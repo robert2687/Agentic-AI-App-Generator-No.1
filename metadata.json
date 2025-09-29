@@ -1,0 +1,5 @@
+{
+  "name": "Copy of Agentic AI App Generator",
+  "description": "A web application that simulates a team of specialized AI agents collaborating to generate a complete, production-ready application based on a user's prompt. The agents work sequentially, from planning to deployment.",
+  "requestFramePermissions": []
+}
