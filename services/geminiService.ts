@@ -1,5 +1,7 @@
 
 
+
+
 import { GoogleGenAI, GenerateContentResponse } from "@google/genai";
 import type { Agent } from '../types';
 
@@ -338,6 +340,7 @@ const mockTodoAppCodeV1 = `
                     return storedTasks ? JSON.parse(storedTasks) : [];
                 } catch (e) {
                     console.error('Error loading tasks from localStorage:', e);
+                    alert('Could not load your tasks. Saved data might be corrupted or inaccessible.');
                     return [];
                 }
             }
@@ -347,6 +350,7 @@ const mockTodoAppCodeV1 = `
                     localStorage.setItem('tasks', JSON.stringify(tasks));
                 } catch (e) {
                     console.error('Error saving tasks to localStorage:', e);
+                    alert('Could not save tasks. Your browser storage might be full or blocked.');
                 }
             }
             
@@ -357,6 +361,7 @@ const mockTodoAppCodeV1 = `
                 const totalTasks = tasks.length;
                 const completedTasks = tasks.filter(task => task.done).length;
                 if (totalTasks > 0) {
+                    // FIX: Escape template literal to prevent evaluation in the outer scope.
                     taskCounter.textContent = \`\${completedTasks} of \${totalTasks} tasks complete\`;
                 } else {
                     taskCounter.textContent = 'No tasks yet.';
@@ -471,6 +476,7 @@ const mockTodoAppCodeV1 = `
 
             function deleteTask(index) {
                 const taskText = tasks[index].text;
+                // FIX: Escape template literal to prevent evaluation in the outer scope.
                 if (!confirm(\`Are you sure you want to delete the task: "\${taskText}"?\`)) {
                     return;
                 }
@@ -774,6 +780,7 @@ const mockTodoAppCodeV2 = `
                 const totalTasks = tasks.length;
                 const completedTasks = tasks.filter(task => task.done).length;
                 if (totalTasks > 0) {
+                    // FIX: Escape template literal to prevent evaluation in the outer scope.
                     taskCounter.textContent = \`\${completedTasks} of \${totalTasks} tasks complete\`;
                 } else {
                     taskCounter.textContent = 'No tasks yet.';
@@ -792,6 +799,7 @@ const mockTodoAppCodeV2 = `
                     const checkbox = document.createElement('input');
                     checkbox.type = 'checkbox';
                     checkbox.checked = task.done;
+                    // FIX: Escape template literal to prevent evaluation in the outer scope.
                     checkbox.setAttribute('aria-label', \`Mark task as complete: "\${task.text}"\`);
                     checkbox.addEventListener('change', () => toggleDone(index));
 
@@ -844,12 +852,14 @@ const mockTodoAppCodeV2 = `
                         const editBtn = document.createElement('button');
                         editBtn.textContent = 'Edit';
                         editBtn.className = 'edit-btn';
+                        // FIX: Escape template literal to prevent evaluation in the outer scope.
                         editBtn.setAttribute('aria-label', \`Edit task: "\${task.text}"\`);
                         editBtn.addEventListener('click', () => editTask(index));
 
                         const deleteBtn = document.createElement('button');
                         deleteBtn.textContent = 'Delete';
                         deleteBtn.className = 'delete-btn';
+                        // FIX: Escape template literal to prevent evaluation in the outer scope.
                         deleteBtn.setAttribute('aria-label', \`Delete task: "\${task.text}"\`);
                         deleteBtn.addEventListener('click', () => deleteTask(index));
 
@@ -894,6 +904,7 @@ const mockTodoAppCodeV2 = `
 
             function deleteTask(index) {
                 const taskText = tasks[index].text;
+                // FIX: Escape template literal to prevent evaluation in the outer scope.
                 if (!confirm(\`Are you sure you want to delete the task: "\${taskText}"?\`)) {
                     return;
                 }
@@ -1219,6 +1230,7 @@ const mockTodoAppCodeV3 = `
                 const totalTasks = tasks.length;
                 const completedTasks = tasks.filter(task => task.done).length;
                 if (totalTasks > 0) {
+                    // FIX: Escape template literal to prevent evaluation in the outer scope.
                     taskCounter.textContent = \`\${completedTasks} of \${totalTasks} tasks complete\`;
                 } else {
                     taskCounter.textContent = 'No tasks yet.';
@@ -1237,6 +1249,7 @@ const mockTodoAppCodeV3 = `
                     const checkbox = document.createElement('input');
                     checkbox.type = 'checkbox';
                     checkbox.checked = task.done;
+                    // FIX: Escape template literal to prevent evaluation in the outer scope.
                     checkbox.setAttribute('aria-label', \`Mark task as complete: "\${task.text}"\`);
                     checkbox.addEventListener('change', () => toggleDone(index));
 
@@ -1289,12 +1302,14 @@ const mockTodoAppCodeV3 = `
                         const editBtn = document.createElement('button');
                         editBtn.textContent = 'Edit';
                         editBtn.className = 'edit-btn';
+                        // FIX: Escape template literal to prevent evaluation in the outer scope.
                         editBtn.setAttribute('aria-label', \`Edit task: "\${task.text}"\`);
                         editBtn.addEventListener('click', () => editTask(index));
 
                         const deleteBtn = document.createElement('button');
                         deleteBtn.textContent = 'Delete';
                         deleteBtn.className = 'delete-btn';
+                        // FIX: Escape template literal to prevent evaluation in the outer scope.
                         deleteBtn.setAttribute('aria-label', \`Delete task: "\${task.text}"\`);
                         deleteBtn.addEventListener('click', () => deleteTask(index));
 
@@ -1339,6 +1354,7 @@ const mockTodoAppCodeV3 = `
 
             function deleteTask(index) {
                 const taskText = tasks[index].text;
+                // FIX: Escape template literal to prevent evaluation in the outer scope.
                 if (!confirm(\`Are you sure you want to delete the task: "\${taskText}"?\`)) {
                     return;
                 }
@@ -1481,6 +1497,7 @@ The code is well-structured and functional. It meets all core requirements.
 3.  **Accessibility:**
     *   The main task input field is missing a proper label. Add an \`aria-label="Add a new task"\` to the \`<input>\` element for screen reader support.
     *   The "Edit" and "Delete" buttons are not descriptive. Add an \`aria-label\` to each that includes the task's text, for example: \`aria-label="Delete task: 'Buy milk'"\`.
+    *   The task completion checkbox is also missing a descriptive label. Add an \`aria-label\` that includes the task text, for example: \`aria-label="Mark task as complete: 'Buy milk'"\`.
 
 Please apply these fixes.
 `,
@@ -1541,31 +1558,35 @@ export const runAgentStream = async (agent: Agent, input: string, onChunk: (chun
   if (!ai) {
     return runMockAgentStream(agent, input, onChunk);
   }
-  
+
+  let finalPrompt: string;
+  let streamedHeader = "";
+
+  // The UX/UI Designer agent has a special multi-step process:
+  // 1. Generate image assets (logo, favicon).
+  // 2. If image generation fails, gracefully fall back to placeholders.
+  // 3. Augment the original input with the generated asset data.
+  // 4. Pass the augmented input to the text model to generate CSS and an integration guide.
   if (agent.name === 'UX/UI Designer') {
-    let fullOutput = "";
+    let imageGenerationOutput = "";
+    
     try {
-      // Step 1: Generate a concise prompt for the logo model
       const promptGenPrefix = "Analyzing requirements to create image prompts...\n\n";
+      streamedHeader += promptGenPrefix;
       onChunk(promptGenPrefix);
-      fullOutput += promptGenPrefix;
-      
-      const imagePromptGenContents = `Based on the following application plan, generate a short, descriptive prompt (under 25 words) for an image generation model to create a logo or key visual. The prompt should capture the essence of the app. Output only the prompt text, without any labels or quotes.
+
+      const imagePromptGenContents = `Based on the following application plan, generate a short, descriptive prompt (under 25 words) for an image generation model to create a logo. Capture the app's essence. Output only the prompt text, without labels or quotes.
 ---
 ${input}
 ---`;
 
-      const imagePromptResponse = await ai.models.generateContent({
-        model: "gemini-2.5-flash",
-        contents: imagePromptGenContents,
-      });
+      const imagePromptResponse = await ai.models.generateContent({ model: "gemini-2.5-flash", contents: imagePromptGenContents });
       const imagePrompt = imagePromptResponse.text.trim();
 
       const imageGenPrefix = `> **Logo Prompt:** "${imagePrompt}"\n\nGenerating logo...\n\n`;
+      streamedHeader += imageGenPrefix;
       onChunk(imageGenPrefix);
-      fullOutput += imageGenPrefix;
 
-      // Step 2: Generate the logo image
       const imageResponse: any = await withRetry(() => ai.models.generateImages({
         model: 'imagen-4.0-generate-001',
         prompt: imagePrompt,
@@ -1574,14 +1595,13 @@ ${input}
 
       const base64Image = imageResponse.generatedImages[0].image.imageBytes;
       const markdownImage = `![${imagePrompt}](data:image/png;base64,${base64Image})\n\n---\n\n`;
+      streamedHeader += markdownImage;
       onChunk(markdownImage);
-      fullOutput += markdownImage;
 
-      // Step 3: Generate the favicon image
-      const faviconPrompt = `A simple, modern, 16x16 favicon for a task app, derived from this concept: ${imagePrompt}`;
+      const faviconPrompt = `A simple, 16x16 favicon based on: ${imagePrompt}`;
       const faviconGenPrefix = `> **Favicon Prompt:** "${faviconPrompt}"\n\nGenerating favicon...\n\n`;
+      streamedHeader += faviconGenPrefix;
       onChunk(faviconGenPrefix);
-      fullOutput += faviconGenPrefix;
 
       const faviconResponse: any = await withRetry(() => ai.models.generateImages({
         model: 'imagen-4.0-generate-001',
@@ -1591,45 +1611,63 @@ ${input}
       
       const base64Favicon = faviconResponse.generatedImages[0].image.imageBytes;
       const faviconUriChunk = `**Favicon Data URI:**\n\`data:image/png;base64,${base64Favicon}\``;
+      streamedHeader += faviconUriChunk;
       onChunk(faviconUriChunk);
-      fullOutput += faviconUriChunk;
       
-      return fullOutput;
-
+      imageGenerationOutput = markdownImage + faviconUriChunk;
     } catch (e) {
-      console.error("Image generation failed, falling back to mock:", e);
+      console.error("Image generation failed, using placeholders:", e);
       let userFacingError = "Image generation failed. A placeholder image will be used instead.";
       if (e instanceof Error && e.message.includes("billed users")) {
-          userFacingError = "Image generation failed as the Imagen API requires a billed account. A placeholder image is being used as a fallback.";
+        userFacingError = "Image generation failed as the Imagen API requires a billed account. A placeholder image is being used as a fallback.";
       }
-      const fallbackMsg = `\n\n*${userFacingError}*\n\n`;
+      const fallbackMsg = `\n*${userFacingError}*\n\n`;
+      streamedHeader += fallbackMsg;
       onChunk(fallbackMsg);
-      // Fallback to the mock stream, which will show the user a placeholder SVG for both logo and favicon
-      return fullOutput + fallbackMsg + await runMockAgentStream(agent, input, onChunk);
+
+      // Use mock/placeholder images
+      const mockLogo = `![Placeholder Logo](data:image/svg+xml;base64,${generateMockLogoBase64()})\n\n---\n\n`;
+      const mockFavicon = `**Favicon Data URI:**\n\`${mockFaviconUri}\``;
+      imageGenerationOutput = mockLogo + mockFavicon;
+      
+      streamedHeader += imageGenerationOutput;
+      onChunk(imageGenerationOutput);
     }
+
+    const continuationHeader = "\n\n---\n\n**Generating Stylesheet & Integration Guide...**\n\n";
+    streamedHeader += continuationHeader;
+    onChunk(continuationHeader);
+    
+    // Augment the original input with the asset information for the text model.
+    const effectiveInput = `${input}\n\n---\n\n**Generated Visual Assets:**\n${imageGenerationOutput}\n*Your task is to use the original input and these generated assets to produce the CSS stylesheet and integration guide. Do not output the assets again in your response; focus only on the CSS and the guide.*`;
+    
+    finalPrompt = MASTER_PROMPT_TEMPLATE
+      .replace('{AGENT_ROLE}', agent.role)
+      .replace('{AGENT_INPUT}', effectiveInput);
+  } else {
+    // Generic logic for all other agents.
+    finalPrompt = MASTER_PROMPT_TEMPLATE
+      .replace('{AGENT_ROLE}', agent.role)
+      .replace('{AGENT_INPUT}', input);
   }
 
-  const prompt = MASTER_PROMPT_TEMPLATE
-    .replace('{AGENT_ROLE}', agent.role)
-    .replace('{AGENT_INPUT}', input);
-
+  // Common text generation logic for all agents.
   try {
-    // FIX: Explicitly type `stream` to `AsyncIterable<GenerateContentResponse>`
-    // to work around a type inference issue with the `withRetry` helper.
     const stream: AsyncIterable<GenerateContentResponse> = await withRetry(() => ai.models.generateContentStream({
       model: "gemini-2.5-flash",
-      contents: prompt,
+      contents: finalPrompt,
     }));
     
-    let fullText = "";
+    let textModelOutput = "";
     for await (const chunk of stream) {
       const chunkText = chunk.text;
       if (chunkText) {
-        fullText += chunkText;
+        textModelOutput += chunkText;
         onChunk(chunkText);
       }
     }
-    return fullText;
+    // The final, complete output for the agent is the streamed header (if any) + the text model's response.
+    return streamedHeader + textModelOutput;
   } catch (error) {
     console.error("Gemini API call failed:", error);
     throw new Error("Failed to get a response from the AI. Check your API key and network connection.");
