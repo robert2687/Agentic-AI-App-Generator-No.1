@@ -6,7 +6,7 @@ export enum AgentStatus {
   ERROR = 'error',
 }
 
-export type AgentName = 'Planner' | 'Architect' | 'Coder' | 'Reviewer' | 'Patcher' | 'Deployer';
+export type AgentName = 'Planner' | 'Architect' | 'Visual Designer' | 'Coder' | 'Reviewer' | 'Patcher' | 'Deployer';
 
 export interface Agent {
   id: number;
@@ -15,4 +15,6 @@ export interface Agent {
   status: AgentStatus;
   input: string | null;
   output: string | null;
+  startedAt?: number;
+  completedAt?: number;
 }

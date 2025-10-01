@@ -1,4 +1,5 @@
-import { GoogleGenAI } from "@google/genai";
+
+import { GoogleGenAI, GenerateContentResponse } from "@google/genai";
 import type { Agent } from '../types';
 
 const API_KEY = process.env.API_KEY;
@@ -7,7 +8,38 @@ if (!API_KEY) {
   console.warn("API_KEY environment variable not set. Using mocked responses.");
 }
 
+// Use the correct `GoogleGenAI` export from the library. The name `GoogleGenerativeAI` is deprecated and causes a runtime error.
 const ai = API_KEY ? new GoogleGenAI({ apiKey: API_KEY }) : null;
+
+/**
+ * A utility function to retry an async API call with exponential backoff.
+ * @param apiCall The async function to call.
+ * @param maxRetries The maximum number of retries.
+ * @returns The result of the API call.
+ */
+const withRetry = async <T>(apiCall: () => Promise<T>, maxRetries = 3): Promise<T> => {
+    let attempt = 0;
+    while (true) {
+        try {
+            return await apiCall();
+        } catch (error: any) {
+            // Check if the error indicates a model overload (503)
+            const isOverloaded = error.message && (error.message.includes('"code": 503') || error.message.includes('"status": "UNAVAILABLE"'));
+
+            if (isOverloaded && attempt < maxRetries) {
+                attempt++;
+                // Exponential backoff with jitter
+                const delay = Math.pow(2, attempt) * 1000 + Math.random() * 1000;
+                console.warn(`Model overloaded. Retrying in ${Math.round(delay / 1000)}s... (Attempt ${attempt})`);
+                await new Promise(resolve => setTimeout(resolve, delay));
+            } else {
+                // Re-throw if it's not a retryable error or if max retries are reached
+                throw error;
+            }
+        }
+    }
+};
+
 
 const MASTER_PROMPT_TEMPLATE = `
 You are a specialized AI agent in a team building a complete, production-ready application.
@@ -155,91 +187,107 @@ const mockTodoAppCodeV1 = `
         <ul id="task-list"></ul>
     </main>
     <script>
-        const taskForm = document.getElementById('task-form');
-        const taskInput = document.getElementById('task-input');
-        const taskList = document.getElementById('task-list');
+        document.addEventListener('DOMContentLoaded', () => {
+            const taskForm = document.getElementById('task-form');
+            const taskInput = document.getElementById('task-input');
+            const taskList = document.getElementById('task-list');
 
-        let tasks = JSON.parse(localStorage.getItem('tasks')) || [];
+            // --- Robust Local Storage Handling ---
+            function loadTasks() {
+                try {
+                    const storedTasks = localStorage.getItem('tasks');
+                    if (storedTasks) {
+                        return JSON.parse(storedTasks);
+                    }
+                } catch (e) {
+                    console.error('Error loading tasks from localStorage:', e);
+                    alert('Could not load your tasks. Local storage might be disabled or full.');
+                }
+                return []; // Return empty array on failure or if no tasks are stored
+            }
 
-        function saveTasks() {
-            localStorage.setItem('tasks', JSON.stringify(tasks));
-        }
+            function saveTasks() {
+                try {
+                    localStorage.setItem('tasks', JSON.stringify(tasks));
+                } catch (e) {
+                    console.error('Error saving tasks to localStorage:', e);
+                    alert('Could not save your tasks. Changes might not persist.');
+                }
+            }
+            
+            let tasks = loadTasks();
 
-        function renderTasks() {
-            taskList.innerHTML = '';
-            tasks.forEach((task, index) => {
-                const li = document.createElement('li');
-                
-                const checkbox = document.createElement('input');
-                checkbox.type = 'checkbox';
-                checkbox.checked = task.done;
-                checkbox.addEventListener('change', () => {
-                    toggleDone(index);
+            function renderTasks() {
+                taskList.innerHTML = '';
+                tasks.forEach((task, index) => {
+                    const li = document.createElement('li');
+                    
+                    const checkbox = document.createElement('input');
+                    checkbox.type = 'checkbox';
+                    checkbox.checked = task.done;
+                    checkbox.addEventListener('change', () => toggleDone(index));
+
+                    const content = document.createElement('span');
+                    content.textContent = task.text;
+                    content.className = 'task-content' + (task.done ? ' done' : '');
+
+                    const actions = document.createElement('div');
+                    actions.className = 'task-actions';
+
+                    const editBtn = document.createElement('button');
+                    editBtn.textContent = 'Edit';
+                    editBtn.className = 'edit-btn';
+                    editBtn.addEventListener('click', () => editTask(index));
+
+                    const deleteBtn = document.createElement('button');
+                    deleteBtn.textContent = 'Delete';
+                    deleteBtn.className = 'delete-btn';
+                    deleteBtn.addEventListener('click', () => deleteTask(index));
+
+                    actions.appendChild(editBtn);
+                    actions.appendChild(deleteBtn);
+                    li.appendChild(checkbox);
+                    li.appendChild(content);
+                    li.appendChild(actions);
+                    taskList.appendChild(li);
                 });
+            }
 
-                const content = document.createElement('span');
-                content.textContent = task.text;
-                content.className = 'task-content' + (task.done ? ' done' : '');
+            function addTask(e) {
+                e.preventDefault();
+                const text = taskInput.value.trim();
+                if (text) {
+                    tasks.push({ text, done: false });
+                    taskInput.value = '';
+                    saveTasks();
+                    renderTasks();
+                }
+            }
 
-                const actions = document.createElement('div');
-                actions.className = 'task-actions';
-
-                const editBtn = document.createElement('button');
-                editBtn.textContent = 'Edit';
-                editBtn.className = 'edit-btn';
-                editBtn.addEventListener('click', () => {
-                    editTask(index);
-                });
-
-                const deleteBtn = document.createElement('button');
-                deleteBtn.textContent = 'Delete';
-                deleteBtn.className = 'delete-btn';
-                deleteBtn.addEventListener('click', () => {
-                    deleteTask(index);
-                });
-
-                actions.appendChild(editBtn);
-                actions.appendChild(deleteBtn);
-                li.appendChild(checkbox);
-                li.appendChild(content);
-                li.appendChild(actions);
-                taskList.appendChild(li);
-            });
-        }
-
-        function addTask(e) {
-            e.preventDefault();
-            const text = taskInput.value.trim();
-            if (text) {
-                tasks.push({ text, done: false });
+            function deleteTask(index) {
+                tasks.splice(index, 1);
                 saveTasks();
                 renderTasks();
             }
-        }
 
-        function deleteTask(index) {
-            tasks.splice(index, 1);
-            saveTasks();
-            renderTasks();
-        }
-
-        function toggleDone(index) {
-            tasks[index].done = !tasks[index].done;
-            saveTasks();
-            renderTasks();
-        }
-
-        function editTask(index) {
-            const newText = prompt('Edit task:', tasks[index].text);
-            if (newText !== null && newText.trim()) {
-                tasks[index].text = newText.trim();
+            function toggleDone(index) {
+                tasks[index].done = !tasks[index].done;
                 saveTasks();
                 renderTasks();
             }
-        }
-        
-        taskForm.addEventListener('submit', addTask);
-        renderTasks();
+
+            function editTask(index) {
+                const newText = prompt('Edit task:', tasks[index].text);
+                if (newText !== null && newText.trim()) {
+                    tasks[index].text = newText.trim();
+                    saveTasks();
+                    renderTasks();
+                }
+            }
+            
+            taskForm.addEventListener('submit', addTask);
+            renderTasks();
+        });
     </script>
 </body>
 </html>
@@ -374,94 +422,109 @@ const mockTodoAppCodeV2 = `
         <ul id="task-list"></ul>
     </main>
     <script>
-        const taskForm = document.getElementById('task-form');
-        const taskInput = document.getElementById('task-input');
-        const taskList = document.getElementById('task-list');
+        document.addEventListener('DOMContentLoaded', () => {
+            const taskForm = document.getElementById('task-form');
+            const taskInput = document.getElementById('task-input');
+            const taskList = document.getElementById('task-list');
 
-        let tasks = JSON.parse(localStorage.getItem('tasks')) || [];
+            // --- Robust Local Storage Handling ---
+            function loadTasks() {
+                try {
+                    const storedTasks = localStorage.getItem('tasks');
+                    if (storedTasks) {
+                        return JSON.parse(storedTasks);
+                    }
+                } catch (e) {
+                    console.error('Error loading tasks from localStorage:', e);
+                    alert('Could not load your tasks. Local storage might be disabled or full.');
+                }
+                return [];
+            }
 
-        function saveTasks() {
-            localStorage.setItem('tasks', JSON.stringify(tasks));
-        }
+            function saveTasks() {
+                try {
+                    localStorage.setItem('tasks', JSON.stringify(tasks));
+                } catch (e) {
+                    console.error('Error saving tasks to localStorage:', e);
+                    alert('Could not save your tasks. Changes might not persist.');
+                }
+            }
 
-        function renderTasks() {
-            taskList.innerHTML = '';
-            tasks.forEach((task, index) => {
-                const li = document.createElement('li');
-                
-                const checkbox = document.createElement('input');
-                checkbox.type = 'checkbox';
-                checkbox.checked = task.done;
-                checkbox.addEventListener('change', () => {
-                    toggleDone(index);
+            let tasks = loadTasks();
+
+            function renderTasks() {
+                taskList.innerHTML = '';
+                tasks.forEach((task, index) => {
+                    const li = document.createElement('li');
+                    
+                    const checkbox = document.createElement('input');
+                    checkbox.type = 'checkbox';
+                    checkbox.checked = task.done;
+                    checkbox.addEventListener('change', () => toggleDone(index));
+
+                    const content = document.createElement('span');
+                    content.textContent = task.text;
+                    content.className = 'task-content' + (task.done ? ' done' : '');
+
+                    const actions = document.createElement('div');
+                    actions.className = 'task-actions';
+
+                    const editBtn = document.createElement('button');
+                    editBtn.textContent = 'Edit';
+                    editBtn.className = 'edit-btn';
+                    editBtn.setAttribute('aria-label', \`Edit task: "\${task.text}"\`);
+                    editBtn.addEventListener('click', () => editTask(index));
+
+                    const deleteBtn = document.createElement('button');
+                    deleteBtn.textContent = 'Delete';
+                    deleteBtn.className = 'delete-btn';
+                    deleteBtn.setAttribute('aria-label', \`Delete task: "\${task.text}"\`);
+                    deleteBtn.addEventListener('click', () => deleteTask(index));
+
+                    actions.appendChild(editBtn);
+                    actions.appendChild(deleteBtn);
+                    li.appendChild(checkbox);
+                    li.appendChild(content);
+                    li.appendChild(actions);
+                    taskList.appendChild(li);
                 });
+            }
 
-                const content = document.createElement('span');
-                content.textContent = task.text;
-                content.className = 'task-content' + (task.done ? ' done' : '');
+            function addTask(e) {
+                e.preventDefault();
+                const text = taskInput.value.trim();
+                if (text) {
+                    tasks.push({ text, done: false });
+                    taskInput.value = '';
+                    saveTasks();
+                    renderTasks();
+                }
+            }
 
-                const actions = document.createElement('div');
-                actions.className = 'task-actions';
-
-                const editBtn = document.createElement('button');
-                editBtn.textContent = 'Edit';
-                editBtn.className = 'edit-btn';
-                editBtn.setAttribute('aria-label', \`Edit task: "\${task.text}"\`);
-                editBtn.addEventListener('click', () => {
-                    editTask(index);
-                });
-
-                const deleteBtn = document.createElement('button');
-                deleteBtn.textContent = 'Delete';
-                deleteBtn.className = 'delete-btn';
-                deleteBtn.setAttribute('aria-label', \`Delete task: "\${task.text}"\`);
-                deleteBtn.addEventListener('click', () => {
-                    deleteTask(index);
-                });
-
-                actions.appendChild(editBtn);
-                actions.appendChild(deleteBtn);
-                li.appendChild(checkbox);
-                li.appendChild(content);
-                li.appendChild(actions);
-                taskList.appendChild(li);
-            });
-        }
-
-        function addTask(e) {
-            e.preventDefault();
-            const text = taskInput.value.trim();
-            if (text) {
-                tasks.push({ text, done: false });
+            function deleteTask(index) {
+                tasks.splice(index, 1);
                 saveTasks();
                 renderTasks();
-                taskInput.value = '';
             }
-        }
 
-        function deleteTask(index) {
-            tasks.splice(index, 1);
-            saveTasks();
-            renderTasks();
-        }
-
-        function toggleDone(index) {
-            tasks[index].done = !tasks[index].done;
-            saveTasks();
-            renderTasks();
-        }
-
-        function editTask(index) {
-            const newText = prompt('Edit task:', tasks[index].text);
-            if (newText !== null && newText.trim()) {
-                tasks[index].text = newText.trim();
+            function toggleDone(index) {
+                tasks[index].done = !tasks[index].done;
                 saveTasks();
                 renderTasks();
             }
-        }
-        
-        taskForm.addEventListener('submit', addTask);
-        renderTasks();
+
+            function editTask(index) {
+                const newText = prompt('Edit task:', tasks[index].text);
+                if (newText !== null && newText.trim()) {
+                    tasks[index].text = newText.trim();
+                    saveTasks();
+                    renderTasks();
+                }
+            }
+            
+            taskForm.addEventListener('submit', addTask);
+            renderTasks();
+        });
     </script>
 </body>
 </html>
@@ -508,7 +571,7 @@ const mockTodoAppCodeV3 = `
         form {
             display: flex;
             gap: 0.5rem;
-            margin-bottom: 2rem;
+            margin-bottom: 1rem;
         }
         input[type="text"] {
             flex-grow: 1;
@@ -531,7 +594,7 @@ const mockTodoAppCodeV3 = `
             font-size: 1rem;
             font-weight: bold;
             cursor: pointer;
-            transition: background-color 0.2s;
+            transition: background-color 0.2s, color 0.2s, border-color 0.2s;
         }
         .add-btn {
             background-color: var(--primary-color);
@@ -539,6 +602,24 @@ const mockTodoAppCodeV3 = `
         }
         .add-btn:hover {
             background-color: var(--primary-hover-color);
+        }
+        .controls {
+            margin-bottom: 2rem;
+            text-align: right;
+        }
+        .clear-btn {
+            background-color: transparent;
+            color: var(--delete-color);
+            border: 1px solid var(--delete-color);
+            padding: 0.5rem 1rem;
+            font-weight: normal;
+            font-size: 0.875rem;
+            opacity: 0.8;
+        }
+        .clear-btn:hover {
+            background-color: var(--delete-color);
+            color: var(--background-color);
+            opacity: 1;
         }
         ul {
             list-style: none;
@@ -593,102 +674,136 @@ const mockTodoAppCodeV3 = `
             <input type="text" id="task-input" placeholder="Add a new task..." autocomplete="off" aria-label="Add a new task">
             <button type="submit" class="add-btn">Add Task</button>
         </form>
+        <div class="controls">
+            <button id="clear-all-btn" class="clear-btn">Clear All Tasks</button>
+        </div>
         <ul id="task-list"></ul>
     </main>
     <script>
-        const taskForm = document.getElementById('task-form');
-        const taskInput = document.getElementById('task-input');
-        const taskList = document.getElementById('task-list');
+        document.addEventListener('DOMContentLoaded', () => {
+            const taskForm = document.getElementById('task-form');
+            const taskInput = document.getElementById('task-input');
+            const taskList = document.getElementById('task-list');
+            const clearAllBtn = document.getElementById('clear-all-btn');
 
-        let tasks = JSON.parse(localStorage.getItem('tasks')) || [];
+            // --- Robust Local Storage Handling ---
+            function loadTasks() {
+                try {
+                    const storedTasks = localStorage.getItem('tasks');
+                    if (storedTasks) {
+                        return JSON.parse(storedTasks);
+                    }
+                } catch (e) {
+                    console.error('Error loading tasks from localStorage:', e);
+                    alert('Could not load your tasks. Local storage might be disabled or full.');
+                }
+                return [];
+            }
 
-        function saveTasks() {
-            localStorage.setItem('tasks', JSON.stringify(tasks));
-        }
+            function saveTasks() {
+                try {
+                    localStorage.setItem('tasks', JSON.stringify(tasks));
+                } catch (e) {
+                    console.error('Error saving tasks to localStorage:', e);
+                    alert('Could not save your tasks. Changes might not persist.');
+                }
+            }
 
-        function renderTasks() {
-            taskList.innerHTML = '';
-            tasks.forEach((task, index) => {
-                const li = document.createElement('li');
-                
-                const checkbox = document.createElement('input');
-                checkbox.type = 'checkbox';
-                checkbox.checked = task.done;
-                checkbox.addEventListener('change', () => {
-                    toggleDone(index);
+            let tasks = loadTasks();
+
+            function renderTasks() {
+                taskList.innerHTML = '';
+                tasks.forEach((task, index) => {
+                    const li = document.createElement('li');
+                    
+                    const checkbox = document.createElement('input');
+                    checkbox.type = 'checkbox';
+                    checkbox.checked = task.done;
+                    checkbox.addEventListener('change', () => toggleDone(index));
+
+                    const content = document.createElement('span');
+                    content.textContent = task.text;
+                    content.className = 'task-content' + (task.done ? ' done' : '');
+
+                    const actions = document.createElement('div');
+                    actions.className = 'task-actions';
+
+                    const editBtn = document.createElement('button');
+                    editBtn.textContent = 'Edit';
+                    editBtn.className = 'edit-btn';
+                    editBtn.setAttribute('aria-label', \`Edit task: "\${task.text}"\`);
+                    editBtn.addEventListener('click', () => editTask(index));
+
+                    const deleteBtn = document.createElement('button');
+                    deleteBtn.textContent = 'Delete';
+                    deleteBtn.className = 'delete-btn';
+                    deleteBtn.setAttribute('aria-label', \`Delete task: "\${task.text}"\`);
+                    deleteBtn.addEventListener('click', () => deleteTask(index));
+
+                    actions.appendChild(editBtn);
+                    actions.appendChild(deleteBtn);
+                    li.appendChild(checkbox);
+                    li.appendChild(content);
+                    li.appendChild(actions);
+                    taskList.appendChild(li);
                 });
+            }
 
-                const content = document.createElement('span');
-                content.textContent = task.text;
-                content.className = 'task-content' + (task.done ? ' done' : '');
+            function addTask(e) {
+                e.preventDefault();
+                const text = taskInput.value.trim();
+                if (text) {
+                    tasks.push({ text, done: false });
+                    taskInput.value = '';
+                    saveTasks();
+                    renderTasks();
+                }
+            }
 
-                const actions = document.createElement('div');
-                actions.className = 'task-actions';
-
-                const editBtn = document.createElement('button');
-                editBtn.textContent = 'Edit';
-                editBtn.className = 'edit-btn';
-                editBtn.setAttribute('aria-label', \`Edit task: "\${task.text}"\`);
-                editBtn.addEventListener('click', () => {
-                    editTask(index);
-                });
-
-                const deleteBtn = document.createElement('button');
-                deleteBtn.textContent = 'Delete';
-                deleteBtn.className = 'delete-btn';
-                deleteBtn.setAttribute('aria-label', \`Delete task: "\${task.text}"\`);
-                deleteBtn.addEventListener('click', () => {
-                    deleteTask(index);
-                });
-
-                actions.appendChild(editBtn);
-                actions.appendChild(deleteBtn);
-                li.appendChild(checkbox);
-                li.appendChild(content);
-                li.appendChild(actions);
-                taskList.appendChild(li);
-            });
-        }
-
-        function addTask(e) {
-            e.preventDefault();
-            const text = taskInput.value.trim();
-            if (text) {
-                tasks.push({ text, done: false });
+            function deleteTask(index) {
+                tasks.splice(index, 1);
                 saveTasks();
                 renderTasks();
-                taskInput.value = '';
             }
-        }
 
-        function deleteTask(index) {
-            tasks.splice(index, 1);
-            saveTasks();
-            renderTasks();
-        }
-
-        function toggleDone(index) {
-            tasks[index].done = !tasks[index].done;
-            saveTasks();
-            renderTasks();
-        }
-
-        function editTask(index) {
-            const newText = prompt('Edit task:', tasks[index].text);
-            if (newText !== null && newText.trim()) {
-                tasks[index].text = newText.trim();
+            function toggleDone(index) {
+                tasks[index].done = !tasks[index].done;
                 saveTasks();
                 renderTasks();
             }
-        }
-        
-        taskForm.addEventListener('submit', addTask);
-        renderTasks();
+
+            function editTask(index) {
+                const newText = prompt('Edit task:', tasks[index].text);
+                if (newText !== null && newText.trim()) {
+                    tasks[index].text = newText.trim();
+                    saveTasks();
+                    renderTasks();
+                }
+            }
+
+            function clearAllTasks() {
+                if (tasks.length === 0) {
+                    alert("There are no tasks to clear.");
+                    return;
+                }
+                if (confirm('Are you sure you want to delete ALL tasks? This action cannot be undone.')) {
+                    tasks = [];
+                    saveTasks();
+                    renderTasks();
+                }
+            }
+            
+            taskForm.addEventListener('submit', addTask);
+            clearAllBtn.addEventListener('click', clearAllTasks);
+            renderTasks();
+        });
     </script>
 </body>
 </html>
 \`\`\`
 `;
+
+const mockBase64Image = 'iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAIoSURBVHhe7Zq/SxxRFMfPBF2UaBNLg4BgoCT4s4WQNpY2KtsE/wcrtdnCwsbG/wQrstgINqZICBqNRA2ChT9AChFKsoiQjOTczF3d3fvu4e578WB35s659z5z7uw9M/M/yZlSklKSUpJSklKSUpJSklKSUpJSklKSUpJS6h1HwBzwAnwD7gGrwDfwDPgA/C+wQJ4Bl4DbwD4wB3wDngLfge/AmGA49wN8AR4AL4E3wEFgDbgFvAb+BL8B74HXwCKwCLwDngNrgRXgM/ASeAVcAmOAU+ARcAZ4DbwFfge/A9+B/0L/CTz+9gJ8BZYAC8Bv4CdwFrgH3gE3gTfAMeADcBC4BGYB74H/gI/AWeAR8J9ZgBHgErgOfAdsB+eBf8BjYBj4DhwGDgMvwVfgN/AL+D78CCwCC8Bv4B/gLfAN2A/uBQOA3/0l/Av8A/gOfAd2Aw/B/4MvwAfgM3AamAJuAi/BF2Af+B/8DzwF3gJ/gOfA/2E48QG4AawBf4S/gTfAduAKcBC4DJwGfg/fgr/Av8C/wG/wS/gL/D9+A9+BD8A/wI/wBfg+fE883wP/gS/AF+B/8A/wPnwMzgJbgVfgb/D7+D58D8wCH4BfwD/gh/AV+CL8Af4C/4CfwZ/hd/CbwUagD/gL/BP+D/8C/4Bf4f/hJ/A/+B/8D/4C/4//gR/Cn+A/8G/4JfxP/At+Dv8Mv4f/ht/A/+C/8L/wL/g//An+D/8M/4P/xr/h/zOlLCUpJSklaSU/pP4BU1B3hWwK9iRAAAAAElFTkSuQmCC';
 
 const mockResponses: Record<string, string> = {
   Planner: `
@@ -711,6 +826,10 @@ const mockResponses: Record<string, string> = {
     *   **Frontend:** Plain HTML, CSS, and JavaScript. No external libraries or frameworks are needed.
     *   **Storage:** Browser Local Storage.
     *   **Deployment:** The entire application must be contained in a single \`index.html\` file.
+
+4.  **Visual Asset Suggestions:**
+    *   **Logo:** A simple, modern logo featuring a checkmark or a stylized letter 'T'. The color palette should be calming yet motivating, perhaps using blues and greens.
+    *   **Icons:** Consistent icons for "Edit" and "Delete" actions. A pencil for edit, and a trash can for delete.
 `,
   Architect: `
 ### **System Architecture: Single-File Task Manager**
@@ -746,6 +865,7 @@ const mockResponses: Record<string, string> = {
         *   \`loadTasks()\`: Loads and parses the task data from Local Storage into the \`tasks\` array on initial script load.
         *   Event Handlers for: adding, deleting, editing, and toggling task completion. These handlers will modify the \`tasks\` array and then call \`saveTasks()\` and \`renderTasks()\`.
 `,
+  'Visual Designer': `Analyzing requirements to create an image prompt...\n\n> **Image Prompt:** "A modern, minimalist logo for a task management app, featuring a stylized checkmark inside a circle. Color palette: shades of teal and slate grey."\n\nGenerating image...\n\n![A modern, minimalist logo for a task management app...](data:image/png;base64,${mockBase64Image})`,
   Coder: mockTodoAppCodeV1,
   Reviewer: `
 The code is well-structured and functional. It meets all core requirements.
@@ -816,12 +936,58 @@ export const runAgentStream = async (agent: Agent, input: string, onChunk: (chun
   if (!ai) {
     return runMockAgentStream(agent, input, onChunk);
   }
+  
+  if (agent.name === 'Visual Designer') {
+    try {
+        const promptExtractionPrompt = `Based on the following project plan, distill a single, concise prompt (less than 30 words) for an image generation model to create a logo or key visual. The prompt should be descriptive, artistic, and suitable for a modern web application.
+
+        Project Plan:
+        ---
+        ${input}
+        ---
+        
+        Image Generation Prompt:`;
+
+        onChunk('Analyzing requirements to create an image prompt...\n\n');
+
+        // FIX: Add explicit type annotation to fix property 'text' does not exist error.
+        const extractionResponse: GenerateContentResponse = await withRetry(() => ai.models.generateContent({
+            model: 'gemini-2.5-flash',
+            contents: promptExtractionPrompt,
+        }));
+
+        const imagePrompt = extractionResponse.text.trim();
+        onChunk(`> **Image Prompt:** "${imagePrompt}"\n\nGenerating image...`);
+        
+        const imageResponse = await ai.models.generateImages({
+            model: 'imagen-4.0-generate-001',
+            prompt: imagePrompt,
+            config: { numberOfImages: 1, outputMimeType: 'image/png' },
+        });
+        
+        const base64ImageBytes = imageResponse.generatedImages[0].image.imageBytes;
+        const markdownImage = `\n\n![${imagePrompt}](data:image/png;base64,${base64ImageBytes})`;
+        
+        onChunk(markdownImage);
+        
+        const fullOutput = `Analyzing requirements to create an image prompt...\n\n> **Image Prompt:** "${imagePrompt}"\n\nGenerating image...${markdownImage}`;
+        return fullOutput;
+
+    } catch (error) {
+        console.error("Image generation failed, falling back to mock:", error);
+        onChunk("Image generation failed due to API limitations. Using a placeholder image.\n\n");
+        // Gracefully fall back to the mock stream instead of crashing the workflow.
+        return runMockAgentStream(agent, input, onChunk);
+    }
+  }
 
   const prompt = MASTER_PROMPT_TEMPLATE
     .replace('{AGENT_ROLE}', agent.role)
     .replace('{AGENT_INPUT}', input);
 
   try {
+    // The `withRetry` helper can interfere with the async iterable returned by the streaming API.
+    // Calling the API directly is more robust for streaming responses.
     const stream = await ai.models.generateContentStream({
       model: "gemini-2.5-flash",
       contents: prompt,

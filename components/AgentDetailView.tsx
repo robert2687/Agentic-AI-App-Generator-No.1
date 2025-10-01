@@ -1,14 +1,50 @@
-import React, { useRef, useEffect } from 'react';
-import type { Agent } from '../types';
+
+import React, { useRef, useEffect, useState } from 'react';
+import type { Agent, AgentName } from '../types';
 import { AgentStatus } from '../types';
 import MarkdownRenderer from './MarkdownRenderer';
 import SkeletonLoader from './SkeletonLoader';
+import PatcherIcon from './icons/PatcherIcon';
 
 interface AgentDetailViewProps {
   agent: Agent;
+  recoveryContext: {
+    failingAgentName: AgentName;
+    errorMessage: string;
+  } | null;
 }
 
-const AgentDetailView: React.FC<AgentDetailViewProps> = ({ agent }) => {
+const Timer: React.FC<{ agent: Agent }> = ({ agent }) => {
+  const [elapsed, setElapsed] = useState(0);
+
+  useEffect(() => {
+    if (agent.status === AgentStatus.RUNNING && agent.startedAt) {
+      const intervalId = setInterval(() => {
+        setElapsed(Date.now() - (agent.startedAt as number));
+      }, 100);
+      return () => clearInterval(intervalId);
+    }
+  }, [agent.status, agent.startedAt]);
+
+  if (agent.status === AgentStatus.COMPLETED && agent.startedAt && agent.completedAt) {
+    const duration = agent.completedAt - agent.startedAt;
+    return <span className="text-sm text-slate-500">Completed in {(duration / 1000).toFixed(1)}s</span>;
+  }
+  
+  if (agent.status === AgentStatus.ERROR && agent.startedAt && agent.completedAt) {
+    const duration = agent.completedAt - agent.startedAt;
+    return <span className="text-sm text-red-500">Failed after {(duration / 1000).toFixed(1)}s</span>;
+  }
+
+  if (agent.status === AgentStatus.RUNNING && agent.startedAt) {
+    return <span className="text-sm text-sky-400">Running for {(elapsed / 1000).toFixed(1)}s...</span>;
+  }
+  
+  return null;
+};
+
+
+const AgentDetailView: React.FC<AgentDetailViewProps> = ({ agent, recoveryContext }) => {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   // Auto-scroll to the bottom of the output when it updates, especially during streaming
@@ -50,10 +86,29 @@ const AgentDetailView: React.FC<AgentDetailViewProps> = ({ agent }) => {
     }
   };
 
+  const isFailingAgentInRecovery = recoveryContext && agent.name === recoveryContext.failingAgentName;
+  const isRecoveringAgent = recoveryContext && (agent.name === 'Reviewer' || agent.name === 'Patcher');
+  const showRecoveryBanner = isFailingAgentInRecovery || isRecoveringAgent;
+
   return (
     <div className="flex flex-col h-full">
+      {showRecoveryBanner && recoveryContext && (
+        <div className="p-3 bg-amber-900/40 text-amber-300 border-b border-amber-700/50 text-sm flex-shrink-0">
+          <p className="font-bold flex items-center gap-2">
+            <PatcherIcon className="w-4 h-4" />
+            <span>Recovery Mode Active</span>
+          </p>
+          {isFailingAgentInRecovery && <p className="mt-1">This agent encountered an error. The Reviewer is analyzing the issue.</p>}
+          {agent.name === 'Reviewer' && <p className="mt-1">Analyzing failure from the <strong>{recoveryContext.failingAgentName}</strong> agent to generate a fix.</p>}
+          {agent.name === 'Patcher' && <p className="mt-1">Applying fix for the <strong>{recoveryContext.failingAgentName}</strong> agent.</p>}
+        </div>
+      )}
+
       <div className="p-4 border-b border-slate-700/50 flex-shrink-0">
-        <h2 className="text-xl font-bold text-sky-400">{agent.name} Agent</h2>
+        <div className="flex justify-between items-center mb-1">
+          <h2 className="text-xl font-bold text-sky-400">{agent.name} Agent</h2>
+          <Timer agent={agent} />
+        </div>
         <p className="text-sm text-slate-400">{agent.role}</p>
       </div>
       

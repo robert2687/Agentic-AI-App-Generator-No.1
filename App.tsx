@@ -1,3 +1,4 @@
+
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { Agent, AgentStatus, AgentName } from './types';
 import { INITIAL_AGENTS } from './constants';
@@ -9,8 +10,6 @@ import AgentCard from './components/AgentCard';
 import AgentDetailView from './components/AgentDetailView';
 import PreviewModal from './components/PreviewModal';
 import PreviewPanel from './components/PreviewPanel';
-import ZenOnIcon from './components/icons/ZenOnIcon';
-import ZenOffIcon from './components/icons/ZenOffIcon';
 
 
 const DEFAULT_PROJECT_GOAL = `
@@ -92,6 +91,11 @@ const App: React.FC = () => {
   const [isPreviewModalOpen, setIsPreviewModalOpen] = useState<boolean>(false);
   const [previewCode, setPreviewCode] = useState<string | null>(null);
   const [isZenMode, setIsZenMode] = useState<boolean>(false);
+  const [recoveryContext, setRecoveryContext] = useState<{
+    failingAgentName: AgentName;
+    originalInput: string;
+    errorMessage: string;
+  } | null>(null);
 
 
   const patcherAgent = useMemo(() => agents.find(a => a.name === 'Patcher'), [agents]);
@@ -130,6 +134,7 @@ const App: React.FC = () => {
     setIsPreviewModalOpen(false);
     setProjectGoal(DEFAULT_PROJECT_GOAL);
     setRefinementPrompt('');
+    setRecoveryContext(null);
   };
   
   const handleStartGeneration = useCallback(async () => {
@@ -140,16 +145,11 @@ const App: React.FC = () => {
 
     resetWorkflow();
     setIsGenerating(true);
+    setRecoveryContext(null);
 
     let currentInput = `The user wants to build an application with the following goal: "${projectGoal}".`;
     const newAgentsState = [...INITIAL_AGENTS];
     const agentOutputs: Record<string, string> = {};
-    
-    let recoveryContext: {
-        failingAgentName: AgentName;
-        originalInput: string;
-        errorMessage: string;
-    } | null = null;
     
     for (let i = 0; i < newAgentsState.length; i++) {
         setCurrentAgentIndex(i);
@@ -196,8 +196,16 @@ ${recoveryContext.originalInput}
 Your task is to take on the role of the failing agent, follow the Reviewer's guidance to correct the mistake, and generate the final, correct output.`;
             }
         } else {
-            // Normal Patcher input logic (not in recovery mode)
-            if (currentAgentConfig.name === 'Patcher') {
+             // --- NORMAL WORKFLOW INPUT CONSTRUCTION ---
+            if (currentAgentConfig.name === 'Visual Designer') {
+                const plannerOutput = agentOutputs['Planner'];
+                const architectOutput = agentOutputs['Architect'];
+                agentSpecificInput = `The Planner provided these requirements and suggestions:\n\n${plannerOutput}\n\n---\n\nThe Architect designed the following system:\n\n${architectOutput}`;
+            } else if (currentAgentConfig.name === 'Coder') {
+                const architectOutput = agentOutputs['Architect'];
+                const visualDesignerOutput = agentOutputs['Visual Designer'];
+                agentSpecificInput = `The Architect designed the following system:\n\n${architectOutput}\n\n---\n\nThe Visual Designer created these assets:\n\n${visualDesignerOutput}`;
+            } else if (currentAgentConfig.name === 'Patcher') {
                 const coderOutput = agentOutputs['Coder'];
                 const reviewerOutput = agentOutputs['Reviewer'];
 
@@ -213,7 +221,13 @@ Your task is to take on the role of the failing agent, follow the Reviewer's gui
             }
         }
 
-        const agentToRun = { ...currentAgentConfig, status: AgentStatus.RUNNING, input: agentSpecificInput, output: '' };
+        const agentToRun = { 
+            ...currentAgentConfig, 
+            status: AgentStatus.RUNNING, 
+            input: agentSpecificInput, 
+            output: '',
+            startedAt: Date.now(),
+        };
         newAgentsState[i] = agentToRun;
         setAgents([...newAgentsState]);
 
@@ -231,11 +245,16 @@ Your task is to take on the role of the failing agent, follow the Reviewer's gui
 
             const finalOutput = await geminiService.runAgentStream(agentToRun, agentSpecificInput, onChunk);
             
-            newAgentsState[i] = { ...agentToRun, status: AgentStatus.COMPLETED, output: finalOutput };
+            newAgentsState[i] = { 
+                ...agentToRun, 
+                status: AgentStatus.COMPLETED, 
+                output: finalOutput,
+                completedAt: Date.now(),
+            };
             
             // If the Patcher just successfully completed a recovery, clear the context.
             if (agentToRun.name === 'Patcher' && recoveryContext) {
-                recoveryContext = null; 
+                setRecoveryContext(null);
             }
 
             agentOutputs[agentToRun.name] = finalOutput;
@@ -247,17 +266,17 @@ Your task is to take on the role of the failing agent, follow the Reviewer's gui
             
             // Check if we can recover: error happened before Reviewer, and we're not already recovering.
             if (i < reviewerIndex && !recoveryContext) {
-                recoveryContext = {
+                setRecoveryContext({
                     failingAgentName: agentToRun.name,
                     originalInput: agentSpecificInput,
                     errorMessage: errorMessage,
-                };
-                newAgentsState[i] = { ...agentToRun, status: AgentStatus.ERROR, output: errorMessage };
+                });
+                newAgentsState[i] = { ...agentToRun, status: AgentStatus.ERROR, output: errorMessage, completedAt: Date.now() };
                 // Let the loop continue to the Reviewer agent.
                 currentInput = `The previous agent, ${agentToRun.name}, failed. The Reviewer will now analyze the error.`;
             } else {
                 // Unrecoverable error (e.g., Reviewer/Patcher failed, or recovery already tried).
-                newAgentsState[i] = { ...agentToRun, status: AgentStatus.ERROR, output: errorMessage };
+                newAgentsState[i] = { ...agentToRun, status: AgentStatus.ERROR, output: errorMessage, completedAt: Date.now() };
                 setError(`Error at ${agentToRun.name} agent: ${errorMessage}`);
                 setAgents([...newAgentsState]);
                 setIsGenerating(false);
@@ -269,7 +288,7 @@ Your task is to take on the role of the failing agent, follow the Reviewer's gui
     setAgents(newAgentsState);
     setIsGenerating(false);
     setCurrentAgentIndex(-1);
-  }, [projectGoal]);
+  }, [projectGoal, recoveryContext]);
 
   const handleStartRefinement = useCallback(async () => {
     if (!refinementPrompt.trim()) {
@@ -340,7 +359,13 @@ Your task is to analyze the request and provide instructions for the Patcher age
             agentSpecificInput = `The user wants to refine the application. The Reviewer agent provided the following instructions:\n\n${reviewerOutput}\n\n---\n\nThe original code to modify is:\n\n${lastPatcherOutput}`;
         }
 
-        const agentToRun = { ...currentAgentConfig, status: AgentStatus.RUNNING, input: agentSpecificInput, output: '' };
+        const agentToRun = { 
+            ...currentAgentConfig, 
+            status: AgentStatus.RUNNING, 
+            input: agentSpecificInput, 
+            output: '',
+            startedAt: Date.now(),
+        };
         newAgentsState[i] = agentToRun;
         setAgents([...newAgentsState]);
 
@@ -357,12 +382,17 @@ Your task is to analyze the request and provide instructions for the Patcher age
             };
 
             const finalOutput = await geminiService.runAgentStream(agentToRun, agentSpecificInput, onChunk);
-            newAgentsState[i] = { ...agentToRun, status: AgentStatus.COMPLETED, output: finalOutput };
+            newAgentsState[i] = { 
+                ...agentToRun, 
+                status: AgentStatus.COMPLETED, 
+                output: finalOutput,
+                completedAt: Date.now(),
+            };
             agentOutputs[agentToRun.name] = finalOutput;
             currentInput = `As the ${agentToRun.name}, you produced this output:\n\n${finalOutput}`;
         } catch (e) {
             const errorMessage = e instanceof Error ? e.message : 'An unknown error occurred';
-            newAgentsState[i] = { ...agentToRun, status: AgentStatus.ERROR, output: errorMessage };
+            newAgentsState[i] = { ...agentToRun, status: AgentStatus.ERROR, output: errorMessage, completedAt: Date.now() };
             setError(`Error at ${agentToRun.name} agent during refinement: ${errorMessage}`);
             setAgents([...newAgentsState]);
             setIsGenerating(false);
@@ -412,6 +442,7 @@ Your task is to analyze the request and provide instructions for the Patcher age
                       isSelected={selectedAgentIndex === index}
                       onClick={() => handleSelectAgent(index)}
                       isCurrent={currentAgentIndex === index}
+                      isInRecoveryMode={recoveryContext !== null}
                     />
                   ))}
                 </div>
@@ -421,7 +452,7 @@ Your task is to analyze the request and provide instructions for the Patcher age
           {/* Top-Right: Agent Details */}
           <section className={`rounded-lg bg-slate-800/50 p-1 flex-col ${isZenMode ? 'hidden md:flex' : 'flex'}`}>
             {selectedAgent ? (
-              <AgentDetailView agent={selectedAgent} />
+              <AgentDetailView agent={selectedAgent} recoveryContext={recoveryContext} />
             ) : (
                 <div className="flex-grow flex items-center justify-center h-full">
                   <p className="text-slate-400">Select an agent to see details.</p>

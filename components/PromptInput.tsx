@@ -44,7 +44,7 @@ const PromptInput: React.FC<PromptInputProps> = ({
           value={projectGoal}
           onChange={(e) => setProjectGoal(e.target.value)}
           placeholder="e.g., A web app for tracking personal fitness goals with data visualization..."
-          className="w-full h-32 p-2 bg-slate-700/50 rounded-md border border-slate-600 focus:ring-2 focus:ring-sky-500 focus:outline-none resize-none transition-colors mt-2"
+          className="w-full h-32 p-2 bg-slate-700/50 rounded-md border border-slate-600 focus:border-sky-500 focus:ring-4 focus:ring-sky-500/30 focus:outline-none resize-none transition-colors mt-2"
           disabled={isGenerating || isComplete}
         />
         <div className="flex gap-2 mt-2">
@@ -68,14 +68,14 @@ const PromptInput: React.FC<PromptInputProps> = ({
       {isComplete && (
         <div className="border-t border-slate-700/50 pt-4 flex flex-col gap-2 animate-fade-in">
           <label htmlFor="refinement-prompt" className="font-bold text-teal-400">
-            2. Refine Your Application
+            2. Debug & Refine
           </label>
           <textarea
             id="refinement-prompt"
             value={refinementPrompt}
             onChange={(e) => setRefinementPrompt(e.target.value)}
-            placeholder="e.g., Change the title color to orange. Add a 'Clear All' button."
-            className="w-full h-20 p-2 bg-slate-700/50 rounded-md border border-slate-600 focus:ring-2 focus:ring-teal-500 focus:outline-none resize-none transition-colors"
+            placeholder="e.g., The 'Delete' button isn't working. OR Change the title color to orange."
+            className="w-full h-20 p-2 bg-slate-700/50 rounded-md border border-slate-600 focus:border-teal-500 focus:ring-4 focus:ring-teal-500/30 focus:outline-none resize-none transition-colors"
             disabled={isGenerating}
           />
           <button
@@ -83,7 +83,7 @@ const PromptInput: React.FC<PromptInputProps> = ({
             disabled={isGenerating || !refinementPrompt.trim()}
             className="w-full bg-teal-600 text-white font-bold py-2 px-4 rounded-md hover:bg-teal-500 disabled:bg-slate-600 disabled:cursor-not-allowed transition-colors"
           >
-            {isGenerating ? 'Refining...' : 'Refine Application'}
+            {isGenerating ? 'Refining...' : 'Submit Refinement'}
           </button>
         </div>
       )}
