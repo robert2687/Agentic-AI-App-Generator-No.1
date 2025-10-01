@@ -408,6 +408,9 @@ const mockTodoAppCodeV1 = `
                             if (e.key === 'Enter') {
                                 e.preventDefault();
                                 input.blur();
+                            } else if (e.key === 'Escape') {
+                                currentlyEditingIndex = -1;
+                                renderTasks();
                             }
                         });
                         li.appendChild(input);
