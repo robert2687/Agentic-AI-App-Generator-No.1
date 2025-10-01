@@ -1,4 +1,7 @@
 
+
+
+
 import { GoogleGenAI, GenerateContentResponse } from "@google/genai";
 import type { Agent } from '../types';
 
@@ -69,21 +72,42 @@ const mockTodoAppCodeV1 = `
     <title>Task Manager</title>
     <style>
         :root {
+            /* Colors */
             --background-color: #1e293b;
             --surface-color: #334155;
+            --surface-hover-color: #475569;
             --text-color: #e2e8f0;
+            --border-color: #475569;
             --primary-color: #38bdf8;
             --primary-hover-color: #0ea5e9;
             --delete-color: #f43f5e;
             --delete-hover-color: #e11d48;
             --done-color: #4ade80;
+
+            /* Typography */
+            --font-family-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            --font-size-base: 1rem;
+
+            /* Spacing */
+            --spacing-sm: 0.5rem;
+            --spacing-md: 0.75rem;
+            --spacing-lg: 1rem;
+            --spacing-xl: 1.5rem;
+            --spacing-2xl: 2rem;
+
+            /* Borders & Radius */
+            --border-radius: 0.375rem;
+            --border-width: 1px;
+            
+            /* Shadows */
+            --focus-shadow: 0 0 0 2px var(--background-color), 0 0 0 4px var(--primary-color);
         }
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            font-family: var(--font-family-sans);
             background-color: var(--background-color);
             color: var(--text-color);
             margin: 0;
-            padding: 2rem;
+            padding: var(--spacing-2xl);
             display: flex;
             justify-content: center;
         }
@@ -94,32 +118,46 @@ const mockTodoAppCodeV1 = `
         h1 {
             text-align: center;
             color: var(--primary-color);
-            margin-bottom: 2rem;
+            margin-bottom: var(--spacing-2xl);
         }
         form {
             display: flex;
-            gap: 0.5rem;
-            margin-bottom: 2rem;
+            gap: var(--spacing-sm);
+            margin-bottom: var(--spacing-2xl);
         }
         input[type="text"] {
             flex-grow: 1;
-            padding: 0.75rem;
-            border: 1px solid var(--surface-color);
-            border-radius: 0.375rem;
+            padding: var(--spacing-md);
+            border: var(--border-width) solid var(--surface-color);
+            border-radius: var(--border-radius);
             background-color: var(--surface-color);
             color: var(--text-color);
-            font-size: 1rem;
+            font-size: var(--font-size-base);
         }
-        input[type="text"]:focus {
+        input[type="text"]:focus-visible {
             outline: none;
             border-color: var(--primary-color);
-            box-shadow: 0 0 0 2px var(--primary-color);
+            box-shadow: var(--focus-shadow);
+        }
+        button:focus-visible,
+        input[type="checkbox"]:focus-visible {
+            outline: none;
+            box-shadow: var(--focus-shadow);
+        }
+        .input-error {
+            border-color: var(--delete-color) !important;
+            animation: shake 0.5s;
+        }
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+            20%, 40%, 60%, 80% { transform: translateX(5px); }
         }
         button {
-            padding: 0.75rem 1.5rem;
+            padding: var(--spacing-md) var(--spacing-xl);
             border: none;
-            border-radius: 0.375rem;
-            font-size: 1rem;
+            border-radius: var(--border-radius);
+            font-size: var(--font-size-base);
             font-weight: bold;
             cursor: pointer;
             transition: background-color 0.2s;
@@ -137,18 +175,39 @@ const mockTodoAppCodeV1 = `
             margin: 0;
             display: flex;
             flex-direction: column;
-            gap: 1rem;
+            gap: var(--spacing-lg);
         }
         li {
             display: flex;
             align-items: center;
-            gap: 0.75rem;
+            gap: var(--spacing-md);
             background-color: var(--surface-color);
-            padding: 1rem;
-            border-radius: 0.375rem;
+            padding: var(--spacing-lg);
+            border-radius: var(--border-radius);
+            transition: background-color 0.2s, opacity 0.3s ease-out, transform 0.3s ease-out, border-left 0.2s ease-in-out, padding-left 0.2s ease-in-out;
+            border-left: 4px solid transparent;
+        }
+        li:hover {
+            background-color: var(--surface-hover-color);
+        }
+        li.task-done {
+            border-left: 4px solid var(--done-color);
+            padding-left: calc(var(--spacing-lg) - 4px);
+        }
+        @keyframes task-add-animation {
+            from { opacity: 0; transform: translateY(-10px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+        .task-added {
+            animation: task-add-animation 0.3s ease-out;
+        }
+        .task-deleting {
+            opacity: 0;
+            transform: scale(0.95);
         }
         .task-content {
             flex-grow: 1;
+            word-break: break-word;
         }
         .task-content.done {
             text-decoration: line-through;
@@ -158,22 +217,44 @@ const mockTodoAppCodeV1 = `
             width: 1.25rem;
             height: 1.25rem;
             cursor: pointer;
+            flex-shrink: 0;
         }
         .task-actions {
             display: flex;
-            gap: 0.5rem;
+            gap: var(--spacing-sm);
         }
         .edit-btn, .delete-btn {
-             background: none;
-             border: 1px solid transparent;
+             background: transparent;
+             border: none;
              color: var(--text-color);
              opacity: 0.7;
+             padding: var(--spacing-sm);
+             border-radius: var(--border-radius);
+             cursor: pointer;
+             transition: all 0.2s ease-in-out;
         }
-        .edit-btn:hover, .delete-btn:hover {
+        .edit-btn:hover {
             opacity: 1;
+            background-color: var(--surface-hover-color);
         }
         .delete-btn:hover {
-            color: var(--delete-color);
+            opacity: 1;
+            background-color: var(--delete-color);
+            color: white;
+        }
+
+        /* Responsive Styles */
+        @media (max-width: 640px) {
+            body {
+                padding: var(--spacing-lg);
+            }
+            h1 {
+                font-size: 1.75rem;
+                margin-bottom: var(--spacing-xl);
+            }
+            li {
+                padding: var(--spacing-md);
+            }
         }
     </style>
 </head>
@@ -181,10 +262,10 @@ const mockTodoAppCodeV1 = `
     <main>
         <h1>Task Manager</h1>
         <form id="task-form">
-            <input type="text" id="task-input" placeholder="Add a new task..." autocomplete="off">
+            <input type="text" id="task-input" placeholder="Add a new task..." autocomplete="off" aria-label="Add a new task">
             <button type="submit" class="add-btn">Add Task</button>
         </form>
-        <ul id="task-list"></ul>
+        <ul id="task-list" aria-live="polite"></ul>
     </main>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
@@ -192,18 +273,14 @@ const mockTodoAppCodeV1 = `
             const taskInput = document.getElementById('task-input');
             const taskList = document.getElementById('task-list');
 
-            // --- Robust Local Storage Handling ---
             function loadTasks() {
                 try {
                     const storedTasks = localStorage.getItem('tasks');
-                    if (storedTasks) {
-                        return JSON.parse(storedTasks);
-                    }
+                    return storedTasks ? JSON.parse(storedTasks) : [];
                 } catch (e) {
                     console.error('Error loading tasks from localStorage:', e);
-                    alert('Could not load your tasks. Local storage might be disabled or full.');
+                    return [];
                 }
-                return []; // Return empty array on failure or if no tasks are stored
             }
 
             function saveTasks() {
@@ -211,20 +288,23 @@ const mockTodoAppCodeV1 = `
                     localStorage.setItem('tasks', JSON.stringify(tasks));
                 } catch (e) {
                     console.error('Error saving tasks to localStorage:', e);
-                    alert('Could not save your tasks. Changes might not persist.');
                 }
             }
             
             let tasks = loadTasks();
 
-            function renderTasks() {
+            function renderTasks(newlyAddedIndex = -1) {
                 taskList.innerHTML = '';
                 tasks.forEach((task, index) => {
                     const li = document.createElement('li');
+                    if (task.done) {
+                        li.classList.add('task-done');
+                    }
                     
                     const checkbox = document.createElement('input');
                     checkbox.type = 'checkbox';
                     checkbox.checked = task.done;
+                    checkbox.setAttribute('aria-label', \`Mark task as complete: "\${task.text}"\`);
                     checkbox.addEventListener('change', () => toggleDone(index));
 
                     const content = document.createElement('span');
@@ -237,11 +317,13 @@ const mockTodoAppCodeV1 = `
                     const editBtn = document.createElement('button');
                     editBtn.textContent = 'Edit';
                     editBtn.className = 'edit-btn';
+                    editBtn.setAttribute('aria-label', \`Edit task: "\${task.text}"\`);
                     editBtn.addEventListener('click', () => editTask(index));
 
                     const deleteBtn = document.createElement('button');
                     deleteBtn.textContent = 'Delete';
                     deleteBtn.className = 'delete-btn';
+                    deleteBtn.setAttribute('aria-label', \`Delete task: "\${task.text}"\`);
                     deleteBtn.addEventListener('click', () => deleteTask(index));
 
                     actions.appendChild(editBtn);
@@ -249,6 +331,11 @@ const mockTodoAppCodeV1 = `
                     li.appendChild(checkbox);
                     li.appendChild(content);
                     li.appendChild(actions);
+
+                    if (index === newlyAddedIndex) {
+                        li.classList.add('task-added');
+                    }
+                    
                     taskList.appendChild(li);
                 });
             }
@@ -258,16 +345,40 @@ const mockTodoAppCodeV1 = `
                 const text = taskInput.value.trim();
                 if (text) {
                     tasks.push({ text, done: false });
-                    taskInput.value = '';
                     saveTasks();
-                    renderTasks();
+                    renderTasks(tasks.length - 1);
+                    taskInput.value = '';
+                    taskInput.focus();
+                } else {
+                    taskInput.classList.add('input-error');
+                    taskInput.focus();
+                    setTimeout(() => {
+                        taskInput.classList.remove('input-error');
+                    }, 500); // Corresponds to animation duration
                 }
             }
 
             function deleteTask(index) {
-                tasks.splice(index, 1);
-                saveTasks();
-                renderTasks();
+                const taskText = tasks[index].text;
+                if (!confirm(\`Are you sure you want to delete the task: "\${taskText}"?\`)) {
+                    return;
+                }
+
+                const itemToDelete = taskList.children[index];
+                if (itemToDelete) {
+                    itemToDelete.classList.add('task-deleting');
+                    // Wait for animation to finish before removing from state
+                    setTimeout(() => {
+                        tasks.splice(index, 1);
+                        saveTasks();
+                        renderTasks();
+                    }, 300);
+                } else {
+                    // Fallback if animation can't run
+                    tasks.splice(index, 1);
+                    saveTasks();
+                    renderTasks();
+                }
             }
 
             function toggleDone(index) {
@@ -304,21 +415,42 @@ const mockTodoAppCodeV2 = `
     <title>Task Manager</title>
     <style>
         :root {
+            /* Colors */
             --background-color: #1e293b;
             --surface-color: #334155;
+            --surface-hover-color: #475569;
             --text-color: #e2e8f0;
+            --border-color: #475569;
             --primary-color: #38bdf8;
             --primary-hover-color: #0ea5e9;
             --delete-color: #f43f5e;
             --delete-hover-color: #e11d48;
             --done-color: #4ade80;
+
+            /* Typography */
+            --font-family-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            --font-size-base: 1rem;
+
+            /* Spacing */
+            --spacing-sm: 0.5rem;
+            --spacing-md: 0.75rem;
+            --spacing-lg: 1rem;
+            --spacing-xl: 1.5rem;
+            --spacing-2xl: 2rem;
+
+            /* Borders & Radius */
+            --border-radius: 0.375rem;
+            --border-width: 1px;
+            
+            /* Shadows */
+            --focus-shadow: 0 0 0 2px var(--background-color), 0 0 0 4px var(--primary-color);
         }
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            font-family: var(--font-family-sans);
             background-color: var(--background-color);
             color: var(--text-color);
             margin: 0;
-            padding: 2rem;
+            padding: var(--spacing-2xl);
             display: flex;
             justify-content: center;
         }
@@ -329,32 +461,46 @@ const mockTodoAppCodeV2 = `
         h1 {
             text-align: center;
             color: var(--primary-color);
-            margin-bottom: 2rem;
+            margin-bottom: var(--spacing-2xl);
         }
         form {
             display: flex;
-            gap: 0.5rem;
-            margin-bottom: 2rem;
+            gap: var(--spacing-sm);
+            margin-bottom: var(--spacing-2xl);
         }
         input[type="text"] {
             flex-grow: 1;
-            padding: 0.75rem;
-            border: 1px solid var(--surface-color);
-            border-radius: 0.375rem;
+            padding: var(--spacing-md);
+            border: var(--border-width) solid var(--surface-color);
+            border-radius: var(--border-radius);
             background-color: var(--surface-color);
             color: var(--text-color);
-            font-size: 1rem;
+            font-size: var(--font-size-base);
         }
-        input[type="text"]:focus {
+        input[type="text"]:focus-visible {
             outline: none;
             border-color: var(--primary-color);
-            box-shadow: 0 0 0 2px var(--primary-color);
+            box-shadow: var(--focus-shadow);
+        }
+        button:focus-visible,
+        input[type="checkbox"]:focus-visible {
+            outline: none;
+            box-shadow: var(--focus-shadow);
+        }
+        .input-error {
+            border-color: var(--delete-color) !important;
+            animation: shake 0.5s;
+        }
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+            20%, 40%, 60%, 80% { transform: translateX(5px); }
         }
         button {
-            padding: 0.75rem 1.5rem;
+            padding: var(--spacing-md) var(--spacing-xl);
             border: none;
-            border-radius: 0.375rem;
-            font-size: 1rem;
+            border-radius: var(--border-radius);
+            font-size: var(--font-size-base);
             font-weight: bold;
             cursor: pointer;
             transition: background-color 0.2s;
@@ -372,18 +518,39 @@ const mockTodoAppCodeV2 = `
             margin: 0;
             display: flex;
             flex-direction: column;
-            gap: 1rem;
+            gap: var(--spacing-lg);
         }
         li {
             display: flex;
             align-items: center;
-            gap: 0.75rem;
+            gap: var(--spacing-md);
             background-color: var(--surface-color);
-            padding: 1rem;
-            border-radius: 0.375rem;
+            padding: var(--spacing-lg);
+            border-radius: var(--border-radius);
+            transition: background-color 0.2s, opacity 0.3s ease-out, transform 0.3s ease-out, border-left 0.2s ease-in-out, padding-left 0.2s ease-in-out;
+            border-left: 4px solid transparent;
+        }
+        li:hover {
+            background-color: var(--surface-hover-color);
+        }
+        li.task-done {
+            border-left: 4px solid var(--done-color);
+            padding-left: calc(var(--spacing-lg) - 4px);
+        }
+        @keyframes task-add-animation {
+            from { opacity: 0; transform: translateY(-10px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+        .task-added {
+            animation: task-add-animation 0.3s ease-out;
+        }
+        .task-deleting {
+            opacity: 0;
+            transform: scale(0.95);
         }
         .task-content {
             flex-grow: 1;
+            word-break: break-word;
         }
         .task-content.done {
             text-decoration: line-through;
@@ -393,22 +560,44 @@ const mockTodoAppCodeV2 = `
             width: 1.25rem;
             height: 1.25rem;
             cursor: pointer;
+            flex-shrink: 0;
         }
         .task-actions {
             display: flex;
-            gap: 0.5rem;
+            gap: var(--spacing-sm);
         }
         .edit-btn, .delete-btn {
-             background: none;
-             border: 1px solid transparent;
+             background: transparent;
+             border: none;
              color: var(--text-color);
              opacity: 0.7;
+             padding: var(--spacing-sm);
+             border-radius: var(--border-radius);
+             cursor: pointer;
+             transition: all 0.2s ease-in-out;
         }
-        .edit-btn:hover, .delete-btn:hover {
+        .edit-btn:hover {
             opacity: 1;
+            background-color: var(--surface-hover-color);
         }
         .delete-btn:hover {
-            color: var(--delete-color);
+            opacity: 1;
+            background-color: var(--delete-color);
+            color: white;
+        }
+
+        /* Responsive Styles */
+        @media (max-width: 640px) {
+            body {
+                padding: var(--spacing-lg);
+            }
+            h1 {
+                font-size: 1.75rem;
+                margin-bottom: var(--spacing-xl);
+            }
+            li {
+                padding: var(--spacing-md);
+            }
         }
     </style>
 </head>
@@ -419,7 +608,7 @@ const mockTodoAppCodeV2 = `
             <input type="text" id="task-input" placeholder="Add a new task..." autocomplete="off" aria-label="Add a new task">
             <button type="submit" class="add-btn">Add Task</button>
         </form>
-        <ul id="task-list"></ul>
+        <ul id="task-list" aria-live="polite"></ul>
     </main>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
@@ -427,18 +616,14 @@ const mockTodoAppCodeV2 = `
             const taskInput = document.getElementById('task-input');
             const taskList = document.getElementById('task-list');
 
-            // --- Robust Local Storage Handling ---
             function loadTasks() {
                 try {
                     const storedTasks = localStorage.getItem('tasks');
-                    if (storedTasks) {
-                        return JSON.parse(storedTasks);
-                    }
+                    return storedTasks ? JSON.parse(storedTasks) : [];
                 } catch (e) {
                     console.error('Error loading tasks from localStorage:', e);
-                    alert('Could not load your tasks. Local storage might be disabled or full.');
+                    return [];
                 }
-                return [];
             }
 
             function saveTasks() {
@@ -446,20 +631,23 @@ const mockTodoAppCodeV2 = `
                     localStorage.setItem('tasks', JSON.stringify(tasks));
                 } catch (e) {
                     console.error('Error saving tasks to localStorage:', e);
-                    alert('Could not save your tasks. Changes might not persist.');
                 }
             }
-
+            
             let tasks = loadTasks();
 
-            function renderTasks() {
+            function renderTasks(newlyAddedIndex = -1) {
                 taskList.innerHTML = '';
                 tasks.forEach((task, index) => {
                     const li = document.createElement('li');
+                    if (task.done) {
+                        li.classList.add('task-done');
+                    }
                     
                     const checkbox = document.createElement('input');
                     checkbox.type = 'checkbox';
                     checkbox.checked = task.done;
+                    checkbox.setAttribute('aria-label', \`Mark task as complete: "\${task.text}"\`);
                     checkbox.addEventListener('change', () => toggleDone(index));
 
                     const content = document.createElement('span');
@@ -486,6 +674,11 @@ const mockTodoAppCodeV2 = `
                     li.appendChild(checkbox);
                     li.appendChild(content);
                     li.appendChild(actions);
+
+                    if (index === newlyAddedIndex) {
+                        li.classList.add('task-added');
+                    }
+                    
                     taskList.appendChild(li);
                 });
             }
@@ -495,16 +688,40 @@ const mockTodoAppCodeV2 = `
                 const text = taskInput.value.trim();
                 if (text) {
                     tasks.push({ text, done: false });
-                    taskInput.value = '';
                     saveTasks();
-                    renderTasks();
+                    renderTasks(tasks.length - 1);
+                    taskInput.value = '';
+                    taskInput.focus();
+                } else {
+                    taskInput.classList.add('input-error');
+                    taskInput.focus();
+                    setTimeout(() => {
+                        taskInput.classList.remove('input-error');
+                    }, 500); // Corresponds to animation duration
                 }
             }
 
             function deleteTask(index) {
-                tasks.splice(index, 1);
-                saveTasks();
-                renderTasks();
+                const taskText = tasks[index].text;
+                if (!confirm(\`Are you sure you want to delete the task: "\${taskText}"?\`)) {
+                    return;
+                }
+
+                const itemToDelete = taskList.children[index];
+                if (itemToDelete) {
+                    itemToDelete.classList.add('task-deleting');
+                    // Wait for animation to finish before removing from state
+                    setTimeout(() => {
+                        tasks.splice(index, 1);
+                        saveTasks();
+                        renderTasks();
+                    }, 300);
+                } else {
+                    // Fallback if animation can't run
+                    tasks.splice(index, 1);
+                    saveTasks();
+                    renderTasks();
+                }
             }
 
             function toggleDone(index) {
@@ -541,21 +758,43 @@ const mockTodoAppCodeV3 = `
     <title>Task Manager</title>
     <style>
         :root {
+            /* Colors */
             --background-color: #1e293b;
             --surface-color: #334155;
+            --surface-hover-color: #475569;
             --text-color: #e2e8f0;
+            --border-color: #475569;
             --primary-color: #38bdf8;
             --primary-hover-color: #0ea5e9;
             --delete-color: #f43f5e;
             --delete-hover-color: #e11d48;
             --done-color: #4ade80;
+
+            /* Typography */
+            --font-family-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            --font-size-base: 1rem;
+            --font-size-sm: 0.875rem;
+
+            /* Spacing */
+            --spacing-sm: 0.5rem;
+            --spacing-md: 0.75rem;
+            --spacing-lg: 1rem;
+            --spacing-xl: 1.5rem;
+            --spacing-2xl: 2rem;
+
+            /* Borders & Radius */
+            --border-radius: 0.375rem;
+            --border-width: 1px;
+            
+            /* Shadows */
+            --focus-shadow: 0 0 0 2px var(--background-color), 0 0 0 4px var(--primary-color);
         }
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            font-family: var(--font-family-sans);
             background-color: var(--background-color);
             color: var(--text-color);
             margin: 0;
-            padding: 2rem;
+            padding: var(--spacing-2xl);
             display: flex;
             justify-content: center;
         }
@@ -566,32 +805,46 @@ const mockTodoAppCodeV3 = `
         h1 {
             text-align: center;
             color: #f97316; /* Vibrant Orange */
-            margin-bottom: 2rem;
+            margin-bottom: var(--spacing-2xl);
         }
         form {
             display: flex;
-            gap: 0.5rem;
-            margin-bottom: 1rem;
+            gap: var(--spacing-sm);
+            margin-bottom: var(--spacing-lg);
         }
         input[type="text"] {
             flex-grow: 1;
-            padding: 0.75rem;
-            border: 1px solid var(--surface-color);
-            border-radius: 0.375rem;
+            padding: var(--spacing-md);
+            border: var(--border-width) solid var(--surface-color);
+            border-radius: var(--border-radius);
             background-color: var(--surface-color);
             color: var(--text-color);
-            font-size: 1rem;
+            font-size: var(--font-size-base);
         }
-        input[type="text"]:focus {
+        input[type="text"]:focus-visible {
             outline: none;
             border-color: var(--primary-color);
-            box-shadow: 0 0 0 2px var(--primary-color);
+            box-shadow: var(--focus-shadow);
+        }
+        button:focus-visible,
+        input[type="checkbox"]:focus-visible {
+            outline: none;
+            box-shadow: var(--focus-shadow);
+        }
+        .input-error {
+            border-color: var(--delete-color) !important;
+            animation: shake 0.5s;
+        }
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+            20%, 40%, 60%, 80% { transform: translateX(5px); }
         }
         button {
-            padding: 0.75rem 1.5rem;
+            padding: var(--spacing-md) var(--spacing-xl);
             border: none;
-            border-radius: 0.375rem;
-            font-size: 1rem;
+            border-radius: var(--border-radius);
+            font-size: var(--font-size-base);
             font-weight: bold;
             cursor: pointer;
             transition: background-color 0.2s, color 0.2s, border-color 0.2s;
@@ -604,16 +857,16 @@ const mockTodoAppCodeV3 = `
             background-color: var(--primary-hover-color);
         }
         .controls {
-            margin-bottom: 2rem;
+            margin-bottom: var(--spacing-2xl);
             text-align: right;
         }
         .clear-btn {
             background-color: transparent;
             color: var(--delete-color);
-            border: 1px solid var(--delete-color);
-            padding: 0.5rem 1rem;
+            border: var(--border-width) solid var(--delete-color);
+            padding: var(--spacing-sm) var(--spacing-lg);
             font-weight: normal;
-            font-size: 0.875rem;
+            font-size: var(--font-size-sm);
             opacity: 0.8;
         }
         .clear-btn:hover {
@@ -627,18 +880,39 @@ const mockTodoAppCodeV3 = `
             margin: 0;
             display: flex;
             flex-direction: column;
-            gap: 1rem;
+            gap: var(--spacing-lg);
         }
         li {
             display: flex;
             align-items: center;
-            gap: 0.75rem;
+            gap: var(--spacing-md);
             background-color: var(--surface-color);
-            padding: 1rem;
-            border-radius: 0.375rem;
+            padding: var(--spacing-lg);
+            border-radius: var(--border-radius);
+            transition: background-color 0.2s, opacity 0.3s ease-out, transform 0.3s ease-out, border-left 0.2s ease-in-out, padding-left 0.2s ease-in-out;
+            border-left: 4px solid transparent;
+        }
+        li:hover {
+            background-color: var(--surface-hover-color);
+        }
+        li.task-done {
+            border-left: 4px solid var(--done-color);
+            padding-left: calc(var(--spacing-lg) - 4px);
+        }
+        @keyframes task-add-animation {
+            from { opacity: 0; transform: translateY(-10px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+        .task-added {
+            animation: task-add-animation 0.3s ease-out;
+        }
+        .task-deleting {
+            opacity: 0;
+            transform: scale(0.95);
         }
         .task-content {
             flex-grow: 1;
+            word-break: break-word;
         }
         .task-content.done {
             text-decoration: line-through;
@@ -648,22 +922,44 @@ const mockTodoAppCodeV3 = `
             width: 1.25rem;
             height: 1.25rem;
             cursor: pointer;
+            flex-shrink: 0;
         }
         .task-actions {
             display: flex;
-            gap: 0.5rem;
+            gap: var(--spacing-sm);
         }
         .edit-btn, .delete-btn {
-             background: none;
-             border: 1px solid transparent;
+             background: transparent;
+             border: none;
              color: var(--text-color);
              opacity: 0.7;
+             padding: var(--spacing-sm);
+             border-radius: var(--border-radius);
+             cursor: pointer;
+             transition: all 0.2s ease-in-out;
         }
-        .edit-btn:hover, .delete-btn:hover {
+        .edit-btn:hover {
             opacity: 1;
+            background-color: var(--surface-hover-color);
         }
         .delete-btn:hover {
-            color: var(--delete-color);
+            opacity: 1;
+            background-color: var(--delete-color);
+            color: white;
+        }
+
+        /* Responsive Styles */
+        @media (max-width: 640px) {
+            body {
+                padding: var(--spacing-lg);
+            }
+            h1 {
+                font-size: 1.75rem;
+                margin-bottom: var(--spacing-xl);
+            }
+            li {
+                padding: var(--spacing-md);
+            }
         }
     </style>
 </head>
@@ -677,7 +973,7 @@ const mockTodoAppCodeV3 = `
         <div class="controls">
             <button id="clear-all-btn" class="clear-btn">Clear All Tasks</button>
         </div>
-        <ul id="task-list"></ul>
+        <ul id="task-list" aria-live="polite"></ul>
     </main>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
@@ -686,18 +982,14 @@ const mockTodoAppCodeV3 = `
             const taskList = document.getElementById('task-list');
             const clearAllBtn = document.getElementById('clear-all-btn');
 
-            // --- Robust Local Storage Handling ---
             function loadTasks() {
                 try {
                     const storedTasks = localStorage.getItem('tasks');
-                    if (storedTasks) {
-                        return JSON.parse(storedTasks);
-                    }
+                    return storedTasks ? JSON.parse(storedTasks) : [];
                 } catch (e) {
                     console.error('Error loading tasks from localStorage:', e);
-                    alert('Could not load your tasks. Local storage might be disabled or full.');
+                    return [];
                 }
-                return [];
             }
 
             function saveTasks() {
@@ -705,20 +997,23 @@ const mockTodoAppCodeV3 = `
                     localStorage.setItem('tasks', JSON.stringify(tasks));
                 } catch (e) {
                     console.error('Error saving tasks to localStorage:', e);
-                    alert('Could not save your tasks. Changes might not persist.');
                 }
             }
 
             let tasks = loadTasks();
 
-            function renderTasks() {
+            function renderTasks(newlyAddedIndex = -1) {
                 taskList.innerHTML = '';
                 tasks.forEach((task, index) => {
                     const li = document.createElement('li');
+                    if (task.done) {
+                        li.classList.add('task-done');
+                    }
                     
                     const checkbox = document.createElement('input');
                     checkbox.type = 'checkbox';
                     checkbox.checked = task.done;
+                    checkbox.setAttribute('aria-label', \`Mark task as complete: "\${task.text}"\`);
                     checkbox.addEventListener('change', () => toggleDone(index));
 
                     const content = document.createElement('span');
@@ -745,6 +1040,11 @@ const mockTodoAppCodeV3 = `
                     li.appendChild(checkbox);
                     li.appendChild(content);
                     li.appendChild(actions);
+
+                    if (index === newlyAddedIndex) {
+                        li.classList.add('task-added');
+                    }
+                    
                     taskList.appendChild(li);
                 });
             }
@@ -754,16 +1054,40 @@ const mockTodoAppCodeV3 = `
                 const text = taskInput.value.trim();
                 if (text) {
                     tasks.push({ text, done: false });
-                    taskInput.value = '';
                     saveTasks();
-                    renderTasks();
+                    renderTasks(tasks.length - 1);
+                    taskInput.value = '';
+                    taskInput.focus();
+                } else {
+                    taskInput.classList.add('input-error');
+                    taskInput.focus();
+                    setTimeout(() => {
+                        taskInput.classList.remove('input-error');
+                    }, 500); // Corresponds to animation duration
                 }
             }
 
             function deleteTask(index) {
-                tasks.splice(index, 1);
-                saveTasks();
-                renderTasks();
+                const taskText = tasks[index].text;
+                if (!confirm(\`Are you sure you want to delete the task: "\${taskText}"?\`)) {
+                    return;
+                }
+
+                const itemToDelete = taskList.children[index];
+                if (itemToDelete) {
+                    itemToDelete.classList.add('task-deleting');
+                    // Wait for animation to finish before removing from state
+                    setTimeout(() => {
+                        tasks.splice(index, 1);
+                        saveTasks();
+                        renderTasks();
+                    }, 300);
+                } else {
+                    // Fallback if animation can't run
+                    tasks.splice(index, 1);
+                    saveTasks();
+                    renderTasks();
+                }
             }
 
             function toggleDone(index) {
@@ -803,7 +1127,27 @@ const mockTodoAppCodeV3 = `
 \`\`\`
 `;
 
-const mockBase64Image = 'iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAIoSURBVHhe7Zq/SxxRFMfPBF2UaBNLg4BgoCT4s4WQNpY2KtsE/wcrtdnCwsbG/wQrstgINqZICBqNRA2ChT9AChFKsoiQjOTczF3d3fvu4e578WB35s659z5z7uw9M/M/yZlSklKSUpJSklKSUpJSklKSUpJSklKSUpJS6h1HwBzwAnwD7gGrwDfwDPgA/C+wQJ4Bl4DbwD4wB3wDngLfge/AmGA49wN8AR4AL4E3wEFgDbgFvAb+BL8B74HXwCKwCLwDngNrgRXgM/ASeAVcAmOAU+ARcAZ4DbwFfge/A9+B/0L/CTz+9gJ8BZYAC8Bv4CdwFrgH3gE3gTfAMeADcBC4BGYB74H/gI/AWeAR8J9ZgBHgErgOfAdsB+eBf8BjYBj4DhwGDgMvwVfgN/AL+D78CCwCC8Bv4B/gLfAN2A/uBQOA3/0l/Av8A/gOfAd2Aw/B/4MvwAfgM3AamAJuAi/BF2Af+B/8DzwF3gJ/gOfA/2E48QG4AawBf4S/gTfAduAKcBC4DJwGfg/fgr/Av8C/wG/wS/gL/D9+A9+BD8A/wI/wBfg+fE883wP/gS/AF+B/8A/wPnwMzgJbgVfgb/D7+D58D8wCH4BfwD/gh/AV+CL8Af4C/4CfwZ/hd/CbwUagD/gL/BP+D/8C/4Bf4f/hJ/A/+B/8D/4C/4//gR/Cn+A/8G/4JfxP/At+Dv8Mv4f/ht/A/+C/8L/wL/g//An+D/8M/4P/xr/h/zOlLCUpJSklaSU/pP4BU1B3hWwK9iRAAAAAElFTkSuQmCC';
+/**
+ * Generates a base64 encoded SVG for a modern, minimalist checkmark logo.
+ * This serves as a dynamic placeholder for the Visual Designer agent's mock response.
+ * @returns {string} A base64 encoded SVG data string.
+ */
+const generateMockLogoBase64 = (): string => {
+  const svg = `
+    <svg width="64" height="64" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" style="stop-color:#38bdf8;stop-opacity:1" />
+          <stop offset="100%" style="stop-color:#0ea5e9;stop-opacity:1" />
+        </linearGradient>
+      </defs>
+      <rect width="64" height="64" rx="12" ry="12" fill="url(#grad1)"/>
+      <path d="M18 32 L28 42 L46 24" fill="none" stroke="white" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+  `.trim();
+  // btoa is available in web worker/browser environments, which is where this will run.
+  return btoa(svg);
+};
 
 const mockResponses: Record<string, string> = {
   Planner: `
@@ -865,7 +1209,7 @@ const mockResponses: Record<string, string> = {
         *   \`loadTasks()\`: Loads and parses the task data from Local Storage into the \`tasks\` array on initial script load.
         *   Event Handlers for: adding, deleting, editing, and toggling task completion. These handlers will modify the \`tasks\` array and then call \`saveTasks()\` and \`renderTasks()\`.
 `,
-  'Visual Designer': `Analyzing requirements to create an image prompt...\n\n> **Image Prompt:** "A modern, minimalist logo for a task management app, featuring a stylized checkmark inside a circle. Color palette: shades of teal and slate grey."\n\nGenerating image...\n\n![A modern, minimalist logo for a task management app...](data:image/png;base64,${mockBase64Image})`,
+  'Visual Designer': `Analyzing requirements to create an image prompt...\n\n> **Image Prompt:** "A modern, minimalist logo for a task management app, featuring a stylized checkmark inside a circle. Color palette: shades of teal and slate grey."\n\nGenerating image...\n\n![A modern, minimalist logo for a task management app...](data:image/svg+xml;base64,${generateMockLogoBase64()})`,
   Coder: mockTodoAppCodeV1,
   Reviewer: `
 The code is well-structured and functional. It meets all core requirements.
@@ -939,45 +1283,49 @@ export const runAgentStream = async (agent: Agent, input: string, onChunk: (chun
   
   if (agent.name === 'Visual Designer') {
     try {
-        const promptExtractionPrompt = `Based on the following project plan, distill a single, concise prompt (less than 30 words) for an image generation model to create a logo or key visual. The prompt should be descriptive, artistic, and suitable for a modern web application.
+      // Step 1: Generate a concise prompt for the image model
+      const promptGenPrefix = "Analyzing requirements to create an image prompt...\n\n";
+      onChunk(promptGenPrefix);
+      const imagePromptGenContents = `Based on the following application plan, generate a short, descriptive prompt (under 25 words) for an image generation model to create a logo or key visual. The prompt should capture the essence of the app. Output only the prompt text, without any labels or quotes.
+---
+${input}
+---`;
 
-        Project Plan:
-        ---
-        ${input}
-        ---
-        
-        Image Generation Prompt:`;
+      const imagePromptResponse = await ai.models.generateContent({
+        model: "gemini-2.5-flash",
+        contents: imagePromptGenContents,
+      });
+      const imagePrompt = imagePromptResponse.text.trim();
 
-        onChunk('Analyzing requirements to create an image prompt...\n\n');
+      const imageGenPrefix = `> **Image Prompt:** "${imagePrompt}"\n\nGenerating image...\n\n`;
+      onChunk(imageGenPrefix);
 
-        // FIX: Add explicit type annotation to fix property 'text' does not exist error.
-        const extractionResponse: GenerateContentResponse = await withRetry(() => ai.models.generateContent({
-            model: 'gemini-2.5-flash',
-            contents: promptExtractionPrompt,
-        }));
+      // Step 2: Generate the image
+      // FIX: Explicitly type `imageResponse` as `any` because type inference fails when using the `withRetry` helper.
+      const imageResponse: any = await withRetry(() => ai.models.generateImages({
+        model: 'imagen-4.0-generate-001',
+        prompt: imagePrompt,
+        config: {
+          numberOfImages: 1,
+          outputMimeType: 'image/png',
+          aspectRatio: '1:1',
+        },
+      }));
 
-        const imagePrompt = extractionResponse.text.trim();
-        onChunk(`> **Image Prompt:** "${imagePrompt}"\n\nGenerating image...`);
-        
-        const imageResponse = await ai.models.generateImages({
-            model: 'imagen-4.0-generate-001',
-            prompt: imagePrompt,
-            config: { numberOfImages: 1, outputMimeType: 'image/png' },
-        });
-        
-        const base64ImageBytes = imageResponse.generatedImages[0].image.imageBytes;
-        const markdownImage = `\n\n![${imagePrompt}](data:image/png;base64,${base64ImageBytes})`;
-        
-        onChunk(markdownImage);
-        
-        const fullOutput = `Analyzing requirements to create an image prompt...\n\n> **Image Prompt:** "${imagePrompt}"\n\nGenerating image...${markdownImage}`;
-        return fullOutput;
+      const base64Image = imageResponse.generatedImages[0].image.imageBytes;
+      const markdownImage = `![${imagePrompt}](data:image/png;base64,${base64Image})`;
+      
+      onChunk(markdownImage);
 
-    } catch (error) {
-        console.error("Image generation failed, falling back to mock:", error);
-        onChunk("Image generation failed due to API limitations. Using a placeholder image.\n\n");
-        // Gracefully fall back to the mock stream instead of crashing the workflow.
-        return runMockAgentStream(agent, input, onChunk);
+      // Return the full, final output for state tracking
+      return promptGenPrefix + imageGenPrefix + markdownImage;
+
+    } catch (e) {
+      console.error("Image generation failed, falling back to mock:", e);
+      const fallbackMsg = "\n\n*Image generation failed. A placeholder image will be used instead.*";
+      onChunk(fallbackMsg);
+      // Fallback to the mock stream, which will show the user a placeholder SVG
+      return runMockAgentStream(agent, input, onChunk);
     }
   }
 
@@ -986,12 +1334,12 @@ export const runAgentStream = async (agent: Agent, input: string, onChunk: (chun
     .replace('{AGENT_INPUT}', input);
 
   try {
-    // The `withRetry` helper can interfere with the async iterable returned by the streaming API.
-    // Calling the API directly is more robust for streaming responses.
-    const stream = await ai.models.generateContentStream({
+    // FIX: Explicitly type `stream` to `AsyncIterable<GenerateContentResponse>`
+    // to work around a type inference issue with the `withRetry` helper.
+    const stream: AsyncIterable<GenerateContentResponse> = await withRetry(() => ai.models.generateContentStream({
       model: "gemini-2.5-flash",
       contents: prompt,
-    });
+    }));
     
     let fullText = "";
     for await (const chunk of stream) {
