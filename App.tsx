@@ -197,14 +197,14 @@ Your task is to take on the role of the failing agent, follow the Reviewer's gui
             }
         } else {
              // --- NORMAL WORKFLOW INPUT CONSTRUCTION ---
-            if (currentAgentConfig.name === 'Visual Designer') {
+            if (currentAgentConfig.name === 'UX/UI Designer') {
                 const plannerOutput = agentOutputs['Planner'];
                 const architectOutput = agentOutputs['Architect'];
                 agentSpecificInput = `The Planner provided these requirements and suggestions:\n\n${plannerOutput}\n\n---\n\nThe Architect designed the following system:\n\n${architectOutput}`;
             } else if (currentAgentConfig.name === 'Coder') {
                 const architectOutput = agentOutputs['Architect'];
-                const visualDesignerOutput = agentOutputs['Visual Designer'];
-                agentSpecificInput = `The Architect designed the following system:\n\n${architectOutput}\n\n---\n\nThe Visual Designer created these assets:\n\n${visualDesignerOutput}`;
+                const uxUiDesignerOutput = agentOutputs['UX/UI Designer'];
+                agentSpecificInput = `The Architect designed the following system:\n\n${architectOutput}\n\n---\n\nThe UX/UI Designer provided the visual design (assets and CSS):\n\n${uxUiDesignerOutput}`;
             } else if (currentAgentConfig.name === 'Patcher') {
                 const coderOutput = agentOutputs['Coder'];
                 const reviewerOutput = agentOutputs['Reviewer'];

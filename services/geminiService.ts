@@ -1,7 +1,5 @@
 
 
-
-
 import { GoogleGenAI, GenerateContentResponse } from "@google/genai";
 import type { Agent } from '../types';
 
@@ -62,6 +60,43 @@ Carefully analyze the input and perform your role. Generate the specified output
 Begin your response immediately without any introductory phrases like "Certainly!" or "Here is the output".
 `;
 
+/**
+ * Generates a base64 encoded SVG for a modern, minimalist checkmark logo.
+ * @returns {string} A base64 encoded SVG data string.
+ */
+const generateMockLogoBase64 = (): string => {
+  const svg = `
+    <svg width="64" height="64" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" style="stop-color:#38bdf8;stop-opacity:1" />
+          <stop offset="100%" style="stop-color:#0ea5e9;stop-opacity:1" />
+        </linearGradient>
+      </defs>
+      <rect width="64" height="64" rx="12" ry="12" fill="url(#grad1)"/>
+      <path d="M18 32 L28 42 L46 24" fill="none" stroke="white" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+  `.trim();
+  // btoa is available in web worker/browser environments.
+  return btoa(svg);
+};
+
+/**
+ * Generates a base64 encoded SVG for a simple, clear favicon.
+ * @returns {string} A base64 encoded SVG data string.
+ */
+const generateMockFaviconBase64 = (): string => {
+  const svg = `
+    <svg width="16" height="16" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
+      <rect width="16" height="16" rx="3" ry="3" fill="#38bdf8"/>
+      <path d="M4 8 L7 11 L12 6" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+  `.trim();
+  return btoa(svg);
+};
+
+const mockFaviconUri = `data:image/svg+xml;base64,${generateMockFaviconBase64()}`;
+
 const mockTodoAppCodeV1 = `
 \`\`\`html
 <!DOCTYPE html>
@@ -70,6 +105,7 @@ const mockTodoAppCodeV1 = `
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Task Manager</title>
+    <link rel="icon" type="image/svg+xml" href="${mockFaviconUri}">
     <style>
         :root {
             /* Colors */
@@ -87,6 +123,7 @@ const mockTodoAppCodeV1 = `
             /* Typography */
             --font-family-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
             --font-size-base: 1rem;
+            --font-size-sm: 0.875rem;
 
             /* Spacing */
             --spacing-sm: 0.5rem;
@@ -123,7 +160,7 @@ const mockTodoAppCodeV1 = `
         form {
             display: flex;
             gap: var(--spacing-sm);
-            margin-bottom: var(--spacing-2xl);
+            margin-bottom: var(--spacing-lg);
         }
         input[type="text"] {
             flex-grow: 1;
@@ -169,6 +206,13 @@ const mockTodoAppCodeV1 = `
         .add-btn:hover {
             background-color: var(--primary-hover-color);
         }
+        .task-counter {
+            text-align: center;
+            margin-bottom: var(--spacing-lg);
+            color: var(--text-color);
+            opacity: 0.7;
+            font-size: var(--font-size-sm);
+        }
         ul {
             list-style: none;
             padding: 0;
@@ -212,6 +256,19 @@ const mockTodoAppCodeV1 = `
         .task-content.done {
             text-decoration: line-through;
             opacity: 0.6;
+        }
+        .task-content.edit-mode {
+            flex-grow: 1;
+            background-color: var(--background-color);
+            border: var(--border-width) solid var(--primary-color);
+            border-radius: var(--border-radius);
+            color: var(--text-color);
+            font-size: var(--font-size-base);
+            font-family: inherit;
+            padding: 0;
+            margin: -2px 0; /* Align vertically */
+            outline: none;
+            padding: 0 4px;
         }
         input[type="checkbox"] {
             width: 1.25rem;
@@ -262,9 +319,10 @@ const mockTodoAppCodeV1 = `
     <main>
         <h1>Task Manager</h1>
         <form id="task-form">
-            <input type="text" id="task-input" placeholder="Add a new task..." autocomplete="off" aria-label="Add a new task">
+            <input type="text" id="task-input" placeholder="Add a new task..." autocomplete="off">
             <button type="submit" class="add-btn">Add Task</button>
         </form>
+        <p id="task-counter" class="task-counter"></p>
         <ul id="task-list" aria-live="polite"></ul>
     </main>
     <script>
@@ -272,6 +330,7 @@ const mockTodoAppCodeV1 = `
             const taskForm = document.getElementById('task-form');
             const taskInput = document.getElementById('task-input');
             const taskList = document.getElementById('task-list');
+            const taskCounter = document.getElementById('task-counter');
 
             function loadTasks() {
                 try {
@@ -292,8 +351,20 @@ const mockTodoAppCodeV1 = `
             }
             
             let tasks = loadTasks();
+            let currentlyEditingIndex = -1;
+
+            function updateTaskCounter() {
+                const totalTasks = tasks.length;
+                const completedTasks = tasks.filter(task => task.done).length;
+                if (totalTasks > 0) {
+                    taskCounter.textContent = \`\${completedTasks} of \${totalTasks} tasks complete\`;
+                } else {
+                    taskCounter.textContent = 'No tasks yet.';
+                }
+            }
 
             function renderTasks(newlyAddedIndex = -1) {
+                updateTaskCounter();
                 taskList.innerHTML = '';
                 tasks.forEach((task, index) => {
                     const li = document.createElement('li');
@@ -304,33 +375,65 @@ const mockTodoAppCodeV1 = `
                     const checkbox = document.createElement('input');
                     checkbox.type = 'checkbox';
                     checkbox.checked = task.done;
-                    checkbox.setAttribute('aria-label', \`Mark task as complete: "\${task.text}"\`);
                     checkbox.addEventListener('change', () => toggleDone(index));
 
-                    const content = document.createElement('span');
-                    content.textContent = task.text;
-                    content.className = 'task-content' + (task.done ? ' done' : '');
-
-                    const actions = document.createElement('div');
-                    actions.className = 'task-actions';
-
-                    const editBtn = document.createElement('button');
-                    editBtn.textContent = 'Edit';
-                    editBtn.className = 'edit-btn';
-                    editBtn.setAttribute('aria-label', \`Edit task: "\${task.text}"\`);
-                    editBtn.addEventListener('click', () => editTask(index));
-
-                    const deleteBtn = document.createElement('button');
-                    deleteBtn.textContent = 'Delete';
-                    deleteBtn.className = 'delete-btn';
-                    deleteBtn.setAttribute('aria-label', \`Delete task: "\${task.text}"\`);
-                    deleteBtn.addEventListener('click', () => deleteTask(index));
-
-                    actions.appendChild(editBtn);
-                    actions.appendChild(deleteBtn);
                     li.appendChild(checkbox);
-                    li.appendChild(content);
-                    li.appendChild(actions);
+
+                    const isEditing = index === currentlyEditingIndex;
+
+                    if (isEditing) {
+                        const input = document.createElement('input');
+                        input.type = 'text';
+                        input.value = task.text;
+                        input.className = 'task-content edit-mode';
+
+                        const save = () => {
+                            if (currentlyEditingIndex !== index) return;
+                            const newText = input.value.trim();
+                            if (newText) {
+                                tasks[index].text = newText;
+                            }
+                            currentlyEditingIndex = -1;
+                            saveTasks();
+                            renderTasks();
+                        };
+
+                        input.addEventListener('blur', save);
+                        input.addEventListener('keydown', (e) => {
+                            if (e.key === 'Enter') {
+                                e.preventDefault();
+                                input.blur();
+                            }
+                        });
+                        li.appendChild(input);
+
+                        const actionsPlaceholder = document.createElement('div');
+                        actionsPlaceholder.className = 'task-actions';
+                        li.appendChild(actionsPlaceholder);
+
+                    } else {
+                        const content = document.createElement('span');
+                        content.textContent = task.text;
+                        content.className = 'task-content' + (task.done ? ' done' : '');
+                        li.appendChild(content);
+
+                        const actions = document.createElement('div');
+                        actions.className = 'task-actions';
+
+                        const editBtn = document.createElement('button');
+                        editBtn.textContent = 'Edit';
+                        editBtn.className = 'edit-btn';
+                        editBtn.addEventListener('click', () => editTask(index));
+
+                        const deleteBtn = document.createElement('button');
+                        deleteBtn.textContent = 'Delete';
+                        deleteBtn.className = 'delete-btn';
+                        deleteBtn.addEventListener('click', () => deleteTask(index));
+
+                        actions.appendChild(editBtn);
+                        actions.appendChild(deleteBtn);
+                        li.appendChild(actions);
+                    }
 
                     if (index === newlyAddedIndex) {
                         li.classList.add('task-added');
@@ -338,6 +441,14 @@ const mockTodoAppCodeV1 = `
                     
                     taskList.appendChild(li);
                 });
+
+                if (currentlyEditingIndex !== -1) {
+                    const inputToFocus = taskList.querySelector('.task-content.edit-mode');
+                    if (inputToFocus) {
+                        inputToFocus.focus();
+                        inputToFocus.select();
+                    }
+                }
             }
 
             function addTask(e) {
@@ -388,12 +499,8 @@ const mockTodoAppCodeV1 = `
             }
 
             function editTask(index) {
-                const newText = prompt('Edit task:', tasks[index].text);
-                if (newText !== null && newText.trim()) {
-                    tasks[index].text = newText.trim();
-                    saveTasks();
-                    renderTasks();
-                }
+                currentlyEditingIndex = index;
+                renderTasks();
             }
             
             taskForm.addEventListener('submit', addTask);
@@ -413,6 +520,7 @@ const mockTodoAppCodeV2 = `
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Task Manager</title>
+    <link rel="icon" type="image/svg+xml" href="${mockFaviconUri}">
     <style>
         :root {
             /* Colors */
@@ -430,6 +538,7 @@ const mockTodoAppCodeV2 = `
             /* Typography */
             --font-family-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
             --font-size-base: 1rem;
+            --font-size-sm: 0.875rem;
 
             /* Spacing */
             --spacing-sm: 0.5rem;
@@ -466,7 +575,7 @@ const mockTodoAppCodeV2 = `
         form {
             display: flex;
             gap: var(--spacing-sm);
-            margin-bottom: var(--spacing-2xl);
+            margin-bottom: var(--spacing-lg);
         }
         input[type="text"] {
             flex-grow: 1;
@@ -512,6 +621,13 @@ const mockTodoAppCodeV2 = `
         .add-btn:hover {
             background-color: var(--primary-hover-color);
         }
+        .task-counter {
+            text-align: center;
+            margin-bottom: var(--spacing-lg);
+            color: var(--text-color);
+            opacity: 0.7;
+            font-size: var(--font-size-sm);
+        }
         ul {
             list-style: none;
             padding: 0;
@@ -555,6 +671,19 @@ const mockTodoAppCodeV2 = `
         .task-content.done {
             text-decoration: line-through;
             opacity: 0.6;
+        }
+        .task-content.edit-mode {
+            flex-grow: 1;
+            background-color: var(--background-color);
+            border: var(--border-width) solid var(--primary-color);
+            border-radius: var(--border-radius);
+            color: var(--text-color);
+            font-size: var(--font-size-base);
+            font-family: inherit;
+            padding: 0;
+            margin: -2px 0; /* Align vertically */
+            outline: none;
+            padding: 0 4px;
         }
         input[type="checkbox"] {
             width: 1.25rem;
@@ -608,6 +737,7 @@ const mockTodoAppCodeV2 = `
             <input type="text" id="task-input" placeholder="Add a new task..." autocomplete="off" aria-label="Add a new task">
             <button type="submit" class="add-btn">Add Task</button>
         </form>
+        <p id="task-counter" class="task-counter"></p>
         <ul id="task-list" aria-live="polite"></ul>
     </main>
     <script>
@@ -615,6 +745,7 @@ const mockTodoAppCodeV2 = `
             const taskForm = document.getElementById('task-form');
             const taskInput = document.getElementById('task-input');
             const taskList = document.getElementById('task-list');
+            const taskCounter = document.getElementById('task-counter');
 
             function loadTasks() {
                 try {
@@ -622,6 +753,7 @@ const mockTodoAppCodeV2 = `
                     return storedTasks ? JSON.parse(storedTasks) : [];
                 } catch (e) {
                     console.error('Error loading tasks from localStorage:', e);
+                    alert('Could not load your tasks. Saved data might be corrupted or inaccessible.');
                     return [];
                 }
             }
@@ -631,12 +763,25 @@ const mockTodoAppCodeV2 = `
                     localStorage.setItem('tasks', JSON.stringify(tasks));
                 } catch (e) {
                     console.error('Error saving tasks to localStorage:', e);
+                    alert('Could not save tasks. Your browser storage might be full or blocked.');
                 }
             }
             
             let tasks = loadTasks();
+            let currentlyEditingIndex = -1;
+
+            function updateTaskCounter() {
+                const totalTasks = tasks.length;
+                const completedTasks = tasks.filter(task => task.done).length;
+                if (totalTasks > 0) {
+                    taskCounter.textContent = \`\${completedTasks} of \${totalTasks} tasks complete\`;
+                } else {
+                    taskCounter.textContent = 'No tasks yet.';
+                }
+            }
 
             function renderTasks(newlyAddedIndex = -1) {
+                updateTaskCounter();
                 taskList.innerHTML = '';
                 tasks.forEach((task, index) => {
                     const li = document.createElement('li');
@@ -650,30 +795,68 @@ const mockTodoAppCodeV2 = `
                     checkbox.setAttribute('aria-label', \`Mark task as complete: "\${task.text}"\`);
                     checkbox.addEventListener('change', () => toggleDone(index));
 
-                    const content = document.createElement('span');
-                    content.textContent = task.text;
-                    content.className = 'task-content' + (task.done ? ' done' : '');
-
-                    const actions = document.createElement('div');
-                    actions.className = 'task-actions';
-
-                    const editBtn = document.createElement('button');
-                    editBtn.textContent = 'Edit';
-                    editBtn.className = 'edit-btn';
-                    editBtn.setAttribute('aria-label', \`Edit task: "\${task.text}"\`);
-                    editBtn.addEventListener('click', () => editTask(index));
-
-                    const deleteBtn = document.createElement('button');
-                    deleteBtn.textContent = 'Delete';
-                    deleteBtn.className = 'delete-btn';
-                    deleteBtn.setAttribute('aria-label', \`Delete task: "\${task.text}"\`);
-                    deleteBtn.addEventListener('click', () => deleteTask(index));
-
-                    actions.appendChild(editBtn);
-                    actions.appendChild(deleteBtn);
                     li.appendChild(checkbox);
-                    li.appendChild(content);
-                    li.appendChild(actions);
+
+                    const isEditing = index === currentlyEditingIndex;
+
+                    if (isEditing) {
+                        const input = document.createElement('input');
+                        input.type = 'text';
+                        input.value = task.text;
+                        input.className = 'task-content edit-mode';
+
+                        const save = () => {
+                            if (currentlyEditingIndex !== index) return;
+                            const newText = input.value.trim();
+                            if (newText) {
+                                tasks[index].text = newText;
+                            }
+                            currentlyEditingIndex = -1;
+                            saveTasks();
+                            renderTasks();
+                        };
+
+                        input.addEventListener('blur', save);
+                        input.addEventListener('keydown', (e) => {
+                            if (e.key === 'Enter') {
+                                e.preventDefault();
+                                input.blur();
+                            } else if (e.key === 'Escape') {
+                                currentlyEditingIndex = -1;
+                                renderTasks();
+                            }
+                        });
+                        li.appendChild(input);
+
+                        const actionsPlaceholder = document.createElement('div');
+                        actionsPlaceholder.className = 'task-actions';
+                        li.appendChild(actionsPlaceholder);
+
+                    } else {
+                        const content = document.createElement('span');
+                        content.textContent = task.text;
+                        content.className = 'task-content' + (task.done ? ' done' : '');
+                        li.appendChild(content);
+
+                        const actions = document.createElement('div');
+                        actions.className = 'task-actions';
+
+                        const editBtn = document.createElement('button');
+                        editBtn.textContent = 'Edit';
+                        editBtn.className = 'edit-btn';
+                        editBtn.setAttribute('aria-label', \`Edit task: "\${task.text}"\`);
+                        editBtn.addEventListener('click', () => editTask(index));
+
+                        const deleteBtn = document.createElement('button');
+                        deleteBtn.textContent = 'Delete';
+                        deleteBtn.className = 'delete-btn';
+                        deleteBtn.setAttribute('aria-label', \`Delete task: "\${task.text}"\`);
+                        deleteBtn.addEventListener('click', () => deleteTask(index));
+
+                        actions.appendChild(editBtn);
+                        actions.appendChild(deleteBtn);
+                        li.appendChild(actions);
+                    }
 
                     if (index === newlyAddedIndex) {
                         li.classList.add('task-added');
@@ -681,6 +864,14 @@ const mockTodoAppCodeV2 = `
                     
                     taskList.appendChild(li);
                 });
+
+                if (currentlyEditingIndex !== -1) {
+                    const inputToFocus = taskList.querySelector('.task-content.edit-mode');
+                    if (inputToFocus) {
+                        inputToFocus.focus();
+                        inputToFocus.select();
+                    }
+                }
             }
 
             function addTask(e) {
@@ -731,12 +922,8 @@ const mockTodoAppCodeV2 = `
             }
 
             function editTask(index) {
-                const newText = prompt('Edit task:', tasks[index].text);
-                if (newText !== null && newText.trim()) {
-                    tasks[index].text = newText.trim();
-                    saveTasks();
-                    renderTasks();
-                }
+                currentlyEditingIndex = index;
+                renderTasks();
             }
             
             taskForm.addEventListener('submit', addTask);
@@ -756,6 +943,7 @@ const mockTodoAppCodeV3 = `
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Task Manager</title>
+    <link rel="icon" type="image/svg+xml" href="${mockFaviconUri}">
     <style>
         :root {
             /* Colors */
@@ -857,8 +1045,15 @@ const mockTodoAppCodeV3 = `
             background-color: var(--primary-hover-color);
         }
         .controls {
-            margin-bottom: var(--spacing-2xl);
-            text-align: right;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: var(--spacing-lg);
+        }
+        .task-counter {
+            color: var(--text-color);
+            opacity: 0.7;
+            font-size: var(--font-size-sm);
         }
         .clear-btn {
             background-color: transparent;
@@ -918,6 +1113,19 @@ const mockTodoAppCodeV3 = `
             text-decoration: line-through;
             opacity: 0.6;
         }
+        .task-content.edit-mode {
+            flex-grow: 1;
+            background-color: var(--background-color);
+            border: var(--border-width) solid var(--primary-color);
+            border-radius: var(--border-radius);
+            color: var(--text-color);
+            font-size: var(--font-size-base);
+            font-family: inherit;
+            padding: 0;
+            margin: -2px 0; /* Align vertically */
+            outline: none;
+            padding: 0 4px;
+        }
         input[type="checkbox"] {
             width: 1.25rem;
             height: 1.25rem;
@@ -971,6 +1179,7 @@ const mockTodoAppCodeV3 = `
             <button type="submit" class="add-btn">Add Task</button>
         </form>
         <div class="controls">
+            <p id="task-counter" class="task-counter"></p>
             <button id="clear-all-btn" class="clear-btn">Clear All Tasks</button>
         </div>
         <ul id="task-list" aria-live="polite"></ul>
@@ -981,6 +1190,7 @@ const mockTodoAppCodeV3 = `
             const taskInput = document.getElementById('task-input');
             const taskList = document.getElementById('task-list');
             const clearAllBtn = document.getElementById('clear-all-btn');
+            const taskCounter = document.getElementById('task-counter');
 
             function loadTasks() {
                 try {
@@ -988,6 +1198,7 @@ const mockTodoAppCodeV3 = `
                     return storedTasks ? JSON.parse(storedTasks) : [];
                 } catch (e) {
                     console.error('Error loading tasks from localStorage:', e);
+                    alert('Could not load your tasks. Saved data might be corrupted or inaccessible.');
                     return [];
                 }
             }
@@ -997,12 +1208,25 @@ const mockTodoAppCodeV3 = `
                     localStorage.setItem('tasks', JSON.stringify(tasks));
                 } catch (e) {
                     console.error('Error saving tasks to localStorage:', e);
+                    alert('Could not save tasks. Your browser storage might be full or blocked.');
                 }
             }
 
             let tasks = loadTasks();
+            let currentlyEditingIndex = -1;
+
+            function updateTaskCounter() {
+                const totalTasks = tasks.length;
+                const completedTasks = tasks.filter(task => task.done).length;
+                if (totalTasks > 0) {
+                    taskCounter.textContent = \`\${completedTasks} of \${totalTasks} tasks complete\`;
+                } else {
+                    taskCounter.textContent = 'No tasks yet.';
+                }
+            }
 
             function renderTasks(newlyAddedIndex = -1) {
+                updateTaskCounter();
                 taskList.innerHTML = '';
                 tasks.forEach((task, index) => {
                     const li = document.createElement('li');
@@ -1016,30 +1240,68 @@ const mockTodoAppCodeV3 = `
                     checkbox.setAttribute('aria-label', \`Mark task as complete: "\${task.text}"\`);
                     checkbox.addEventListener('change', () => toggleDone(index));
 
-                    const content = document.createElement('span');
-                    content.textContent = task.text;
-                    content.className = 'task-content' + (task.done ? ' done' : '');
-
-                    const actions = document.createElement('div');
-                    actions.className = 'task-actions';
-
-                    const editBtn = document.createElement('button');
-                    editBtn.textContent = 'Edit';
-                    editBtn.className = 'edit-btn';
-                    editBtn.setAttribute('aria-label', \`Edit task: "\${task.text}"\`);
-                    editBtn.addEventListener('click', () => editTask(index));
-
-                    const deleteBtn = document.createElement('button');
-                    deleteBtn.textContent = 'Delete';
-                    deleteBtn.className = 'delete-btn';
-                    deleteBtn.setAttribute('aria-label', \`Delete task: "\${task.text}"\`);
-                    deleteBtn.addEventListener('click', () => deleteTask(index));
-
-                    actions.appendChild(editBtn);
-                    actions.appendChild(deleteBtn);
                     li.appendChild(checkbox);
-                    li.appendChild(content);
-                    li.appendChild(actions);
+
+                    const isEditing = index === currentlyEditingIndex;
+
+                    if (isEditing) {
+                        const input = document.createElement('input');
+                        input.type = 'text';
+                        input.value = task.text;
+                        input.className = 'task-content edit-mode';
+
+                        const save = () => {
+                            if (currentlyEditingIndex !== index) return;
+                            const newText = input.value.trim();
+                            if (newText) {
+                                tasks[index].text = newText;
+                            }
+                            currentlyEditingIndex = -1;
+                            saveTasks();
+                            renderTasks();
+                        };
+
+                        input.addEventListener('blur', save);
+                        input.addEventListener('keydown', (e) => {
+                            if (e.key === 'Enter') {
+                                e.preventDefault();
+                                input.blur();
+                            } else if (e.key === 'Escape') {
+                                currentlyEditingIndex = -1;
+                                renderTasks();
+                            }
+                        });
+                        li.appendChild(input);
+
+                        const actionsPlaceholder = document.createElement('div');
+                        actionsPlaceholder.className = 'task-actions';
+                        li.appendChild(actionsPlaceholder);
+
+                    } else {
+                        const content = document.createElement('span');
+                        content.textContent = task.text;
+                        content.className = 'task-content' + (task.done ? ' done' : '');
+                        li.appendChild(content);
+
+                        const actions = document.createElement('div');
+                        actions.className = 'task-actions';
+
+                        const editBtn = document.createElement('button');
+                        editBtn.textContent = 'Edit';
+                        editBtn.className = 'edit-btn';
+                        editBtn.setAttribute('aria-label', \`Edit task: "\${task.text}"\`);
+                        editBtn.addEventListener('click', () => editTask(index));
+
+                        const deleteBtn = document.createElement('button');
+                        deleteBtn.textContent = 'Delete';
+                        deleteBtn.className = 'delete-btn';
+                        deleteBtn.setAttribute('aria-label', \`Delete task: "\${task.text}"\`);
+                        deleteBtn.addEventListener('click', () => deleteTask(index));
+
+                        actions.appendChild(editBtn);
+                        actions.appendChild(deleteBtn);
+                        li.appendChild(actions);
+                    }
 
                     if (index === newlyAddedIndex) {
                         li.classList.add('task-added');
@@ -1047,6 +1309,14 @@ const mockTodoAppCodeV3 = `
                     
                     taskList.appendChild(li);
                 });
+
+                if (currentlyEditingIndex !== -1) {
+                    const inputToFocus = taskList.querySelector('.task-content.edit-mode');
+                    if (inputToFocus) {
+                        inputToFocus.focus();
+                        inputToFocus.select();
+                    }
+                }
             }
 
             function addTask(e) {
@@ -1097,12 +1367,8 @@ const mockTodoAppCodeV3 = `
             }
 
             function editTask(index) {
-                const newText = prompt('Edit task:', tasks[index].text);
-                if (newText !== null && newText.trim()) {
-                    tasks[index].text = newText.trim();
-                    saveTasks();
-                    renderTasks();
-                }
+                currentlyEditingIndex = index;
+                renderTasks();
             }
 
             function clearAllTasks() {
@@ -1126,28 +1392,6 @@ const mockTodoAppCodeV3 = `
 </html>
 \`\`\`
 `;
-
-/**
- * Generates a base64 encoded SVG for a modern, minimalist checkmark logo.
- * This serves as a dynamic placeholder for the Visual Designer agent's mock response.
- * @returns {string} A base64 encoded SVG data string.
- */
-const generateMockLogoBase64 = (): string => {
-  const svg = `
-    <svg width="64" height="64" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
-      <defs>
-        <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" style="stop-color:#38bdf8;stop-opacity:1" />
-          <stop offset="100%" style="stop-color:#0ea5e9;stop-opacity:1" />
-        </linearGradient>
-      </defs>
-      <rect width="64" height="64" rx="12" ry="12" fill="url(#grad1)"/>
-      <path d="M18 32 L28 42 L46 24" fill="none" stroke="white" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
-    </svg>
-  `.trim();
-  // btoa is available in web worker/browser environments, which is where this will run.
-  return btoa(svg);
-};
 
 const mockResponses: Record<string, string> = {
   Planner: `
@@ -1209,17 +1453,34 @@ const mockResponses: Record<string, string> = {
         *   \`loadTasks()\`: Loads and parses the task data from Local Storage into the \`tasks\` array on initial script load.
         *   Event Handlers for: adding, deleting, editing, and toggling task completion. These handlers will modify the \`tasks\` array and then call \`saveTasks()\` and \`renderTasks()\`.
 `,
-  'Visual Designer': `Analyzing requirements to create an image prompt...\n\n> **Image Prompt:** "A modern, minimalist logo for a task management app, featuring a stylized checkmark inside a circle. Color palette: shades of teal and slate grey."\n\nGenerating image...\n\n![A modern, minimalist logo for a task management app...](data:image/svg+xml;base64,${generateMockLogoBase64()})`,
+  'UX/UI Designer': `Analyzing requirements to create visual assets...
+
+> **Logo Prompt:** "A modern, minimalist logo for a task management app, featuring a stylized checkmark inside a circle. Color palette: shades of teal and slate grey."
+
+Generating logo...
+
+![A modern, minimalist logo for a task management app...](data:image/svg+xml;base64,${generateMockLogoBase64()})
+
+---
+
+> **Favicon Prompt:** "A simple, clean 16x16 favicon for a task app, showing a checkmark on a blue background."
+
+Generating favicon...
+
+**Favicon Data URI:**
+\`${mockFaviconUri}\`
+`,
   Coder: mockTodoAppCodeV1,
   Reviewer: `
 The code is well-structured and functional. It meets all core requirements.
 
 **Suggested Improvements:**
 
-1.  **User Experience:** After a user adds a new task, the input field should be cleared automatically. This makes it easier to add multiple tasks in a row.
-2.  **Accessibility:**
-    *   The main task input field is missing a label. Please add an \`aria-label="Add a new task"\` to the \`<input>\` element to improve screen reader support.
-    *   The "Edit" and "Delete" buttons are not descriptive enough for screen reader users. When creating them, please add an \`aria-label\` that includes the task's text, for example: \`aria-label="Delete 'Buy milk'"\`.
+1.  **Error Handling:** The current implementation fails silently if \`localStorage\` is full or inaccessible. Update the \`loadTasks\` and \`saveTasks\` functions to show a user-facing \`alert()\` in their respective \`catch\` blocks. This will inform the user that their tasks could not be saved or loaded.
+2.  **Editing Experience:** When a user edits a task, they should be able to press the 'Escape' key to cancel their changes. Add a keydown event listener to the edit input that listens for 'Escape', discards the edit, and re-renders the task. The auto-focus on edit is already correctly implemented.
+3.  **Accessibility:**
+    *   The main task input field is missing a proper label. Add an \`aria-label="Add a new task"\` to the \`<input>\` element for screen reader support.
+    *   The "Edit" and "Delete" buttons are not descriptive. Add an \`aria-label\` to each that includes the task's text, for example: \`aria-label="Delete task: 'Buy milk'"\`.
 
 Please apply these fixes.
 `,
@@ -1281,11 +1542,14 @@ export const runAgentStream = async (agent: Agent, input: string, onChunk: (chun
     return runMockAgentStream(agent, input, onChunk);
   }
   
-  if (agent.name === 'Visual Designer') {
+  if (agent.name === 'UX/UI Designer') {
+    let fullOutput = "";
     try {
-      // Step 1: Generate a concise prompt for the image model
-      const promptGenPrefix = "Analyzing requirements to create an image prompt...\n\n";
+      // Step 1: Generate a concise prompt for the logo model
+      const promptGenPrefix = "Analyzing requirements to create image prompts...\n\n";
       onChunk(promptGenPrefix);
+      fullOutput += promptGenPrefix;
+      
       const imagePromptGenContents = `Based on the following application plan, generate a short, descriptive prompt (under 25 words) for an image generation model to create a logo or key visual. The prompt should capture the essence of the app. Output only the prompt text, without any labels or quotes.
 ---
 ${input}
@@ -1297,35 +1561,51 @@ ${input}
       });
       const imagePrompt = imagePromptResponse.text.trim();
 
-      const imageGenPrefix = `> **Image Prompt:** "${imagePrompt}"\n\nGenerating image...\n\n`;
+      const imageGenPrefix = `> **Logo Prompt:** "${imagePrompt}"\n\nGenerating logo...\n\n`;
       onChunk(imageGenPrefix);
+      fullOutput += imageGenPrefix;
 
-      // Step 2: Generate the image
-      // FIX: Explicitly type `imageResponse` as `any` because type inference fails when using the `withRetry` helper.
+      // Step 2: Generate the logo image
       const imageResponse: any = await withRetry(() => ai.models.generateImages({
         model: 'imagen-4.0-generate-001',
         prompt: imagePrompt,
-        config: {
-          numberOfImages: 1,
-          outputMimeType: 'image/png',
-          aspectRatio: '1:1',
-        },
+        config: { numberOfImages: 1, outputMimeType: 'image/png', aspectRatio: '1:1' },
       }));
 
       const base64Image = imageResponse.generatedImages[0].image.imageBytes;
-      const markdownImage = `![${imagePrompt}](data:image/png;base64,${base64Image})`;
-      
+      const markdownImage = `![${imagePrompt}](data:image/png;base64,${base64Image})\n\n---\n\n`;
       onChunk(markdownImage);
+      fullOutput += markdownImage;
 
-      // Return the full, final output for state tracking
-      return promptGenPrefix + imageGenPrefix + markdownImage;
+      // Step 3: Generate the favicon image
+      const faviconPrompt = `A simple, modern, 16x16 favicon for a task app, derived from this concept: ${imagePrompt}`;
+      const faviconGenPrefix = `> **Favicon Prompt:** "${faviconPrompt}"\n\nGenerating favicon...\n\n`;
+      onChunk(faviconGenPrefix);
+      fullOutput += faviconGenPrefix;
+
+      const faviconResponse: any = await withRetry(() => ai.models.generateImages({
+        model: 'imagen-4.0-generate-001',
+        prompt: faviconPrompt,
+        config: { numberOfImages: 1, outputMimeType: 'image/png', aspectRatio: '1:1' },
+      }));
+      
+      const base64Favicon = faviconResponse.generatedImages[0].image.imageBytes;
+      const faviconUriChunk = `**Favicon Data URI:**\n\`data:image/png;base64,${base64Favicon}\``;
+      onChunk(faviconUriChunk);
+      fullOutput += faviconUriChunk;
+      
+      return fullOutput;
 
     } catch (e) {
       console.error("Image generation failed, falling back to mock:", e);
-      const fallbackMsg = "\n\n*Image generation failed. A placeholder image will be used instead.*";
+      let userFacingError = "Image generation failed. A placeholder image will be used instead.";
+      if (e instanceof Error && e.message.includes("billed users")) {
+          userFacingError = "Image generation failed as the Imagen API requires a billed account. A placeholder image is being used as a fallback.";
+      }
+      const fallbackMsg = `\n\n*${userFacingError}*\n\n`;
       onChunk(fallbackMsg);
-      // Fallback to the mock stream, which will show the user a placeholder SVG
-      return runMockAgentStream(agent, input, onChunk);
+      // Fallback to the mock stream, which will show the user a placeholder SVG for both logo and favicon
+      return fullOutput + fallbackMsg + await runMockAgentStream(agent, input, onChunk);
     }
   }
 

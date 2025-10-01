@@ -33,7 +33,7 @@ const AgentIcon = ({ name }: { name: string }) => {
     switch (name) {
         case 'Planner': return <PlannerIcon {...iconProps} />;
         case 'Architect': return <ArchitectIcon {...iconProps} />;
-        case 'Visual Designer': return <VisualDesignerIcon {...iconProps} />;
+        case 'UX/UI Designer': return <VisualDesignerIcon {...iconProps} />;
         case 'Coder': return <CoderIcon {...iconProps} />;
         case 'Reviewer': return <ReviewerIcon {...iconProps} />;
         case 'Patcher': return <PatcherIcon {...iconProps} />;

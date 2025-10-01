@@ -1,3 +1,4 @@
+
 import type { Agent } from './types';
 import { AgentStatus } from './types';
 
@@ -5,7 +6,7 @@ export const AGENTS_CONFIG: Omit<Agent, 'status' | 'input' | 'output'>[] = [
   {
     id: 1,
     name: 'Planner',
-    role: "Define the app’s purpose, core features, user flows, and technical stack. You should also suggest potential images or visual assets (like logos or icons) that could enhance the user interface. Output: structured requirements document including visual asset suggestions.",
+    role: "Define the app’s purpose, core features, user flows, and technical stack. This includes specifying a design system using CSS variables for colors, fonts, and spacing. You should also suggest potential images or visual assets (like logos or icons) that could enhance the user interface. Output: structured requirements document including visual asset suggestions and design system guidelines.",
   },
   {
     id: 2,
@@ -14,18 +15,18 @@ export const AGENTS_CONFIG: Omit<Agent, 'status' | 'input' | 'output'>[] = [
   },
   {
     id: 3,
-    name: 'Visual Designer',
-    role: "Based on the Planner's suggestions and the Architect's blueprint, generate relevant visual assets for the application using an image generation tool. Describe the image you are generating. Output the generated images as base64 encoded strings formatted within markdown (e.g., ![A logo for a task app](data:image/png;base64,...)).",
+    name: 'UX/UI Designer',
+    role: "Based on the Planner's design system and the Architect's blueprint, generate the complete visual design. Your output must include:\n1. **Visual Assets:** A main logo (as a base64 markdown image) and a 16x16 favicon (as a raw `data:image/png;base64,...` data URI). If image generation fails, you must provide a suitable SVG placeholder for both assets and note this in your output.\n2. **CSS Stylesheet:** A complete stylesheet inside a single ```css code block. **Crucially, all colors, fonts, and spacing must be defined and used via the CSS variables provided by the Planner.** This ensures consistency.\n3. **Integration Guide:** Clear instructions for the Coder on which CSS classes to apply to which HTML elements from the Architect's plan. This bridges the gap between structure and style.",
   },
   {
     id: 4,
     name: 'Coder',
-    role: "Implement the application based on the architecture and visual assets. Your output must be a single, self-contained HTML file with embedded CSS (in a `<style>` tag) and JavaScript (in a `<script>` tag). You may use the base64 images provided by the Visual Designer. Do not include explanations or markdown formatting, only the raw HTML code inside a single ```html code block. This file will be rendered directly in a browser preview.",
+    role: "Implement the application. You will receive an architecture blueprint, visual assets, and a complete CSS stylesheet with an integration guide. Your task is to combine these into a single, self-contained HTML file. The file must include:\n1. The HTML structure from the Architect, with CSS classes applied as per the integration guide.\n2. The full CSS from the UX/UI Designer, placed inside a single `<style>` tag in the `<head>`.\n3. The JavaScript logic to make the application functional.\n4. **Asset Integration:** The visual assets must be correctly embedded. The favicon should be linked in the `<head>` using its data URI. The main logo should be placed in the `<body>` at an appropriate location, using its base64 data URI in an `<img>` tag.\nYour final output must be only the raw HTML code inside a single ```html code block, with no explanations.",
   },
   {
     id: 5,
     name: 'Reviewer',
-    role: "Audit the generated code for quality, security, accessibility, and best practices. Suggest improvements. During a refinement cycle, you will analyze a user's change request against the existing code and provide instructions for the Patcher. If an agent fails, your role is to analyze the error and provide a fix. Output: review notes, refinement instructions, or error analysis.",
+    role: "Audit the generated code for quality, security, accessibility, and best practices, with a specific focus on robust error handling for user interactions and data persistence (e.g., localStorage failures). Crucially, you must also check any user-facing error messages (e.g., from an `alert()`) and suggest more user-friendly, informative alternatives if they are too technical or unclear. Suggest improvements. During a refinement cycle, you will analyze a user's change request against the existing code and provide instructions for the Patcher. If an agent fails, your role is to analyze the error and provide a fix. Output: review notes, refinement instructions, or error analysis.",
   },
   {
     id: 6,
@@ -35,7 +36,7 @@ export const AGENTS_CONFIG: Omit<Agent, 'status' | 'input' | 'output'>[] = [
   {
     id: 7,
     name: 'Deployer',
-    role: "The Patcher agent has produced a final, self-contained HTML file. Provide deployment instructions for this file (e.g., using a static web host like Firebase Hosting, Netlify, or Vercel). Output: step-by-step deployment guide.",
+    role: "Your task is to provide step-by-step instructions on how to deploy the generated HTML file. The output must be a clear, actionable guide that covers static hosting services like Netlify, Vercel, and GitHub Pages.",
   },
 ];
 

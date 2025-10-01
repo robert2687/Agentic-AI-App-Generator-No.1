@@ -6,7 +6,7 @@ export enum AgentStatus {
   ERROR = 'error',
 }
 
-export type AgentName = 'Planner' | 'Architect' | 'Visual Designer' | 'Coder' | 'Reviewer' | 'Patcher' | 'Deployer';
+export type AgentName = 'Planner' | 'Architect' | 'UX/UI Designer' | 'Coder' | 'Reviewer' | 'Patcher' | 'Deployer';
 
 export interface Agent {
   id: number;

@@ -58,7 +58,8 @@ const PromptInput: React.FC<PromptInputProps> = ({
           </button>
           <button
             onClick={onReset}
-            className="bg-slate-600 text-white font-bold py-2 px-4 rounded-md hover:bg-slate-500 disabled:bg-slate-700 transition-colors"
+            disabled={isGenerating}
+            className="bg-slate-600 text-white font-bold py-2 px-4 rounded-md hover:bg-slate-500 disabled:bg-slate-700 disabled:cursor-not-allowed transition-colors"
           >
             Reset
           </button>
