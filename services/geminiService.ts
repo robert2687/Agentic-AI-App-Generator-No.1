@@ -1,7 +1,7 @@
 import { GenerateContentResponse } from "@google/genai";
 import type { Agent } from '../types';
-import { ai, API_KEY, withRetry } from './geminiClient';
-import { activeImageProvider, placeholderImageService } from './imageProvider';
+import { ai, withRetry } from './geminiClient';
+import { activeImageProvider, placeholderImageService, activeImageProviderName } from './imageProvider';
 import { ImageGenerationResult } from "./imageService";
 import { generateMockLogoBase64, generateMockFaviconBase64 } from "./placeholderUtils";
 
@@ -2065,13 +2065,17 @@ ${input}
         faviconResult = await activeImageProvider.generateImage(faviconPrompt, { aspectRatio: '1:1' });
 
       } catch (e) {
-        console.error("Image generation failed, using placeholders:", e);
-        let userFacingError = "Image generation failed. A placeholder image will be used instead.";
+        console.error(`Image generation with provider '${activeImageProviderName}' failed, using placeholders:`, e);
+        let userFacingError = `Image generation with ${activeImageProviderName.toUpperCase()} failed. A placeholder image will be used instead.`;
         
-        const errorAsString = (e instanceof Error) ? e.message : JSON.stringify(e);
-        if (errorAsString.includes("billed users") || errorAsString.includes("Imagen API is only accessible")) {
-          userFacingError = "Image generation failed as the Imagen API requires a billed account. A placeholder image is being used as a fallback.";
+        const errorText = (e instanceof Error)
+          ? e.message
+          : JSON.stringify(e);
+        
+        if (errorText.includes("billed users") || errorText.includes("Imagen API is only accessible")) {
+          userFacingError = "Image generation failed as the Gemini Imagen API requires a billed account. A placeholder image is being used as a fallback.";
         }
+        
         const fallbackMsg = `\n*${userFacingError}*\n\n`;
         streamedHeader += fallbackMsg;
         onChunk(fallbackMsg);

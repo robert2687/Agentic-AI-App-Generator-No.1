@@ -1,14 +1,14 @@
 
 import { GoogleGenAI } from "@google/genai";
 
-export const API_KEY = process.env.API_KEY;
+export const GEMINI_API_KEY = process.env.API_KEY;
 
-if (!API_KEY) {
+if (!GEMINI_API_KEY) {
   console.warn("API_KEY environment variable not set. Using mocked responses for text generation.");
 }
 
 // Use the correct `GoogleGenAI` export. `GoogleGenerativeAI` is deprecated.
-export const ai = API_KEY ? new GoogleGenAI({ apiKey: API_KEY }) : null;
+export const ai = GEMINI_API_KEY ? new GoogleGenAI({ apiKey: GEMINI_API_KEY }) : null;
 
 /**
  * A utility function to retry an async API call with exponential backoff.
