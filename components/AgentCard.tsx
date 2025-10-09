@@ -2,15 +2,10 @@
 import React from 'react';
 import type { Agent } from '../types';
 import { AgentStatus } from '../types';
-import PlannerIcon from './icons/PlannerIcon';
-import ArchitectIcon from './icons/ArchitectIcon';
-import VisualDesignerIcon from './icons/VisualDesignerIcon';
-import CoderIcon from './icons/CoderIcon';
-import ReviewerIcon from './icons/ReviewerIcon';
-import PatcherIcon from './icons/PatcherIcon';
-import DeployerIcon from './icons/DeployerIcon';
 import SpinnerIcon from './icons/SpinnerIcon';
 import ErrorIcon from './icons/ErrorIcon';
+import AgentIcon from './icons/AgentIcon';
+import PatcherIcon from './icons/PatcherIcon';
 
 interface AgentCardProps {
   agent: Agent;
@@ -28,20 +23,6 @@ const statusStyles: Record<AgentStatus | 'RECOVERING', { border: string; bg: str
   'RECOVERING': { border: 'border-amber-500', bg: 'bg-amber-900/30', text: 'text-amber-300' },
 };
 
-const AgentIcon = ({ name }: { name: string }) => {
-    const iconProps = { className: "w-6 h-6" };
-    switch (name) {
-        case 'Planner': return <PlannerIcon {...iconProps} />;
-        case 'Architect': return <ArchitectIcon {...iconProps} />;
-        case 'UX/UI Designer': return <VisualDesignerIcon {...iconProps} />;
-        case 'Coder': return <CoderIcon {...iconProps} />;
-        case 'Reviewer': return <ReviewerIcon {...iconProps} />;
-        case 'Patcher': return <PatcherIcon {...iconProps} />;
-        case 'Deployer': return <DeployerIcon {...iconProps} />;
-        default: return null;
-    }
-};
-
 const AgentCard: React.FC<AgentCardProps> = ({ agent, isSelected, isCurrent, onClick, isInRecoveryMode }) => {
   
   const isRecoveringAgent = isInRecoveryMode && (agent.name === 'Reviewer' || agent.name === 'Patcher');
@@ -53,6 +34,7 @@ const AgentCard: React.FC<AgentCardProps> = ({ agent, isSelected, isCurrent, onC
   
   const styles = statusStyles[effectiveStatusKey] || statusStyles[AgentStatus.PENDING];
   const selectedClass = isSelected ? 'ring-2 ring-offset-2 ring-offset-slate-800 ring-indigo-400' : '';
+  const pulseClass = isCurrent ? 'animate-pulse' : '';
   
   const renderIcon = () => {
     const iconProps = { className: "w-6 h-6" };
@@ -72,7 +54,7 @@ const AgentCard: React.FC<AgentCardProps> = ({ agent, isSelected, isCurrent, onC
       return <SpinnerIcon {...iconProps} />;
     }
     
-    return <AgentIcon name={agent.name} />;
+    return <AgentIcon name={agent.name} className="w-6 h-6" />;
   };
 
   const getCardStyles = () => {
@@ -93,7 +75,7 @@ const AgentCard: React.FC<AgentCardProps> = ({ agent, isSelected, isCurrent, onC
   return (
     <div
       onClick={onClick}
-      className={`p-3 rounded-lg border flex items-center gap-4 cursor-pointer transition-all duration-200 ${finalStyles.border} ${finalStyles.bg} ${selectedClass}`}
+      className={`p-3 rounded-lg border flex items-center gap-4 cursor-pointer transition-all duration-200 ${finalStyles.border} ${finalStyles.bg} ${selectedClass} ${pulseClass}`}
     >
       <div className={`flex-shrink-0 ${finalStyles.text}`}>
         {renderIcon()}

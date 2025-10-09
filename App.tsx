@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { Agent, AgentStatus, AgentName } from './types';
 import { INITIAL_AGENTS } from './constants';
@@ -10,6 +9,7 @@ import AgentCard from './components/AgentCard';
 import AgentDetailView from './components/AgentDetailView';
 import PreviewModal from './components/PreviewModal';
 import PreviewPanel from './components/PreviewPanel';
+import DeploymentModal from './components/DeploymentModal';
 
 
 const DEFAULT_PROJECT_GOAL = `
@@ -89,6 +89,7 @@ const App: React.FC = () => {
   const [selectedAgentIndex, setSelectedAgentIndex] = useState<number>(0);
   const [currentAgentIndex, setCurrentAgentIndex] = useState<number>(-1);
   const [isPreviewModalOpen, setIsPreviewModalOpen] = useState<boolean>(false);
+  const [isDeploymentModalOpen, setIsDeploymentModalOpen] = useState<boolean>(false);
   const [previewCode, setPreviewCode] = useState<string | null>(null);
   const [isZenMode, setIsZenMode] = useState<boolean>(false);
   const [recoveryContext, setRecoveryContext] = useState<{
@@ -100,6 +101,7 @@ const App: React.FC = () => {
 
   const patcherAgent = useMemo(() => agents.find(a => a.name === 'Patcher'), [agents]);
   const coderAgent = useMemo(() => agents.find(a => a.name === 'Coder'), [agents]);
+  const deployerAgent = useMemo(() => agents.find(a => a.name === 'Deployer'), [agents]);
 
   useEffect(() => {
     // Prioritize Patcher's output if it has completed, otherwise use Coder's output.
@@ -121,7 +123,10 @@ const App: React.FC = () => {
   };
 
   const isWorkflowComplete = useMemo(() => {
-    return agents.every(agent => agent.status === AgentStatus.COMPLETED);
+    // The core workflow is complete when all agents *except* the Deployer have finished.
+    const coreAgents = agents.filter(agent => agent.name !== 'Deployer');
+    if (coreAgents.length === 0) return false;
+    return coreAgents.every(agent => agent.status === AgentStatus.COMPLETED);
   }, [agents]);
 
   const resetWorkflow = () => {
@@ -132,6 +137,7 @@ const App: React.FC = () => {
     setSelectedAgentIndex(0);
     setPreviewCode(null);
     setIsPreviewModalOpen(false);
+    setIsDeploymentModalOpen(false);
     setProjectGoal(DEFAULT_PROJECT_GOAL);
     setRefinementPrompt('');
     setRecoveryContext(null);
@@ -151,7 +157,11 @@ const App: React.FC = () => {
     const newAgentsState = [...INITIAL_AGENTS];
     const agentOutputs: Record<string, string> = {};
     
-    for (let i = 0; i < newAgentsState.length; i++) {
+    // The main workflow runs up to, but not including, the Deployer agent.
+    const deployerIndex = newAgentsState.findIndex(a => a.name === 'Deployer');
+    const loopEnd = deployerIndex !== -1 ? deployerIndex : newAgentsState.length;
+    
+    for (let i = 0; i < loopEnd; i++) {
         setCurrentAgentIndex(i);
         setSelectedAgentIndex(i);
         
@@ -338,8 +348,11 @@ ${lastPatcherOutput}
 
 Your task is to analyze the request and provide instructions for the Patcher agent.`;
 
-    // Loop from Reviewer to Deployer
-    for (let i = reviewerIndex; i < newAgentsState.length; i++) {
+    // Loop from Reviewer to Deployer, stopping before deployer
+    const deployerIndex = newAgentsState.findIndex(a => a.name === 'Deployer');
+    const loopEnd = deployerIndex !== -1 ? deployerIndex : newAgentsState.length;
+
+    for (let i = reviewerIndex; i < loopEnd; i++) {
         setCurrentAgentIndex(i);
         setSelectedAgentIndex(i);
 
@@ -406,9 +419,95 @@ Your task is to analyze the request and provide instructions for the Patcher age
     setCurrentAgentIndex(-1);
   }, [agents, refinementPrompt]);
 
+  const handleDeploy = useCallback(async () => {
+    if (!isWorkflowComplete) {
+      setError("Cannot deploy until the application is fully generated.");
+      return;
+    }
+
+    const deployerIndex = agents.findIndex(a => a.name === 'Deployer');
+    if (deployerIndex === -1) {
+      setError("Configuration error: Deployer agent not found.");
+      return;
+    }
+
+    if (!previewCode) {
+      setError("Cannot deploy without generated application code.");
+      return;
+    }
+
+    setError(null);
+    setIsGenerating(true); // Lock the UI for this single action
+
+    let newAgentsState = [...agents];
+    
+    // Reset the Deployer agent for a fresh run
+    const deployerConfig = { ...INITIAL_AGENTS[deployerIndex] };
+    
+    setCurrentAgentIndex(deployerIndex);
+    setSelectedAgentIndex(deployerIndex);
+    
+    const agentSpecificInput = `The application code has been finalized. Your task is to provide clear, step-by-step instructions on how to deploy the single HTML file to common static hosting services (like Netlify, Vercel, or GitHub Pages).`;
+
+    const agentToRun = {
+      ...deployerConfig,
+      status: AgentStatus.RUNNING,
+      input: agentSpecificInput,
+      output: '',
+      startedAt: Date.now(),
+    };
+    newAgentsState[deployerIndex] = agentToRun;
+    setAgents([...newAgentsState]);
+
+    try {
+      const onChunk = (chunk: string) => {
+        setAgents(prevAgents => {
+          const updatedAgents = [...prevAgents];
+          const agentToUpdate = updatedAgents.find(a => a.id === agentToRun.id);
+          if (agentToUpdate) {
+            agentToUpdate.output = (agentToUpdate.output || '') + chunk;
+          }
+          return updatedAgents;
+        });
+      };
+
+      const finalOutput = await geminiService.runAgentStream(agentToRun, agentSpecificInput, onChunk);
+      
+      setAgents(prevAgents => {
+          const finalAgents = [...prevAgents];
+          finalAgents[deployerIndex] = {
+            ...agentToRun,
+            status: AgentStatus.COMPLETED,
+            output: finalOutput,
+            completedAt: Date.now(),
+          };
+          return finalAgents;
+      });
+
+      setIsDeploymentModalOpen(true);
+
+    } catch (e) {
+      const errorMessage = e instanceof Error ? e.message : 'An unknown error occurred';
+      setAgents(prevAgents => {
+          const finalAgents = [...prevAgents];
+          finalAgents[deployerIndex] = {
+            ...agentToRun,
+            status: AgentStatus.ERROR,
+            output: errorMessage,
+            completedAt: Date.now(),
+          };
+          return finalAgents;
+      });
+      setError(`Error at Deployer agent: ${errorMessage}`);
+    } finally {
+      setIsGenerating(false);
+      setCurrentAgentIndex(-1);
+    }
+  }, [agents, isWorkflowComplete, previewCode]);
+
 
   const selectedAgent = agents[selectedAgentIndex];
-  
+  const currentAgent = currentAgentIndex >= 0 ? agents[currentAgentIndex] : null;
   const mainContentClass = isZenMode ? 'md:grid-cols-1' : 'md:grid-cols-2 lg:grid-cols-[1fr_1fr]';
 
 
@@ -467,12 +566,22 @@ Your task is to analyze the request and provide instructions for the Patcher age
                 code={previewCode} 
                 isZenMode={isZenMode}
                 onToggleZenMode={() => setIsZenMode(!isZenMode)}
+                isGenerating={isGenerating}
+                currentAgent={currentAgent}
+                totalAgents={agents.length}
+                isWorkflowComplete={isWorkflowComplete}
+                onDeploy={handleDeploy}
+                deployerAgent={deployerAgent}
             />
         </div>
       </main>
       
       {isPreviewModalOpen && previewCode && (
         <PreviewModal code={previewCode} onClose={() => setIsPreviewModalOpen(false)} />
+      )}
+
+      {isDeploymentModalOpen && (
+        <DeploymentModal agent={deployerAgent} onClose={() => setIsDeploymentModalOpen(false)} />
       )}
 
       {error && (

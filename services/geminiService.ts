@@ -1,7 +1,4 @@
 
-
-
-
 import { GoogleGenAI, GenerateContentResponse } from "@google/genai";
 import type { Agent } from '../types';
 
@@ -408,9 +405,6 @@ const mockTodoAppCodeV1 = `
                             if (e.key === 'Enter') {
                                 e.preventDefault();
                                 input.blur();
-                            } else if (e.key === 'Escape') {
-                                currentlyEditingIndex = -1;
-                                renderTasks();
                             }
                         });
                         li.appendChild(input);
@@ -1412,6 +1406,516 @@ const mockTodoAppCodeV3 = `
 \`\`\`
 `;
 
+const mockTodoAppCodeV4 = `
+\`\`\`html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Task Manager</title>
+    <link rel="icon" type="image/svg+xml" href="${mockFaviconUri}">
+    <style>
+        :root {
+            /* Colors */
+            --background-color: #1e293b;
+            --surface-color: #334155;
+            --surface-hover-color: #475569;
+            --text-color: #e2e8f0;
+            --text-color-secondary: #94a3b8;
+            --border-color: #475569;
+            --primary-color: #38bdf8;
+            --primary-hover-color: #0ea5e9;
+            --delete-color: #f43f5e;
+            --delete-hover-color: #e11d48;
+            --done-color: #4ade80;
+
+            /* Typography */
+            --font-family-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            --font-size-base: 1rem;
+            --font-size-sm: 0.875rem;
+
+            /* Spacing */
+            --spacing-sm: 0.5rem;
+            --spacing-md: 0.75rem;
+            --spacing-lg: 1rem;
+            --spacing-xl: 1.5rem;
+            --spacing-2xl: 2rem;
+
+            /* Borders & Radius */
+            --border-radius: 0.375rem;
+            --border-width: 1px;
+            
+            /* Shadows */
+            --focus-shadow: 0 0 0 2px var(--background-color), 0 0 0 4px var(--primary-color);
+        }
+        body {
+            font-family: var(--font-family-sans);
+            background-color: var(--background-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: var(--spacing-2xl);
+            display: flex;
+            justify-content: center;
+        }
+        main {
+            width: 100%;
+            max-width: 600px;
+        }
+        h1 {
+            text-align: center;
+            color: #f97316; /* Vibrant Orange */
+            margin-bottom: var(--spacing-2xl);
+        }
+        form {
+            display: flex;
+            flex-direction: column;
+            gap: var(--spacing-md);
+            margin-bottom: var(--spacing-lg);
+        }
+        .form-row {
+            display: flex;
+            gap: var(--spacing-sm);
+        }
+        input[type="text"], textarea {
+            padding: var(--spacing-md);
+            border: var(--border-width) solid var(--surface-color);
+            border-radius: var(--border-radius);
+            background-color: var(--surface-color);
+            color: var(--text-color);
+            font-size: var(--font-size-base);
+            font-family: inherit;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        input[type="text"]:focus-visible, textarea:focus-visible {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: var(--focus-shadow);
+        }
+        #task-input {
+            flex-grow: 1;
+        }
+        #task-description-input {
+            resize: vertical;
+            min-height: 50px;
+        }
+        .input-error {
+            border-color: var(--delete-color) !important;
+            animation: shake 0.5s;
+        }
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+            20%, 40%, 60%, 80% { transform: translateX(5px); }
+        }
+        button {
+            padding: var(--spacing-md) var(--spacing-xl);
+            border: none;
+            border-radius: var(--border-radius);
+            font-size: var(--font-size-base);
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.2s, color 0.2s, border-color 0.2s;
+        }
+        .add-btn {
+            background-color: var(--primary-color);
+            color: var(--background-color);
+        }
+        .add-btn:hover {
+            background-color: var(--primary-hover-color);
+        }
+        .controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: var(--spacing-lg);
+        }
+        .task-counter {
+            color: var(--text-color);
+            opacity: 0.7;
+            font-size: var(--font-size-sm);
+        }
+        .clear-btn {
+            background-color: transparent;
+            color: var(--delete-color);
+            border: var(--border-width) solid var(--delete-color);
+            padding: var(--spacing-sm) var(--spacing-lg);
+            font-weight: normal;
+            font-size: var(--font-size-sm);
+            opacity: 0.8;
+        }
+        .clear-btn:hover {
+            background-color: var(--delete-color);
+            color: var(--background-color);
+            opacity: 1;
+        }
+        ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            gap: var(--spacing-lg);
+        }
+        li {
+            display: flex;
+            align-items: flex-start;
+            gap: var(--spacing-md);
+            background-color: var(--surface-color);
+            padding: var(--spacing-lg);
+            border-radius: var(--border-radius);
+            transition: background-color 0.2s, opacity 0.3s ease-out, transform 0.3s ease-out, border-left 0.2s ease-in-out;
+            border-left: 4px solid transparent;
+        }
+        li:hover {
+            background-color: var(--surface-hover-color);
+        }
+        li.task-done {
+            border-left: 4px solid var(--done-color);
+        }
+        @keyframes task-add-animation {
+            from { opacity: 0; transform: translateY(-10px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+        .task-added {
+            animation: task-add-animation 0.3s ease-out;
+        }
+        .task-deleting {
+            opacity: 0;
+            transform: scale(0.95);
+        }
+        .task-main-content {
+            flex-grow: 1;
+            word-break: break-word;
+        }
+        .task-title {
+            font-weight: 500;
+        }
+        .task-title.done {
+            text-decoration: line-through;
+            opacity: 0.6;
+        }
+        .task-description {
+            font-size: var(--font-size-sm);
+            color: var(--text-color-secondary);
+            margin-top: var(--spacing-sm);
+            white-space: pre-wrap; /* Preserve line breaks */
+        }
+        .task-description.done {
+            opacity: 0.6;
+        }
+        .edit-mode-container {
+            display: flex;
+            flex-direction: column;
+            flex-grow: 1;
+            gap: var(--spacing-sm);
+        }
+        .title-edit-mode {
+            background-color: var(--background-color);
+            border: var(--border-width) solid var(--primary-color);
+            border-radius: var(--border-radius);
+            color: var(--text-color);
+            font-size: var(--font-size-base);
+            font-family: inherit;
+            padding: var(--spacing-sm);
+            width: 100%;
+            box-sizing: border-box;
+        }
+        .description-edit-mode {
+            background-color: var(--background-color);
+            border: var(--border-width) solid var(--primary-color);
+            border-radius: var(--border-radius);
+            color: var(--text-color);
+            font-size: var(--font-size-sm);
+            font-family: inherit;
+            padding: var(--spacing-sm);
+            width: 100%;
+            box-sizing: border-box;
+            resize: vertical;
+            min-height: 60px;
+        }
+        input[type="checkbox"] {
+            width: 1.25rem;
+            height: 1.25rem;
+            cursor: pointer;
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
+        .task-actions {
+            display: flex;
+            gap: var(--spacing-sm);
+        }
+        .edit-btn, .delete-btn {
+             background: transparent;
+             border: none;
+             color: var(--text-color);
+             opacity: 0.7;
+             padding: var(--spacing-sm);
+             border-radius: var(--border-radius);
+             cursor: pointer;
+             transition: all 0.2s ease-in-out;
+        }
+        .edit-btn:hover {
+            opacity: 1;
+            background-color: var(--surface-hover-color);
+        }
+        .delete-btn:hover {
+            opacity: 1;
+            background-color: var(--delete-color);
+            color: white;
+        }
+        /* Responsive Styles */
+        @media (max-width: 640px) {
+            body {
+                padding: var(--spacing-lg);
+            }
+        }
+    </style>
+</head>
+<body>
+    <main>
+        <h1>Task Manager</h1>
+        <form id="task-form">
+             <div class="form-row">
+                <input type="text" id="task-input" placeholder="Task title..." autocomplete="off" aria-label="Add a new task title" required>
+                <button type="submit" class="add-btn">Add Task</button>
+            </div>
+            <textarea id="task-description-input" placeholder="Description (optional)..." aria-label="Add a task description"></textarea>
+        </form>
+        <div class="controls">
+            <p id="task-counter" class="task-counter"></p>
+            <button id="clear-all-btn" class="clear-btn">Clear All Tasks</button>
+        </div>
+        <ul id="task-list" aria-live="polite"></ul>
+    </main>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const taskForm = document.getElementById('task-form');
+            const taskInput = document.getElementById('task-input');
+            const taskDescriptionInput = document.getElementById('task-description-input');
+            const taskList = document.getElementById('task-list');
+            const clearAllBtn = document.getElementById('clear-all-btn');
+            const taskCounter = document.getElementById('task-counter');
+
+            function loadTasks() {
+                try {
+                    const storedTasks = localStorage.getItem('tasks');
+                    // Migration: Ensure all tasks have a description property
+                    return storedTasks ? JSON.parse(storedTasks).map(task => ({ ...task, description: task.description || '' })) : [];
+                } catch (e) {
+                    console.error('Error loading tasks from localStorage:', e);
+                    alert('Could not load your tasks. Saved data might be corrupted or inaccessible.');
+                    return [];
+                }
+            }
+
+            function saveTasks() {
+                try {
+                    localStorage.setItem('tasks', JSON.stringify(tasks));
+                } catch (e) {
+                    console.error('Error saving tasks to localStorage:', e);
+                    alert('Could not save tasks. Your browser storage might be full or blocked.');
+                }
+            }
+
+            let tasks = loadTasks();
+            let currentlyEditingIndex = -1;
+
+            function updateTaskCounter() {
+                const totalTasks = tasks.length;
+                const completedTasks = tasks.filter(task => task.done).length;
+                clearAllBtn.style.display = totalTasks > 0 ? 'block' : 'none';
+                if (totalTasks > 0) {
+                    taskCounter.textContent = \`\${completedTasks} of \${totalTasks} tasks complete\`;
+                } else {
+                    taskCounter.textContent = 'No tasks yet.';
+                }
+            }
+
+            function renderTasks(newlyAddedIndex = -1) {
+                updateTaskCounter();
+                taskList.innerHTML = '';
+                tasks.forEach((task, index) => {
+                    const li = document.createElement('li');
+                    if (task.done) li.classList.add('task-done');
+                    
+                    const checkbox = document.createElement('input');
+                    checkbox.type = 'checkbox';
+                    checkbox.checked = task.done;
+                    checkbox.setAttribute('aria-label', \`Mark task as complete: "\${task.text}"\`);
+                    checkbox.addEventListener('change', () => toggleDone(index));
+
+                    li.appendChild(checkbox);
+
+                    const isEditing = index === currentlyEditingIndex;
+
+                    if (isEditing) {
+                        const editContainer = document.createElement('div');
+                        editContainer.className = 'edit-mode-container';
+
+                        const titleInput = document.createElement('input');
+                        titleInput.type = 'text';
+                        titleInput.value = task.text;
+                        titleInput.className = 'title-edit-mode';
+
+                        const descriptionTextarea = document.createElement('textarea');
+                        descriptionTextarea.value = task.description;
+                        descriptionTextarea.className = 'description-edit-mode';
+                        descriptionTextarea.placeholder = 'Description';
+
+                        editContainer.appendChild(titleInput);
+                        editContainer.appendChild(descriptionTextarea);
+                        li.appendChild(editContainer);
+
+                        const save = () => {
+                            if (currentlyEditingIndex !== index) return;
+                            const newText = titleInput.value.trim();
+                            if (newText) {
+                                tasks[index].text = newText;
+                                tasks[index].description = descriptionTextarea.value.trim();
+                            }
+                            currentlyEditingIndex = -1;
+                            saveTasks();
+                            renderTasks();
+                        };
+
+                        const handleKeyDown = (e) => {
+                            if (e.key === 'Enter' && !e.shiftKey) { // Allow Shift+Enter for newlines in textarea
+                                e.preventDefault();
+                                titleInput.blur(); // Triggers save
+                            } else if (e.key === 'Escape') {
+                                currentlyEditingIndex = -1;
+                                renderTasks();
+                            }
+                        };
+                        
+                        titleInput.addEventListener('blur', save);
+                        descriptionTextarea.addEventListener('blur', save);
+                        titleInput.addEventListener('keydown', handleKeyDown);
+                        descriptionTextarea.addEventListener('keydown', handleKeyDown);
+
+                    } else {
+                        const mainContent = document.createElement('div');
+                        mainContent.className = 'task-main-content';
+                        
+                        const title = document.createElement('div');
+                        title.textContent = task.text;
+                        title.className = 'task-title' + (task.done ? ' done' : '');
+                        mainContent.appendChild(title);
+                        
+                        if (task.description) {
+                            const description = document.createElement('p');
+                            description.textContent = task.description;
+                            description.className = 'task-description' + (task.done ? ' done' : '');
+                            mainContent.appendChild(description);
+                        }
+                        
+                        li.appendChild(mainContent);
+
+                        const actions = document.createElement('div');
+                        actions.className = 'task-actions';
+
+                        const editBtn = document.createElement('button');
+                        editBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>';
+                        editBtn.className = 'edit-btn';
+                        editBtn.setAttribute('aria-label', \`Edit task: "\${task.text}"\`);
+                        editBtn.addEventListener('click', () => editTask(index));
+
+                        const deleteBtn = document.createElement('button');
+                        deleteBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>';
+                        deleteBtn.className = 'delete-btn';
+                        deleteBtn.setAttribute('aria-label', \`Delete task: "\${task.text}"\`);
+                        deleteBtn.addEventListener('click', () => deleteTask(index));
+
+                        actions.appendChild(editBtn);
+                        actions.appendChild(deleteBtn);
+                        li.appendChild(actions);
+                    }
+
+                    if (index === newlyAddedIndex) li.classList.add('task-added');
+                    
+                    taskList.appendChild(li);
+                });
+
+                if (currentlyEditingIndex !== -1) {
+                    const inputToFocus = taskList.querySelector('.title-edit-mode');
+                    if (inputToFocus) {
+                        inputToFocus.focus();
+                        inputToFocus.select();
+                    }
+                }
+            }
+
+            function addTask(e) {
+                e.preventDefault();
+                const text = taskInput.value.trim();
+                const description = taskDescriptionInput.value.trim();
+                if (text) {
+                    tasks.push({ text, description, done: false });
+                    saveTasks();
+                    renderTasks(tasks.length - 1);
+                    taskInput.value = '';
+                    taskDescriptionInput.value = '';
+                    taskInput.focus();
+                } else {
+                    taskInput.classList.add('input-error');
+                    taskInput.focus();
+                    setTimeout(() => taskInput.classList.remove('input-error'), 500);
+                }
+            }
+
+            function deleteTask(index) {
+                const taskText = tasks[index].text;
+                if (!confirm(\`Are you sure you want to delete the task: "\${taskText}"?\`)) {
+                    return;
+                }
+
+                const itemToDelete = taskList.children[index];
+                if (itemToDelete) {
+                    itemToDelete.classList.add('task-deleting');
+                    setTimeout(() => {
+                        tasks.splice(index, 1);
+                        saveTasks();
+                        renderTasks();
+                    }, 300);
+                } else {
+                    tasks.splice(index, 1);
+                    saveTasks();
+                    renderTasks();
+                }
+            }
+
+            function toggleDone(index) {
+                tasks[index].done = !tasks[index].done;
+                saveTasks();
+                renderTasks();
+            }
+
+            function editTask(index) {
+                currentlyEditingIndex = index;
+                renderTasks();
+            }
+
+            function clearAllTasks() {
+                if (tasks.length === 0) return;
+                if (confirm('Are you sure you want to delete ALL tasks? This action cannot be undone.')) {
+                    tasks = [];
+                    saveTasks();
+                    renderTasks();
+                }
+            }
+            
+            taskForm.addEventListener('submit', addTask);
+            clearAllBtn.addEventListener('click', clearAllTasks);
+            renderTasks();
+        });
+    </script>
+</body>
+</html>
+\`\`\`
+`;
+
+
 const mockResponses: Record<string, string> = {
   Planner: `
 ### **Project Plan: Task Management Application**
@@ -1495,9 +1999,8 @@ The code is well-structured and functional. It meets all core requirements.
 
 **Suggested Improvements:**
 
-1.  **Error Handling:** The current implementation fails silently if \`localStorage\` is full or inaccessible. Update the \`loadTasks\` and \`saveTasks\` functions to show a user-facing \`alert()\` in their respective \`catch\` blocks. This will inform the user that their tasks could not be saved or loaded.
-2.  **Editing Experience:** When a user edits a task, they should be able to press the 'Escape' key to cancel their changes. Add a keydown event listener to the edit input that listens for 'Escape', discards the edit, and re-renders the task. The auto-focus on edit is already correctly implemented.
-3.  **Accessibility:**
+1.  **Editing Experience:** When a user edits a task, they should be able to press the 'Escape' key to cancel their changes. Add a keydown event listener to the edit input that listens for 'Escape', discards the edit, and re-renders the task. The auto-focus on edit is already correctly implemented.
+2.  **Accessibility:**
     *   The main task input field is missing a proper label. Add an \`aria-label="Add a new task"\` to the \`<input>\` element for screen reader support.
     *   The "Edit" and "Delete" buttons are not descriptive. Add an \`aria-label\` to each that includes the task's text, for example: \`aria-label="Delete task: 'Buy milk'"\`.
     *   The task completion checkbox is also missing a descriptive label. Add an \`aria-label\` that includes the task text, for example: \`aria-label="Mark task as complete: 'Buy milk'"\`.
@@ -1534,17 +2037,45 @@ Deploying this self-contained HTML file is straightforward. You can use any stat
 const runMockAgentStream = async (agent: Agent, input: string, onChunk: (chunk: string) => void): Promise<string> => {
     let mockOutput = mockResponses[agent.name] || "Processing... Done.";
 
-    // Special mock logic for refinement cycle
-    if (agent.name === 'Reviewer' && /refinement request/i.test(input)) {
+    // --- Special mock logic for refinement cycles ---
+    
+    // 1. User wants to change title color
+    if (agent.name === 'Reviewer' && /change the title color to orange/i.test(input)) {
         mockOutput = `The user wants to change the title color to a vibrant orange.
 
 **Analysis:**
 The current title color is set by the CSS selector \`h1\` and its \`color\` property is \`var(--primary-color)\`.
 
 **Suggested Change:**
-In the \`<style>\` block, find the \`h1\` selector and change its \`color\` property to a vibrant orange hex code, like \`#f97316\`.`;
+In the \`<style>\` block, find the \`h1\` selector and change its \`color\` property to a vibrant orange hex code, like \`#f97316\`. Also add a 'Clear All' button.`;
     } else if (agent.name === 'Patcher' && /#f97316/i.test(input)) {
         mockOutput = mockTodoAppCodeV3;
+    }
+
+    // 2. User wants to add a task description field
+    else if (agent.name === 'Reviewer' && /add a more detailed description/i.test(input)) {
+        mockOutput = `
+The user wants to add a multi-line description field for each task.
+
+**Analysis of Request:**
+This requires changes to the data model, the main form, task rendering logic, and editing logic.
+
+**Instructions for Patcher Agent:**
+
+1.  **Data Model:** The task object stored in \`localStorage\` must be updated from \`{text, done}\` to \`{text, description, done}\`. The \`loadTasks\` function should be updated to gracefully handle old tasks that don't have a \`description\` property by defaulting it to an empty string.
+
+2.  **HTML Form:** The main task creation form (\`<form id="task-form">\`) needs a new multi-line \`<textarea>\` for the description input, placed below the main task title input.
+
+3.  **Task Display:** When rendering a task in the list (\`<li>\`), if a description exists, it should be displayed below the task title in a visually distinct style (e.g., smaller, lighter text).
+
+4.  **Task Editing:** When a user clicks "Edit", both the title and description must become editable. This means creating both an \`<input>\` for the title and a \`<textarea>\` for the description. The "save" logic (triggered by 'blur' or 'Enter') must be updated to read from and save both fields.
+
+5.  **Task Creation:** The \`addTask\` function must be modified to read from both the title \`<input>\` and the description \`<textarea>\` and create the new task object with all three properties.
+
+Implement these changes to add the description feature.
+`;
+    } else if (agent.name === 'Patcher' && /add the description feature/i.test(input)) {
+        mockOutput = mockTodoAppCodeV4;
     }
     
     const chunks = mockOutput.split(/(?=\s)/); // Split while keeping spaces for a more "streamed" look
@@ -1621,7 +2152,11 @@ ${input}
     } catch (e) {
       console.error("Image generation failed, using placeholders:", e);
       let userFacingError = "Image generation failed. A placeholder image will be used instead.";
-      if (e instanceof Error && e.message.includes("billed users")) {
+      
+      // Robustly convert the error to a string, capturing all properties, to check for the billing message.
+      const errorDetailsString = JSON.stringify(e, Object.getOwnPropertyNames(e));
+      
+      if (errorDetailsString.includes("billed users")) {
         userFacingError = "Image generation failed as the Imagen API requires a billed account. A placeholder image is being used as a fallback.";
       }
       const fallbackMsg = `\n*${userFacingError}*\n\n`;
