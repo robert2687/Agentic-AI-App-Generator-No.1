@@ -1,44 +1,12 @@
-
-import { GoogleGenAI, GenerateContentResponse } from "@google/genai";
+import { GenerateContentResponse } from "@google/genai";
 import type { Agent } from '../types';
+import { ai, API_KEY, withRetry } from './geminiClient';
+import { activeImageProvider, placeholderImageService } from './imageProvider';
+import { ImageGenerationResult } from "./imageService";
+import { generateMockLogoBase64, generateMockFaviconBase64 } from "./placeholderUtils";
 
-const API_KEY = process.env.API_KEY;
-
-if (!API_KEY) {
-  console.warn("API_KEY environment variable not set. Using mocked responses.");
-}
-
-// Use the correct `GoogleGenAI` export from the library. The name `GoogleGenerativeAI` is deprecated and causes a runtime error.
-const ai = API_KEY ? new GoogleGenAI({ apiKey: API_KEY }) : null;
-
-/**
- * A utility function to retry an async API call with exponential backoff.
- * @param apiCall The async function to call.
- * @param maxRetries The maximum number of retries.
- * @returns The result of the API call.
- */
-const withRetry = async <T>(apiCall: () => Promise<T>, maxRetries = 3): Promise<T> => {
-    let attempt = 0;
-    while (true) {
-        try {
-            return await apiCall();
-        } catch (error: any) {
-            // Check if the error indicates a model overload (503)
-            const isOverloaded = error.message && (error.message.includes('"code": 503') || error.message.includes('"status": "UNAVAILABLE"'));
-
-            if (isOverloaded && attempt < maxRetries) {
-                attempt++;
-                // Exponential backoff with jitter
-                const delay = Math.pow(2, attempt) * 1000 + Math.random() * 1000;
-                console.warn(`Model overloaded. Retrying in ${Math.round(delay / 1000)}s... (Attempt ${attempt})`);
-                await new Promise(resolve => setTimeout(resolve, delay));
-            } else {
-                // Re-throw if it's not a retryable error or if max retries are reached
-                throw error;
-            }
-        }
-    }
-};
+// Re-create mockFaviconUri for the mock responses using the centralized utility function.
+const mockFaviconUri = `data:image/svg+xml;base64,${generateMockFaviconBase64()}`;
 
 
 const MASTER_PROMPT_TEMPLATE = `
@@ -58,43 +26,6 @@ YOUR TASK:
 Carefully analyze the input and perform your role. Generate the specified output, ensuring it is clear, structured, and ready for the next agent.
 Begin your response immediately without any introductory phrases like "Certainly!" or "Here is the output".
 `;
-
-/**
- * Generates a base64 encoded SVG for a modern, minimalist checkmark logo.
- * @returns {string} A base64 encoded SVG data string.
- */
-const generateMockLogoBase64 = (): string => {
-  const svg = `
-    <svg width="64" height="64" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
-      <defs>
-        <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" style="stop-color:#38bdf8;stop-opacity:1" />
-          <stop offset="100%" style="stop-color:#0ea5e9;stop-opacity:1" />
-        </linearGradient>
-      </defs>
-      <rect width="64" height="64" rx="12" ry="12" fill="url(#grad1)"/>
-      <path d="M18 32 L28 42 L46 24" fill="none" stroke="white" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
-    </svg>
-  `.trim();
-  // btoa is available in web worker/browser environments.
-  return btoa(svg);
-};
-
-/**
- * Generates a base64 encoded SVG for a simple, clear favicon.
- * @returns {string} A base64 encoded SVG data string.
- */
-const generateMockFaviconBase64 = (): string => {
-  const svg = `
-    <svg width="16" height="16" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
-      <rect width="16" height="16" rx="3" ry="3" fill="#38bdf8"/>
-      <path d="M4 8 L7 11 L12 6" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-    </svg>
-  `.trim();
-  return btoa(svg);
-};
-
-const mockFaviconUri = `data:image/svg+xml;base64,${generateMockFaviconBase64()}`;
 
 const mockTodoAppCodeV1 = `
 \`\`\`html
@@ -2097,10 +2028,11 @@ export const runAgentStream = async (agent: Agent, input: string, onChunk: (chun
   let streamedHeader = "";
 
   // The UX/UI Designer agent has a special multi-step process:
-  // 1. Generate image assets (logo, favicon).
-  // 2. If image generation fails, gracefully fall back to placeholders.
-  // 3. Augment the original input with the generated asset data.
-  // 4. Pass the augmented input to the text model to generate CSS and an integration guide.
+  // 1. Generate image prompts from the user's plan.
+  // 2. Use the active image provider to generate assets.
+  // 3. If image generation fails, gracefully fall back to placeholders.
+  // 4. Augment the original input with the generated asset data.
+  // 5. Pass the augmented input to the text model to generate CSS and an integration guide.
   if (agent.name === 'UX/UI Designer') {
     let imageGenerationOutput = "";
     
@@ -2116,60 +2048,65 @@ ${input}
 
       const imagePromptResponse = await ai.models.generateContent({ model: "gemini-2.5-flash", contents: imagePromptGenContents });
       const imagePrompt = imagePromptResponse.text.trim();
+      const faviconPrompt = `A simple, 16x16 favicon based on: ${imagePrompt}`;
+      
+      let logoResult: ImageGenerationResult;
+      let faviconResult: ImageGenerationResult;
 
-      const imageGenPrefix = `> **Logo Prompt:** "${imagePrompt}"\n\nGenerating logo...\n\n`;
-      streamedHeader += imageGenPrefix;
-      onChunk(imageGenPrefix);
+      try {
+        const logoPromptPrefix = `> **Logo Prompt:** "${imagePrompt}"\n\nGenerating logo...\n\n`;
+        streamedHeader += logoPromptPrefix;
+        onChunk(logoPromptPrefix);
+        logoResult = await activeImageProvider.generateImage(imagePrompt, { aspectRatio: '1:1' });
+        
+        const faviconPromptPrefix = `> **Favicon Prompt:** "${faviconPrompt}"\n\nGenerating favicon...\n\n`;
+        streamedHeader += faviconPromptPrefix;
+        onChunk(faviconPromptPrefix);
+        faviconResult = await activeImageProvider.generateImage(faviconPrompt, { aspectRatio: '1:1' });
 
-      const imageResponse: any = await withRetry(() => ai.models.generateImages({
-        model: 'imagen-4.0-generate-001',
-        prompt: imagePrompt,
-        config: { numberOfImages: 1, outputMimeType: 'image/png', aspectRatio: '1:1' },
-      }));
+      } catch (e) {
+        console.error("Image generation failed, using placeholders:", e);
+        let userFacingError = "Image generation failed. A placeholder image will be used instead.";
+        
+        const errorAsString = (e instanceof Error) ? e.message : JSON.stringify(e);
+        if (errorAsString.includes("billed users") || errorAsString.includes("Imagen API is only accessible")) {
+          userFacingError = "Image generation failed as the Imagen API requires a billed account. A placeholder image is being used as a fallback.";
+        }
+        const fallbackMsg = `\n*${userFacingError}*\n\n`;
+        streamedHeader += fallbackMsg;
+        onChunk(fallbackMsg);
 
-      const base64Image = imageResponse.generatedImages[0].image.imageBytes;
-      const markdownImage = `![${imagePrompt}](data:image/png;base64,${base64Image})\n\n---\n\n`;
+        // Fallback to placeholder service
+        logoResult = await placeholderImageService.generateImage(imagePrompt);
+        faviconResult = await placeholderImageService.generateImage(faviconPrompt);
+      }
+
+      const markdownImage = `![${logoResult.prompt}](data:${logoResult.mimeType};base64,${logoResult.base64})\n\n---\n\n`;
       streamedHeader += markdownImage;
       onChunk(markdownImage);
 
-      const faviconPrompt = `A simple, 16x16 favicon based on: ${imagePrompt}`;
-      const faviconGenPrefix = `> **Favicon Prompt:** "${faviconPrompt}"\n\nGenerating favicon...\n\n`;
-      streamedHeader += faviconGenPrefix;
-      onChunk(faviconGenPrefix);
-
-      const faviconResponse: any = await withRetry(() => ai.models.generateImages({
-        model: 'imagen-4.0-generate-001',
-        prompt: faviconPrompt,
-        config: { numberOfImages: 1, outputMimeType: 'image/png', aspectRatio: '1:1' },
-      }));
-      
-      const base64Favicon = faviconResponse.generatedImages[0].image.imageBytes;
-      const faviconUriChunk = `**Favicon Data URI:**\n\`data:image/png;base64,${base64Favicon}\``;
+      const faviconUriChunk = `**Favicon Data URI:**\n\`data:${faviconResult.mimeType};base64,${faviconResult.base64}\``;
       streamedHeader += faviconUriChunk;
       onChunk(faviconUriChunk);
       
       imageGenerationOutput = markdownImage + faviconUriChunk;
+    
     } catch (e) {
-      console.error("Image generation failed, using placeholders:", e);
-      let userFacingError = "Image generation failed. A placeholder image will be used instead.";
-      
-      // Robustly convert the error to a string, capturing all properties, to check for the billing message.
-      const errorDetailsString = JSON.stringify(e, Object.getOwnPropertyNames(e));
-      
-      if (errorDetailsString.includes("billed users")) {
-        userFacingError = "Image generation failed as the Imagen API requires a billed account. A placeholder image is being used as a fallback.";
-      }
-      const fallbackMsg = `\n*${userFacingError}*\n\n`;
-      streamedHeader += fallbackMsg;
-      onChunk(fallbackMsg);
+        // This catch handles failures in the *prompt generation* step itself.
+        console.error("Failed to generate image prompts, using placeholders:", e);
+        const errorMsg = "\n*Could not generate image prompts. Using default placeholder assets.*\n\n";
+        streamedHeader += errorMsg;
+        onChunk(errorMsg);
 
-      // Use mock/placeholder images
-      const mockLogo = `![Placeholder Logo](data:image/svg+xml;base64,${generateMockLogoBase64()})\n\n---\n\n`;
-      const mockFavicon = `**Favicon Data URI:**\n\`${mockFaviconUri}\``;
-      imageGenerationOutput = mockLogo + mockFavicon;
+        // Use mock/placeholder images
+        const logoResult = await placeholderImageService.generateImage("Default placeholder logo");
+        const faviconResult = await placeholderImageService.generateImage("Default placeholder favicon");
+        const mockLogo = `![Placeholder Logo](data:${logoResult.mimeType};base64,${logoResult.base64})\n\n---\n\n`;
+        const mockFavicon = `**Favicon Data URI:**\n\`data:${faviconResult.mimeType};base64,${faviconResult.base64}\``;
+        imageGenerationOutput = mockLogo + mockFavicon;
       
-      streamedHeader += imageGenerationOutput;
-      onChunk(imageGenerationOutput);
+        streamedHeader += imageGenerationOutput;
+        onChunk(imageGenerationOutput);
     }
 
     const continuationHeader = "\n\n---\n\n**Generating Stylesheet & Integration Guide...**\n\n";
