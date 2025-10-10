@@ -142,4 +142,4 @@ const PreviewPanel: React.FC<PreviewPanelProps> = ({
   );
 };
 
-export default PreviewPanel;
+export default React.memo(PreviewPanel);

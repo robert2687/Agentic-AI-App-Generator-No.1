@@ -86,6 +86,7 @@ const App: React.FC = () => {
   const [refinementPrompt, setRefinementPrompt] = useState<string>('');
   const [isGenerating, setIsGenerating] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+  const [isUnrecoverableError, setIsUnrecoverableError] = useState<boolean>(false);
   const [selectedAgentIndex, setSelectedAgentIndex] = useState<number>(0);
   const [currentAgentIndex, setCurrentAgentIndex] = useState<number>(-1);
   const [isPreviewModalOpen, setIsPreviewModalOpen] = useState<boolean>(false);
@@ -118,9 +119,9 @@ const App: React.FC = () => {
   }, [agents, coderAgent, patcherAgent]);
 
 
-  const handleSelectAgent = (index: number) => {
+  const handleSelectAgent = useCallback((index: number) => {
     setSelectedAgentIndex(index);
-  };
+  }, []);
 
   const isWorkflowComplete = useMemo(() => {
     // The core workflow is complete when all agents *except* the Deployer have finished.
@@ -129,7 +130,7 @@ const App: React.FC = () => {
     return coreAgents.every(agent => agent.status === AgentStatus.COMPLETED);
   }, [agents]);
 
-  const resetWorkflow = () => {
+  const resetWorkflow = useCallback(() => {
     setAgents(INITIAL_AGENTS);
     setError(null);
     setIsGenerating(false);
@@ -141,7 +142,8 @@ const App: React.FC = () => {
     setProjectGoal(DEFAULT_PROJECT_GOAL);
     setRefinementPrompt('');
     setRecoveryContext(null);
-  };
+    setIsUnrecoverableError(false);
+  }, []);
   
   const handleStartGeneration = useCallback(async () => {
     if (!projectGoal.trim()) {
@@ -190,6 +192,7 @@ Your task is to analyze this error and provide a clear, concise set of instructi
                     const errorMessage = "Critical error: Could not find Reviewer output for error recovery.";
                     newAgentsState[i] = { ...currentAgentConfig, status: AgentStatus.ERROR, output: errorMessage };
                     setError(errorMessage);
+                    setIsUnrecoverableError(true);
                     setAgents([...newAgentsState]);
                     setIsGenerating(false);
                     return;
@@ -223,6 +226,7 @@ Your task is to take on the role of the failing agent, follow the Reviewer's gui
                     const errorMessage = "Critical error: Could not find Coder or Reviewer output for the Patcher agent.";
                     newAgentsState[i] = { ...currentAgentConfig, status: AgentStatus.ERROR, output: errorMessage };
                     setError(errorMessage);
+                    setIsUnrecoverableError(true);
                     setAgents([...newAgentsState]);
                     setIsGenerating(false);
                     return;
@@ -288,6 +292,7 @@ Your task is to take on the role of the failing agent, follow the Reviewer's gui
                 // Unrecoverable error (e.g., Reviewer/Patcher failed, or recovery already tried).
                 newAgentsState[i] = { ...agentToRun, status: AgentStatus.ERROR, output: errorMessage, completedAt: Date.now() };
                 setError(`Error at ${agentToRun.name} agent: ${errorMessage}`);
+                setIsUnrecoverableError(true);
                 setAgents([...newAgentsState]);
                 setIsGenerating(false);
                 return;
@@ -298,7 +303,7 @@ Your task is to take on the role of the failing agent, follow the Reviewer's gui
     setAgents(newAgentsState);
     setIsGenerating(false);
     setCurrentAgentIndex(-1);
-  }, [projectGoal, recoveryContext]);
+  }, [projectGoal, recoveryContext, resetWorkflow]);
 
   const handleStartRefinement = useCallback(async () => {
     if (!refinementPrompt.trim()) {
@@ -365,6 +370,7 @@ Your task is to analyze the request and provide instructions for the Patcher age
                 const errorMessage = "Critical error: Could not find Reviewer output for refinement.";
                 newAgentsState[i] = { ...currentAgentConfig, status: AgentStatus.ERROR, output: errorMessage };
                 setError(errorMessage);
+                setIsUnrecoverableError(true);
                 setAgents([...newAgentsState]);
                 setIsGenerating(false);
                 return;
@@ -407,6 +413,7 @@ Your task is to analyze the request and provide instructions for the Patcher age
             const errorMessage = e instanceof Error ? e.message : 'An unknown error occurred';
             newAgentsState[i] = { ...agentToRun, status: AgentStatus.ERROR, output: errorMessage, completedAt: Date.now() };
             setError(`Error at ${agentToRun.name} agent during refinement: ${errorMessage}`);
+            setIsUnrecoverableError(true);
             setAgents([...newAgentsState]);
             setIsGenerating(false);
             return;
@@ -499,6 +506,7 @@ Your task is to analyze the request and provide instructions for the Patcher age
           return finalAgents;
       });
       setError(`Error at Deployer agent: ${errorMessage}`);
+      setIsUnrecoverableError(true);
     } finally {
       setIsGenerating(false);
       setCurrentAgentIndex(-1);
@@ -510,6 +518,8 @@ Your task is to analyze the request and provide instructions for the Patcher age
   const currentAgent = currentAgentIndex >= 0 ? agents[currentAgentIndex] : null;
   const mainContentClass = isZenMode ? 'md:grid-cols-1' : 'md:grid-cols-2 lg:grid-cols-[1fr_1fr]';
 
+  const handlePreview = useCallback(() => setIsPreviewModalOpen(true), []);
+  const handleToggleZenMode = useCallback(() => setIsZenMode(prev => !prev), []);
 
   return (
     <div className="min-h-screen bg-slate-900 font-sans flex flex-col">
@@ -526,10 +536,12 @@ Your task is to analyze the request and provide instructions for the Patcher age
                 onReset={resetWorkflow}
                 isGenerating={isGenerating}
                 isComplete={isWorkflowComplete}
-                onPreview={() => setIsPreviewModalOpen(true)}
+                onPreview={handlePreview}
                 refinementPrompt={refinementPrompt}
                 setRefinementPrompt={setRefinementPrompt}
                 onRefine={handleStartRefinement}
+                isError={isUnrecoverableError}
+                errorText={error}
              />
               <div className="bg-slate-800/50 rounded-lg p-4 flex-grow">
                 <h2 className="text-lg font-bold mb-3 text-sky-400">Agent Workflow</h2>
@@ -565,7 +577,7 @@ Your task is to analyze the request and provide instructions for the Patcher age
             <PreviewPanel 
                 code={previewCode} 
                 isZenMode={isZenMode}
-                onToggleZenMode={() => setIsZenMode(!isZenMode)}
+                onToggleZenMode={handleToggleZenMode}
                 isGenerating={isGenerating}
                 currentAgent={currentAgent}
                 totalAgents={agents.length}

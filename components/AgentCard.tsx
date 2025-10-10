@@ -1,4 +1,3 @@
-
 import React from 'react';
 import type { Agent } from '../types';
 import { AgentStatus } from '../types';
@@ -88,4 +87,4 @@ const AgentCard: React.FC<AgentCardProps> = ({ agent, isSelected, isCurrent, onC
   );
 };
 
-export default AgentCard;
+export default React.memo(AgentCard);

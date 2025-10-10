@@ -1,3 +1,4 @@
+
 import { GenerateContentResponse } from "@google/genai";
 import type { Agent } from '../types';
 import { ai, withRetry } from './geminiClient';
@@ -649,6 +650,34 @@ const mockTodoAppCodeV2 = `
             color: white;
         }
 
+        #error-container {
+            position: fixed;
+            bottom: var(--spacing-xl);
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            gap: var(--spacing-md);
+            align-items: center;
+        }
+        .error-toast {
+            background-color: var(--delete-color);
+            color: white;
+            padding: var(--spacing-md) var(--spacing-xl);
+            border-radius: var(--border-radius);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+            opacity: 0;
+            transform: translateY(10px);
+            transition: opacity 0.3s ease-out, transform 0.3s ease-out;
+            font-size: var(--font-size-sm);
+            font-weight: 500;
+        }
+        .error-toast.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
         /* Responsive Styles */
         @media (max-width: 640px) {
             body {
@@ -673,6 +702,7 @@ const mockTodoAppCodeV2 = `
         </form>
         <p id="task-counter" class="task-counter"></p>
         <ul id="task-list" aria-live="polite"></ul>
+        <div id="error-container"></div>
     </main>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
@@ -680,6 +710,32 @@ const mockTodoAppCodeV2 = `
             const taskInput = document.getElementById('task-input');
             const taskList = document.getElementById('task-list');
             const taskCounter = document.getElementById('task-counter');
+            const errorContainer = document.getElementById('error-container');
+            let errorTimeoutId = null;
+
+            function showError(message) {
+                if (errorTimeoutId) {
+                    clearTimeout(errorTimeoutId);
+                }
+                const errorElement = document.createElement('div');
+                errorElement.textContent = message;
+                errorElement.className = 'error-toast';
+                errorContainer.innerHTML = '';
+                errorContainer.appendChild(errorElement);
+
+                setTimeout(() => {
+                    errorElement.classList.add('show');
+                }, 10); // Short delay to allow CSS transition
+
+                errorTimeoutId = setTimeout(() => {
+                    errorElement.classList.remove('show');
+                     setTimeout(() => {
+                        if (errorContainer.contains(errorElement)) {
+                            errorContainer.removeChild(errorElement);
+                        }
+                    }, 300); // Wait for fade out transition
+                }, 5000);
+            }
 
             function loadTasks() {
                 try {
@@ -687,7 +743,7 @@ const mockTodoAppCodeV2 = `
                     return storedTasks ? JSON.parse(storedTasks) : [];
                 } catch (e) {
                     console.error('Error loading tasks from localStorage:', e);
-                    alert('Could not load your tasks. Saved data might be corrupted or inaccessible.');
+                    showError('Could not load tasks. Storage might be corrupted.');
                     return [];
                 }
             }
@@ -697,7 +753,7 @@ const mockTodoAppCodeV2 = `
                     localStorage.setItem('tasks', JSON.stringify(tasks));
                 } catch (e) {
                     console.error('Error saving tasks to localStorage:', e);
-                    alert('Could not save tasks. Your browser storage might be full or blocked.');
+                    showError('Could not save tasks. Storage may be full or blocked.');
                 }
             }
             
@@ -1930,8 +1986,9 @@ The code is well-structured and functional. It meets all core requirements.
 
 **Suggested Improvements:**
 
-1.  **Editing Experience:** When a user edits a task, they should be able to press the 'Escape' key to cancel their changes. Add a keydown event listener to the edit input that listens for 'Escape', discards the edit, and re-renders the task. The auto-focus on edit is already correctly implemented.
-2.  **Accessibility:**
+1.  **Error Handling:** The current implementation uses \`alert()\` for localStorage errors, which is disruptive. Replace these with a non-blocking UI notification. Create a dedicated error display element that can be dynamically populated and shown for a few seconds. The messages should be user-friendly, explaining that tasks could not be saved or loaded and suggesting possible reasons like private browsing mode or full storage.
+2.  **Editing Experience:** When a user edits a task, they should be able to press the 'Escape' key to cancel their changes. Add a keydown event listener to the edit input that listens for 'Escape', discards the edit, and re-renders the task. The auto-focus on edit is already correctly implemented.
+3.  **Accessibility:**
     *   The main task input field is missing a proper label. Add an \`aria-label="Add a new task"\` to the \`<input>\` element for screen reader support.
     *   The "Edit" and "Delete" buttons are not descriptive. Add an \`aria-label\` to each that includes the task's text, for example: \`aria-label="Delete task: 'Buy milk'"\`.
     *   The task completion checkbox is also missing a descriptive label. Add an \`aria-label\` that includes the task text, for example: \`aria-label="Mark task as complete: 'Buy milk'"\`.
@@ -2065,15 +2122,17 @@ ${input}
         faviconResult = await activeImageProvider.generateImage(faviconPrompt, { aspectRatio: '1:1' });
 
       } catch (e) {
-        console.error(`Image generation with provider '${activeImageProviderName}' failed, using placeholders:`, e);
-        let userFacingError = `Image generation with ${activeImageProviderName.toUpperCase()} failed. A placeholder image will be used instead.`;
-        
-        const errorText = (e instanceof Error)
-          ? e.message
-          : JSON.stringify(e);
-        
-        if (errorText.includes("billed users") || errorText.includes("Imagen API is only accessible")) {
-          userFacingError = "Image generation failed as the Gemini Imagen API requires a billed account. A placeholder image is being used as a fallback.";
+        const errorText = (e instanceof Error) ? e.message : JSON.stringify(e);
+        const isBilledUserError = errorText.includes("billed users") || errorText.includes("Imagen API is only accessible");
+
+        let userFacingError: string;
+
+        if (isBilledUserError) {
+          userFacingError = "Image generation requires a billed Gemini account. Using placeholder images as a fallback.";
+          console.warn(`Image generation with '${activeImageProviderName}' skipped due to billing restrictions. Falling back to placeholders.`);
+        } else {
+          userFacingError = `Image generation with ${activeImageProviderName.toUpperCase()} failed. A placeholder image will be used instead.`;
+          console.error(`Image generation with provider '${activeImageProviderName}' failed, using placeholders:`, e);
         }
         
         const fallbackMsg = `\n*${userFacingError}*\n\n`;

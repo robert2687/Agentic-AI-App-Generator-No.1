@@ -1,5 +1,6 @@
 import React from 'react';
 import EyeIcon from './icons/EyeIcon';
+import ErrorIcon from './icons/ErrorIcon';
 
 interface PromptInputProps {
   projectGoal: string;
@@ -12,13 +13,35 @@ interface PromptInputProps {
   refinementPrompt: string;
   setRefinementPrompt: (prompt: string) => void;
   onRefine: () => void;
+  isError: boolean;
+  errorText: string | null;
 }
 
 const PromptInput: React.FC<PromptInputProps> = ({ 
   projectGoal, setProjectGoal, onStart, onReset, onPreview, isGenerating, isComplete,
-  refinementPrompt, setRefinementPrompt, onRefine
+  refinementPrompt, setRefinementPrompt, onRefine, isError, errorText
 }) => {
   
+  if (isError) {
+    return (
+      <div className="bg-red-900/40 border border-red-700/60 rounded-lg p-4 flex flex-col gap-3 text-center animate-fade-in">
+        <div className="flex items-center justify-center gap-2">
+          <ErrorIcon className="w-6 h-6 text-red-400" />
+          <h2 className="text-lg font-bold text-red-300">Generation Failed</h2>
+        </div>
+        <p className="text-red-300/90 text-sm">
+          {errorText || 'An unexpected error occurred during agent execution.'}
+        </p>
+        <button
+          onClick={onReset}
+          className="w-full bg-slate-600 text-white font-bold py-2 px-4 rounded-md hover:bg-slate-500 transition-colors mt-2"
+        >
+          Reset and Try Again
+        </button>
+      </div>
+    );
+  }
+
   const handlePrimaryAction = () => {
     if (isComplete) {
       onPreview();

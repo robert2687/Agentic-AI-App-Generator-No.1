@@ -1,4 +1,3 @@
-
 import React, { useRef, useEffect, useState } from 'react';
 import type { Agent, AgentName } from '../types';
 import { AgentStatus } from '../types';
@@ -140,4 +139,4 @@ const AgentDetailView: React.FC<AgentDetailViewProps> = ({ agent, recoveryContex
   );
 };
 
-export default AgentDetailView;
+export default React.memo(AgentDetailView);
