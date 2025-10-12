@@ -246,6 +246,39 @@ const mockTodoAppCodeV1 = `
             border-width: 0;
         }
 
+        /* Skeleton Loader Styles */
+        #task-list-skeleton {
+            display: flex;
+            flex-direction: column;
+            gap: var(--spacing-lg);
+        }
+        .skeleton-item {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-md);
+            background-color: var(--surface-color);
+            padding: var(--spacing-lg);
+            border-radius: var(--border-radius);
+        }
+        .skeleton-checkbox {
+            width: 1.25rem;
+            height: 1.25rem;
+            background-color: var(--surface-hover-color);
+            border-radius: 4px;
+            flex-shrink: 0;
+        }
+        .skeleton-text {
+            height: 1.25rem;
+            background-color: var(--surface-hover-color);
+            border-radius: 4px;
+        }
+        @keyframes pulse {
+            50% { opacity: 0.5; }
+        }
+        .skeleton-item {
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+
         /* Responsive Styles */
         @media (max-width: 640px) {
             body {
@@ -270,13 +303,28 @@ const mockTodoAppCodeV1 = `
             <button type="submit" class="add-btn">Add Task</button>
         </form>
         <p id="task-counter" class="task-counter"></p>
-        <ul id="task-list" aria-live="polite"></ul>
+        <div id="task-list-skeleton">
+            <div class="skeleton-item">
+                <div class="skeleton-checkbox"></div>
+                <div class="skeleton-text" style="width: 70%;"></div>
+            </div>
+            <div class="skeleton-item">
+                <div class="skeleton-checkbox"></div>
+                <div class="skeleton-text" style="width: 50%;"></div>
+            </div>
+            <div class="skeleton-item">
+                <div class="skeleton-checkbox"></div>
+                <div class="skeleton-text" style="width: 85%;"></div>
+            </div>
+        </div>
+        <ul id="task-list" aria-live="polite" style="display: none;"></ul>
     </main>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             const taskForm = document.getElementById('task-form');
             const taskInput = document.getElementById('task-input');
             const taskList = document.getElementById('task-list');
+            const taskListSkeleton = document.getElementById('task-list-skeleton');
             const taskCounter = document.getElementById('task-counter');
 
             function loadTasks() {
@@ -299,7 +347,7 @@ const mockTodoAppCodeV1 = `
                 }
             }
             
-            let tasks = loadTasks();
+            let tasks = [];
             let currentlyEditingIndex = -1;
 
             function updateTaskCounter() {
@@ -454,9 +502,19 @@ const mockTodoAppCodeV1 = `
                 currentlyEditingIndex = index;
                 renderTasks();
             }
+
+            async function initializeApp() {
+                // Simulate loading to provide user feedback
+                await new Promise(resolve => setTimeout(resolve, 350));
+                tasks = loadTasks();
+                renderTasks();
+                // Reveal the list and hide the skeleton
+                taskListSkeleton.style.display = 'none';
+                taskList.style.display = 'flex';
+            }
             
             taskForm.addEventListener('submit', addTask);
-            renderTasks();
+            initializeApp();
         });
     </script>
 </body>
@@ -709,6 +767,39 @@ const mockTodoAppCodeV2 = `
             white-space: nowrap;
             border-width: 0;
         }
+        
+        /* Skeleton Loader Styles */
+        #task-list-skeleton {
+            display: flex;
+            flex-direction: column;
+            gap: var(--spacing-lg);
+        }
+        .skeleton-item {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-md);
+            background-color: var(--surface-color);
+            padding: var(--spacing-lg);
+            border-radius: var(--border-radius);
+        }
+        .skeleton-checkbox {
+            width: 1.25rem;
+            height: 1.25rem;
+            background-color: var(--surface-hover-color);
+            border-radius: 4px;
+            flex-shrink: 0;
+        }
+        .skeleton-text {
+            height: 1.25rem;
+            background-color: var(--surface-hover-color);
+            border-radius: 4px;
+        }
+        @keyframes pulse {
+            50% { opacity: 0.5; }
+        }
+        .skeleton-item {
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
 
         /* Responsive Styles */
         @media (max-width: 640px) {
@@ -734,7 +825,21 @@ const mockTodoAppCodeV2 = `
             <button type="submit" class="add-btn">Add Task</button>
         </form>
         <p id="task-counter" class="task-counter"></p>
-        <ul id="task-list" aria-live="polite"></ul>
+        <div id="task-list-skeleton">
+            <div class="skeleton-item">
+                <div class="skeleton-checkbox"></div>
+                <div class="skeleton-text" style="width: 70%;"></div>
+            </div>
+            <div class="skeleton-item">
+                <div class="skeleton-checkbox"></div>
+                <div class="skeleton-text" style="width: 50%;"></div>
+            </div>
+            <div class="skeleton-item">
+                <div class="skeleton-checkbox"></div>
+                <div class="skeleton-text" style="width: 85%;"></div>
+            </div>
+        </div>
+        <ul id="task-list" aria-live="polite" style="display: none;"></ul>
         <div id="error-container"></div>
     </main>
     <script>
@@ -742,6 +847,7 @@ const mockTodoAppCodeV2 = `
             const taskForm = document.getElementById('task-form');
             const taskInput = document.getElementById('task-input');
             const taskList = document.getElementById('task-list');
+            const taskListSkeleton = document.getElementById('task-list-skeleton');
             const taskCounter = document.getElementById('task-counter');
             const errorContainer = document.getElementById('error-container');
             let errorTimeoutId = null;
@@ -790,7 +896,7 @@ const mockTodoAppCodeV2 = `
                 }
             }
             
-            let tasks = loadTasks();
+            let tasks = [];
             let currentlyEditingIndex = -1;
 
             function updateTaskCounter() {
@@ -953,9 +1059,19 @@ const mockTodoAppCodeV2 = `
                 currentlyEditingIndex = index;
                 renderTasks();
             }
+
+            async function initializeApp() {
+                // Simulate loading to provide user feedback
+                await new Promise(resolve => setTimeout(resolve, 350));
+                tasks = loadTasks();
+                renderTasks();
+                // Reveal the list and hide the skeleton
+                taskListSkeleton.style.display = 'none';
+                taskList.style.display = 'flex';
+            }
             
             taskForm.addEventListener('submit', addTask);
-            renderTasks();
+            initializeApp();
         });
     </script>
 </body>
@@ -1198,6 +1314,39 @@ const mockTodoAppCodeV3 = `
             white-space: nowrap;
             border-width: 0;
         }
+        
+        /* Skeleton Loader Styles */
+        #task-list-skeleton {
+            display: flex;
+            flex-direction: column;
+            gap: var(--spacing-lg);
+        }
+        .skeleton-item {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-md);
+            background-color: var(--surface-color);
+            padding: var(--spacing-lg);
+            border-radius: var(--border-radius);
+        }
+        .skeleton-checkbox {
+            width: 1.25rem;
+            height: 1.25rem;
+            background-color: var(--surface-hover-color);
+            border-radius: 4px;
+            flex-shrink: 0;
+        }
+        .skeleton-text {
+            height: 1.25rem;
+            background-color: var(--surface-hover-color);
+            border-radius: 4px;
+        }
+        @keyframes pulse {
+            50% { opacity: 0.5; }
+        }
+        .skeleton-item {
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
 
         /* Responsive Styles */
         @media (max-width: 640px) {
@@ -1226,13 +1375,28 @@ const mockTodoAppCodeV3 = `
             <p id="task-counter" class="task-counter"></p>
             <button id="clear-all-btn" class="clear-btn">Clear All Tasks</button>
         </div>
-        <ul id="task-list" aria-live="polite"></ul>
+        <div id="task-list-skeleton">
+            <div class="skeleton-item">
+                <div class="skeleton-checkbox"></div>
+                <div class="skeleton-text" style="width: 70%;"></div>
+            </div>
+            <div class="skeleton-item">
+                <div class="skeleton-checkbox"></div>
+                <div class="skeleton-text" style="width: 50%;"></div>
+            </div>
+            <div class="skeleton-item">
+                <div class="skeleton-checkbox"></div>
+                <div class="skeleton-text" style="width: 85%;"></div>
+            </div>
+        </div>
+        <ul id="task-list" aria-live="polite" style="display: none;"></ul>
     </main>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             const taskForm = document.getElementById('task-form');
             const taskInput = document.getElementById('task-input');
             const taskList = document.getElementById('task-list');
+            const taskListSkeleton = document.getElementById('task-list-skeleton');
             const clearAllBtn = document.getElementById('clear-all-btn');
             const taskCounter = document.getElementById('task-counter');
 
@@ -1256,7 +1420,7 @@ const mockTodoAppCodeV3 = `
                 }
             }
 
-            let tasks = loadTasks();
+            let tasks = [];
             let currentlyEditingIndex = -1;
 
             function updateTaskCounter() {
@@ -1431,10 +1595,20 @@ const mockTodoAppCodeV3 = `
                     renderTasks();
                 }
             }
+
+            async function initializeApp() {
+                // Simulate loading to provide user feedback
+                await new Promise(resolve => setTimeout(resolve, 350));
+                tasks = loadTasks();
+                renderTasks();
+                // Reveal the list and hide the skeleton
+                taskListSkeleton.style.display = 'none';
+                taskList.style.display = 'flex';
+            }
             
             taskForm.addEventListener('submit', addTask);
             clearAllBtn.addEventListener('click', clearAllTasks);
-            renderTasks();
+            initializeApp();
         });
     </script>
 </body>
@@ -1715,6 +1889,47 @@ const mockTodoAppCodeV4 = `
             white-space: nowrap;
             border-width: 0;
         }
+
+        /* Skeleton Loader Styles */
+        #task-list-skeleton {
+            display: flex;
+            flex-direction: column;
+            gap: var(--spacing-lg);
+        }
+        .skeleton-item {
+            display: flex;
+            align-items: flex-start;
+            gap: var(--spacing-md);
+            background-color: var(--surface-color);
+            padding: var(--spacing-lg);
+            border-radius: var(--border-radius);
+        }
+        .skeleton-checkbox {
+            width: 1.25rem;
+            height: 1.25rem;
+            background-color: var(--surface-hover-color);
+            border-radius: 4px;
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
+        .skeleton-text-container {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            gap: var(--spacing-sm);
+        }
+        .skeleton-text {
+            height: 1.25rem;
+            background-color: var(--surface-hover-color);
+            border-radius: 4px;
+        }
+        @keyframes pulse {
+            50% { opacity: 0.5; }
+        }
+        .skeleton-item {
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+
         /* Responsive Styles */
         @media (max-width: 640px) {
             body {
@@ -1739,7 +1954,29 @@ const mockTodoAppCodeV4 = `
             <p id="task-counter" class="task-counter"></p>
             <button id="clear-all-btn" class="clear-btn">Clear All Tasks</button>
         </div>
-        <ul id="task-list" aria-live="polite"></ul>
+        <div id="task-list-skeleton">
+            <div class="skeleton-item">
+                <div class="skeleton-checkbox"></div>
+                <div class="skeleton-text-container">
+                    <div class="skeleton-text" style="width: 70%;"></div>
+                    <div class="skeleton-text" style="width: 40%; height: 0.875rem;"></div>
+                </div>
+            </div>
+            <div class="skeleton-item">
+                <div class="skeleton-checkbox"></div>
+                <div class="skeleton-text-container">
+                    <div class="skeleton-text" style="width: 50%;"></div>
+                </div>
+            </div>
+            <div class="skeleton-item">
+                <div class="skeleton-checkbox"></div>
+                <div class="skeleton-text-container">
+                    <div class="skeleton-text" style="width: 85%;"></div>
+                     <div class="skeleton-text" style="width: 60%; height: 0.875rem;"></div>
+                </div>
+            </div>
+        </div>
+        <ul id="task-list" aria-live="polite" style="display: none;"></ul>
     </main>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
@@ -1747,6 +1984,7 @@ const mockTodoAppCodeV4 = `
             const taskInput = document.getElementById('task-input');
             const taskDescriptionInput = document.getElementById('task-description-input');
             const taskList = document.getElementById('task-list');
+            const taskListSkeleton = document.getElementById('task-list-skeleton');
             const clearAllBtn = document.getElementById('clear-all-btn');
             const taskCounter = document.getElementById('task-counter');
 
@@ -1771,7 +2009,7 @@ const mockTodoAppCodeV4 = `
                 }
             }
 
-            let tasks = loadTasks();
+            let tasks = [];
             let currentlyEditingIndex = -1;
 
             function updateTaskCounter() {
@@ -1957,10 +2195,20 @@ const mockTodoAppCodeV4 = `
                     renderTasks();
                 }
             }
+
+            async function initializeApp() {
+                // Simulate loading to provide user feedback
+                await new Promise(resolve => setTimeout(resolve, 350));
+                tasks = loadTasks();
+                renderTasks();
+                // Reveal the list and hide the skeleton
+                taskListSkeleton.style.display = 'none';
+                taskList.style.display = 'flex';
+            }
             
             taskForm.addEventListener('submit', addTask);
             clearAllBtn.addEventListener('click', clearAllTasks);
-            renderTasks();
+            initializeApp();
         });
     </script>
 </body>
