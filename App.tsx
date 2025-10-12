@@ -1,3 +1,4 @@
+
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { Agent, AgentStatus, AgentName } from './types';
 import { INITIAL_AGENTS } from './constants';
@@ -145,167 +146,176 @@ const App: React.FC = () => {
     setIsUnrecoverableError(false);
   }, []);
   
-  const handleStartGeneration = useCallback(async () => {
+  const handleStartGeneration = useCallback(() => {
     if (!projectGoal.trim()) {
       setError("Please enter a project goal.");
       return;
     }
 
+    // Set immediate UI feedback states
     resetWorkflow();
     setIsGenerating(true);
     setRecoveryContext(null);
 
-    let currentInput = `The user wants to build an application with the following goal: "${projectGoal}".`;
-    const newAgentsState = [...INITIAL_AGENTS];
-    const agentOutputs: Record<string, string> = {};
-    
-    // The main workflow runs up to, but not including, the Deployer agent.
-    const deployerIndex = newAgentsState.findIndex(a => a.name === 'Deployer');
-    const loopEnd = deployerIndex !== -1 ? deployerIndex : newAgentsState.length;
-    
-    for (let i = 0; i < loopEnd; i++) {
-        setCurrentAgentIndex(i);
-        setSelectedAgentIndex(i);
-        
-        const currentAgentConfig = newAgentsState[i];
-        let agentSpecificInput = currentInput;
+    // Defer the long-running agent workflow to the next event loop cycle.
+    // This allows the UI to update immediately, preventing INP issues.
+    setTimeout(async () => {
+      let currentInput = `The user wants to build an application with the following goal: "${projectGoal}".`;
+      const newAgentsState = [...INITIAL_AGENTS];
+      const agentOutputs: Record<string, string> = {};
+      
+      const deployerIndex = newAgentsState.findIndex(a => a.name === 'Deployer');
+      const loopEnd = deployerIndex !== -1 ? deployerIndex : newAgentsState.length;
+      
+      // Use a local, mutable variable for recovery context within this async flow.
+      let localRecoveryContext: {
+        failingAgentName: AgentName;
+        originalInput: string;
+        errorMessage: string;
+      } | null = null;
 
-        // --- SPECIAL INPUT HANDLING ---
-        if (recoveryContext) {
-            // If in recovery mode, the Reviewer gets a special prompt to analyze the error.
-            if (currentAgentConfig.name === 'Reviewer') {
-                agentSpecificInput = `The '${recoveryContext.failingAgentName}' agent failed to execute its task.
+      for (let i = 0; i < loopEnd; i++) {
+          setCurrentAgentIndex(i);
+          setSelectedAgentIndex(i);
+          
+          const currentAgentConfig = newAgentsState[i];
+          let agentSpecificInput = currentInput;
+
+          // --- SPECIAL INPUT HANDLING ---
+          if (localRecoveryContext) {
+              if (currentAgentConfig.name === 'Reviewer') {
+                  agentSpecificInput = `The '${localRecoveryContext.failingAgentName}' agent failed to execute its task.
 Error Message:
 ---
-${recoveryContext.errorMessage}
+${localRecoveryContext.errorMessage}
 ---
 Original Input to the failing agent:
 ---
-${recoveryContext.originalInput}
+${localRecoveryContext.originalInput}
 ---
 Your task is to analyze this error and provide a clear, concise set of instructions for the Patcher agent on how to resolve the issue. Explain what likely went wrong and what needs to be changed.`;
-            } 
-            // The Patcher gets a special prompt to apply the fix.
-            else if (currentAgentConfig.name === 'Patcher') {
-                const reviewerOutput = agentOutputs['Reviewer'];
-                if (!reviewerOutput) {
-                    const errorMessage = "Critical error: Could not find Reviewer output for error recovery.";
-                    newAgentsState[i] = { ...currentAgentConfig, status: AgentStatus.ERROR, output: errorMessage };
-                    setError(errorMessage);
-                    setIsUnrecoverableError(true);
-                    setAgents([...newAgentsState]);
-                    setIsGenerating(false);
-                    return;
-                }
-                 agentSpecificInput = `A previous agent, '${recoveryContext.failingAgentName}', encountered an error.
+              } 
+              else if (currentAgentConfig.name === 'Patcher') {
+                  const reviewerOutput = agentOutputs['Reviewer'];
+                  if (!reviewerOutput) {
+                      const errorMessage = "Critical error: Could not find Reviewer output for error recovery.";
+                      newAgentsState[i] = { ...currentAgentConfig, status: AgentStatus.ERROR, output: errorMessage };
+                      setError(errorMessage);
+                      setIsUnrecoverableError(true);
+                      setAgents([...newAgentsState]);
+                      setIsGenerating(false);
+                      return;
+                  }
+                   agentSpecificInput = `A previous agent, '${localRecoveryContext.failingAgentName}', encountered an error.
 The Reviewer agent has analyzed this failure and provided the following guidance:
 ---
 ${reviewerOutput}
 ---
-The original input that was given to the failing '${recoveryContext.failingAgentName}' agent was:
+The original input that was given to the failing '${localRecoveryContext.failingAgentName}' agent was:
 ---
-${recoveryContext.originalInput}
+${localRecoveryContext.originalInput}
 ---
 Your task is to take on the role of the failing agent, follow the Reviewer's guidance to correct the mistake, and generate the final, correct output.`;
-            }
-        } else {
-             // --- NORMAL WORKFLOW INPUT CONSTRUCTION ---
-            if (currentAgentConfig.name === 'UX/UI Designer') {
-                const plannerOutput = agentOutputs['Planner'];
-                const architectOutput = agentOutputs['Architect'];
-                agentSpecificInput = `The Planner provided these requirements and suggestions:\n\n${plannerOutput}\n\n---\n\nThe Architect designed the following system:\n\n${architectOutput}`;
-            } else if (currentAgentConfig.name === 'Coder') {
-                const architectOutput = agentOutputs['Architect'];
-                const uxUiDesignerOutput = agentOutputs['UX/UI Designer'];
-                agentSpecificInput = `The Architect designed the following system:\n\n${architectOutput}\n\n---\n\nThe UX/UI Designer provided the visual design (assets and CSS):\n\n${uxUiDesignerOutput}`;
-            } else if (currentAgentConfig.name === 'Patcher') {
-                const coderOutput = agentOutputs['Coder'];
-                const reviewerOutput = agentOutputs['Reviewer'];
+              }
+          } else {
+               // --- NORMAL WORKFLOW INPUT CONSTRUCTION ---
+              if (currentAgentConfig.name === 'UX/UI Designer') {
+                  const plannerOutput = agentOutputs['Planner'];
+                  const architectOutput = agentOutputs['Architect'];
+                  agentSpecificInput = `The Planner provided these requirements and suggestions:\n\n${plannerOutput}\n\n---\n\nThe Architect designed the following system:\n\n${architectOutput}`;
+              } else if (currentAgentConfig.name === 'Coder') {
+                  const architectOutput = agentOutputs['Architect'];
+                  const uxUiDesignerOutput = agentOutputs['UX/UI Designer'];
+                  agentSpecificInput = `The Architect designed the following system:\n\n${architectOutput}\n\n---\n\nThe UX/UI Designer provided the visual design (assets and CSS):\n\n${uxUiDesignerOutput}`;
+              } else if (currentAgentConfig.name === 'Patcher') {
+                  const coderOutput = agentOutputs['Coder'];
+                  const reviewerOutput = agentOutputs['Reviewer'];
 
-                if (!coderOutput || !reviewerOutput) {
-                    const errorMessage = "Critical error: Could not find Coder or Reviewer output for the Patcher agent.";
-                    newAgentsState[i] = { ...currentAgentConfig, status: AgentStatus.ERROR, output: errorMessage };
-                    setError(errorMessage);
-                    setIsUnrecoverableError(true);
-                    setAgents([...newAgentsState]);
-                    setIsGenerating(false);
-                    return;
-                }
-                agentSpecificInput = `The Coder agent produced the following code:\n\n${coderOutput}\n\n---\n\nThe Reviewer agent provided the following feedback and requested changes:\n\n${reviewerOutput}`;
-            }
-        }
+                  if (!coderOutput || !reviewerOutput) {
+                      const errorMessage = "Critical error: Could not find Coder or Reviewer output for the Patcher agent.";
+                      newAgentsState[i] = { ...currentAgentConfig, status: AgentStatus.ERROR, output: errorMessage };
+                      setError(errorMessage);
+                      setIsUnrecoverableError(true);
+                      setAgents([...newAgentsState]);
+                      setIsGenerating(false);
+                      return;
+                  }
+                  agentSpecificInput = `The Coder agent produced the following code:\n\n${coderOutput}\n\n---\n\nThe Reviewer agent provided the following feedback and requested changes:\n\n${reviewerOutput}`;
+              }
+          }
 
-        const agentToRun = { 
-            ...currentAgentConfig, 
-            status: AgentStatus.RUNNING, 
-            input: agentSpecificInput, 
-            output: '',
-            startedAt: Date.now(),
-        };
-        newAgentsState[i] = agentToRun;
-        setAgents([...newAgentsState]);
+          const agentToRun = { 
+              ...currentAgentConfig, 
+              status: AgentStatus.RUNNING, 
+              input: agentSpecificInput, 
+              output: '',
+              startedAt: Date.now(),
+          };
+          newAgentsState[i] = agentToRun;
+          setAgents([...newAgentsState]);
 
-        try {
-            const onChunk = (chunk: string) => {
-                setAgents(prevAgents => {
-                    const updatedAgents = [...prevAgents];
-                    const agentToUpdate = updatedAgents.find(a => a.id === agentToRun.id);
-                    if (agentToUpdate) {
-                        agentToUpdate.output = (agentToUpdate.output || '') + chunk;
-                    }
-                    return updatedAgents;
-                });
-            };
+          try {
+              const onChunk = (chunk: string) => {
+                  setAgents(prevAgents => {
+                      const updatedAgents = [...prevAgents];
+                      const agentToUpdate = updatedAgents.find(a => a.id === agentToRun.id);
+                      if (agentToUpdate) {
+                          agentToUpdate.output = (agentToUpdate.output || '') + chunk;
+                      }
+                      return updatedAgents;
+                  });
+              };
 
-            const finalOutput = await geminiService.runAgentStream(agentToRun, agentSpecificInput, onChunk);
-            
-            newAgentsState[i] = { 
-                ...agentToRun, 
-                status: AgentStatus.COMPLETED, 
-                output: finalOutput,
-                completedAt: Date.now(),
-            };
-            
-            // If the Patcher just successfully completed a recovery, clear the context.
-            if (agentToRun.name === 'Patcher' && recoveryContext) {
-                setRecoveryContext(null);
-            }
+              const finalOutput = await geminiService.runAgentStream(agentToRun, agentSpecificInput, onChunk);
+              
+              newAgentsState[i] = { 
+                  ...agentToRun, 
+                  status: AgentStatus.COMPLETED, 
+                  output: finalOutput,
+                  completedAt: Date.now(),
+              };
+              
+              if (agentToRun.name === 'Patcher' && localRecoveryContext) {
+                  localRecoveryContext = null;
+                  setRecoveryContext(null);
+              }
 
-            agentOutputs[agentToRun.name] = finalOutput;
-            currentInput = `As the ${agentToRun.name}, you produced this output:\n\n${finalOutput}`;
-        
-        } catch (e) {
-            const errorMessage = e instanceof Error ? e.message : 'An unknown error occurred';
-            const reviewerIndex = newAgentsState.findIndex(a => a.name === 'Reviewer');
-            
-            // Check if we can recover: error happened before Reviewer, and we're not already recovering.
-            if (i < reviewerIndex && !recoveryContext) {
-                setRecoveryContext({
-                    failingAgentName: agentToRun.name,
-                    originalInput: agentSpecificInput,
-                    errorMessage: errorMessage,
-                });
-                newAgentsState[i] = { ...agentToRun, status: AgentStatus.ERROR, output: errorMessage, completedAt: Date.now() };
-                // Let the loop continue to the Reviewer agent.
-                currentInput = `The previous agent, ${agentToRun.name}, failed. The Reviewer will now analyze the error.`;
-            } else {
-                // Unrecoverable error (e.g., Reviewer/Patcher failed, or recovery already tried).
-                newAgentsState[i] = { ...agentToRun, status: AgentStatus.ERROR, output: errorMessage, completedAt: Date.now() };
-                setError(`Error at ${agentToRun.name} agent: ${errorMessage}`);
-                setIsUnrecoverableError(true);
-                setAgents([...newAgentsState]);
-                setIsGenerating(false);
-                return;
-            }
-        }
-    }
-    
-    setAgents(newAgentsState);
-    setIsGenerating(false);
-    setCurrentAgentIndex(-1);
-  }, [projectGoal, recoveryContext, resetWorkflow]);
+              agentOutputs[agentToRun.name] = finalOutput;
+              currentInput = `As the ${agentToRun.name}, you produced this output:\n\n${finalOutput}`;
+          
+          } catch (e) {
+              const errorMessage = e instanceof Error ? e.message : 'An unknown error occurred';
+              const reviewerIndex = newAgentsState.findIndex(a => a.name === 'Reviewer');
+              
+              if (i < reviewerIndex && !localRecoveryContext) {
+                  const newRecoveryContext = {
+                      failingAgentName: agentToRun.name,
+                      originalInput: agentSpecificInput,
+                      errorMessage: errorMessage,
+                  };
+                  localRecoveryContext = newRecoveryContext;
+                  setRecoveryContext(newRecoveryContext);
+                  
+                  newAgentsState[i] = { ...agentToRun, status: AgentStatus.ERROR, output: errorMessage, completedAt: Date.now() };
+                  currentInput = `The previous agent, ${agentToRun.name}, failed. The Reviewer will now analyze the error.`;
+              } else {
+                  newAgentsState[i] = { ...agentToRun, status: AgentStatus.ERROR, output: errorMessage, completedAt: Date.now() };
+                  setError(`Error at ${agentToRun.name} agent: ${errorMessage}`);
+                  setIsUnrecoverableError(true);
+                  setAgents([...newAgentsState]);
+                  setIsGenerating(false);
+                  return;
+              }
+          }
+      }
+      
+      setAgents(newAgentsState);
+      setIsGenerating(false);
+      setCurrentAgentIndex(-1);
+    }, 0);
+  }, [projectGoal, resetWorkflow]);
 
-  const handleStartRefinement = useCallback(async () => {
+  const handleStartRefinement = useCallback(() => {
     if (!refinementPrompt.trim()) {
       setError("Please enter a refinement request.");
       return;
@@ -316,32 +326,34 @@ Your task is to take on the role of the failing agent, follow the Reviewer's gui
         return;
     }
 
+    // Set immediate UI feedback states
     setError(null);
-    setIsGenerating(true); // Lock the UI
+    setIsGenerating(true);
 
-    const reviewerIndex = agents.findIndex(a => a.name === 'Reviewer');
-    if (reviewerIndex === -1) {
-        setError("Configuration error: Reviewer agent not found.");
-        setIsGenerating(false);
-        return;
-    }
-    
-    // Create a new state array for this run, resetting agents from Reviewer onwards
-    let newAgentsState = agents.map((agent, index) => {
-        if (index >= reviewerIndex) {
-            return { ...INITIAL_AGENTS[index], status: AgentStatus.PENDING };
-        }
-        return agent;
-    });
+    // Defer the long-running task to the next event loop cycle.
+    setTimeout(async () => {
+      const reviewerIndex = agents.findIndex(a => a.name === 'Reviewer');
+      if (reviewerIndex === -1) {
+          setError("Configuration error: Reviewer agent not found.");
+          setIsGenerating(false);
+          return;
+      }
+      
+      let newAgentsState = agents.map((agent, index) => {
+          if (index >= reviewerIndex) {
+              return { ...INITIAL_AGENTS[index], status: AgentStatus.PENDING };
+          }
+          return agent;
+      });
 
-    const agentOutputs: Record<string, string> = {};
-    newAgentsState.forEach(agent => {
-        if (agent.status === AgentStatus.COMPLETED && agent.output) {
-            agentOutputs[agent.name] = agent.output;
-        }
-    });
+      const agentOutputs: Record<string, string> = {};
+      newAgentsState.forEach(agent => {
+          if (agent.status === AgentStatus.COMPLETED && agent.output) {
+              agentOutputs[agent.name] = agent.output;
+          }
+      });
 
-    let currentInput = `The user wants to refine the existing application.
+      let currentInput = `The user wants to refine the existing application.
 
 **User's Refinement Request:**
 "${refinementPrompt}"
@@ -353,77 +365,77 @@ ${lastPatcherOutput}
 
 Your task is to analyze the request and provide instructions for the Patcher agent.`;
 
-    // Loop from Reviewer to Deployer, stopping before deployer
-    const deployerIndex = newAgentsState.findIndex(a => a.name === 'Deployer');
-    const loopEnd = deployerIndex !== -1 ? deployerIndex : newAgentsState.length;
+      const deployerIndex = newAgentsState.findIndex(a => a.name === 'Deployer');
+      const loopEnd = deployerIndex !== -1 ? deployerIndex : newAgentsState.length;
 
-    for (let i = reviewerIndex; i < loopEnd; i++) {
-        setCurrentAgentIndex(i);
-        setSelectedAgentIndex(i);
+      for (let i = reviewerIndex; i < loopEnd; i++) {
+          setCurrentAgentIndex(i);
+          setSelectedAgentIndex(i);
 
-        const currentAgentConfig = newAgentsState[i];
-        let agentSpecificInput = currentInput;
+          const currentAgentConfig = newAgentsState[i];
+          let agentSpecificInput = currentInput;
 
-        if (currentAgentConfig.name === 'Patcher') {
-            const reviewerOutput = agentOutputs['Reviewer'];
-            if (!reviewerOutput) {
-                const errorMessage = "Critical error: Could not find Reviewer output for refinement.";
-                newAgentsState[i] = { ...currentAgentConfig, status: AgentStatus.ERROR, output: errorMessage };
-                setError(errorMessage);
-                setIsUnrecoverableError(true);
-                setAgents([...newAgentsState]);
-                setIsGenerating(false);
-                return;
-            }
-            agentSpecificInput = `The user wants to refine the application. The Reviewer agent provided the following instructions:\n\n${reviewerOutput}\n\n---\n\nThe original code to modify is:\n\n${lastPatcherOutput}`;
-        }
+          if (currentAgentConfig.name === 'Patcher') {
+              const reviewerOutput = agentOutputs['Reviewer'];
+              if (!reviewerOutput) {
+                  const errorMessage = "Critical error: Could not find Reviewer output for refinement.";
+                  newAgentsState[i] = { ...currentAgentConfig, status: AgentStatus.ERROR, output: errorMessage };
+                  setError(errorMessage);
+                  setIsUnrecoverableError(true);
+                  setAgents([...newAgentsState]);
+                  setIsGenerating(false);
+                  return;
+              }
+              agentSpecificInput = `The user wants to refine the application. The Reviewer agent provided the following instructions:\n\n${reviewerOutput}\n\n---\n\nThe original code to modify is:\n\n${lastPatcherOutput}`;
+          }
 
-        const agentToRun = { 
-            ...currentAgentConfig, 
-            status: AgentStatus.RUNNING, 
-            input: agentSpecificInput, 
-            output: '',
-            startedAt: Date.now(),
-        };
-        newAgentsState[i] = agentToRun;
-        setAgents([...newAgentsState]);
+          const agentToRun = { 
+              ...currentAgentConfig, 
+              status: AgentStatus.RUNNING, 
+              input: agentSpecificInput, 
+              output: '',
+              startedAt: Date.now(),
+          };
+          newAgentsState[i] = agentToRun;
+          setAgents([...newAgentsState]);
 
-        try {
-            const onChunk = (chunk: string) => {
-                setAgents(prevAgents => {
-                    const updatedAgents = [...prevAgents];
-                    const agentToUpdate = updatedAgents.find(a => a.id === agentToRun.id);
-                    if (agentToUpdate) {
-                        agentToUpdate.output = (agentToUpdate.output || '') + chunk;
-                    }
-                    return updatedAgents;
-                });
-            };
+          try {
+              const onChunk = (chunk: string) => {
+                  setAgents(prevAgents => {
+                      const updatedAgents = [...prevAgents];
+                      const agentToUpdate = updatedAgents.find(a => a.id === agentToRun.id);
+                      if (agentToUpdate) {
+                          agentToUpdate.output = (agentToUpdate.output || '') + chunk;
+                      }
+                      return updatedAgents;
+                  });
+              };
 
-            const finalOutput = await geminiService.runAgentStream(agentToRun, agentSpecificInput, onChunk);
-            newAgentsState[i] = { 
-                ...agentToRun, 
-                status: AgentStatus.COMPLETED, 
-                output: finalOutput,
-                completedAt: Date.now(),
-            };
-            agentOutputs[agentToRun.name] = finalOutput;
-            currentInput = `As the ${agentToRun.name}, you produced this output:\n\n${finalOutput}`;
-        } catch (e) {
-            const errorMessage = e instanceof Error ? e.message : 'An unknown error occurred';
-            newAgentsState[i] = { ...agentToRun, status: AgentStatus.ERROR, output: errorMessage, completedAt: Date.now() };
-            setError(`Error at ${agentToRun.name} agent during refinement: ${errorMessage}`);
-            setIsUnrecoverableError(true);
-            setAgents([...newAgentsState]);
-            setIsGenerating(false);
-            return;
-        }
-    }
-    
-    setAgents(newAgentsState);
-    setRefinementPrompt(''); // Clear prompt on success
-    setIsGenerating(false);
-    setCurrentAgentIndex(-1);
+              const finalOutput = await geminiService.runAgentStream(agentToRun, agentSpecificInput, onChunk);
+              newAgentsState[i] = { 
+                  ...agentToRun, 
+                  status: AgentStatus.COMPLETED, 
+                  output: finalOutput,
+                  completedAt: Date.now(),
+              };
+              agentOutputs[agentToRun.name] = finalOutput;
+              currentInput = `As the ${agentToRun.name}, you produced this output:\n\n${finalOutput}`;
+          } catch (e) {
+              const errorMessage = e instanceof Error ? e.message : 'An unknown error occurred';
+              newAgentsState[i] = { ...agentToRun, status: AgentStatus.ERROR, output: errorMessage, completedAt: Date.now() };
+              setError(`Error at ${agentToRun.name} agent during refinement: ${errorMessage}`);
+              setIsUnrecoverableError(true);
+              setAgents([...newAgentsState]);
+              setIsGenerating(false);
+              return;
+          }
+      }
+      
+      setAgents(newAgentsState);
+      setRefinementPrompt(''); // Clear prompt on success
+      setIsGenerating(false);
+      setCurrentAgentIndex(-1);
+    }, 0);
   }, [agents, refinementPrompt]);
 
   const handleDeploy = useCallback(async () => {
@@ -596,7 +608,7 @@ Your task is to analyze the request and provide instructions for the Patcher age
         <DeploymentModal agent={deployerAgent} onClose={() => setIsDeploymentModalOpen(false)} />
       )}
 
-      {error && (
+      {error && !isUnrecoverableError && (
         <div className="fixed bottom-4 right-4 bg-red-800 text-white p-4 rounded-lg shadow-lg z-50">
           <p className="font-bold">Error</p>
           <p>{error}</p>

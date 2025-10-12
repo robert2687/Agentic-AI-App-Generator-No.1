@@ -1,4 +1,3 @@
-
 import { GenerateContentResponse } from "@google/genai";
 import type { Agent } from '../types';
 import { ai, withRetry } from './geminiClient';
@@ -250,7 +249,7 @@ const mockTodoAppCodeV1 = `
     <main>
         <h1>Task Manager</h1>
         <form id="task-form">
-            <input type="text" id="task-input" placeholder="Add a new task..." autocomplete="off">
+            <input type="text" id="task-input" placeholder="Add a new task..." autocomplete="off" aria-label="Add a new task">
             <button type="submit" class="add-btn">Add Task</button>
         </form>
         <p id="task-counter" class="task-counter"></p>
@@ -290,7 +289,6 @@ const mockTodoAppCodeV1 = `
                 const totalTasks = tasks.length;
                 const completedTasks = tasks.filter(task => task.done).length;
                 if (totalTasks > 0) {
-                    // FIX: Escape template literal to prevent evaluation in the outer scope.
                     taskCounter.textContent = \`\${completedTasks} of \${totalTasks} tasks complete\`;
                 } else {
                     taskCounter.textContent = 'No tasks yet.';
@@ -309,6 +307,7 @@ const mockTodoAppCodeV1 = `
                     const checkbox = document.createElement('input');
                     checkbox.type = 'checkbox';
                     checkbox.checked = task.done;
+                    checkbox.setAttribute('aria-label', \`Mark task as complete: "\${task.text}"\`);
                     checkbox.addEventListener('change', () => toggleDone(index));
 
                     li.appendChild(checkbox);
@@ -357,11 +356,13 @@ const mockTodoAppCodeV1 = `
                         const editBtn = document.createElement('button');
                         editBtn.textContent = 'Edit';
                         editBtn.className = 'edit-btn';
+                        editBtn.setAttribute('aria-label', \`Edit task: "\${task.text}"\`);
                         editBtn.addEventListener('click', () => editTask(index));
 
                         const deleteBtn = document.createElement('button');
                         deleteBtn.textContent = 'Delete';
                         deleteBtn.className = 'delete-btn';
+                        deleteBtn.setAttribute('aria-label', \`Delete task: "\${task.text}"\`);
                         deleteBtn.addEventListener('click', () => deleteTask(index));
 
                         actions.appendChild(editBtn);
@@ -405,7 +406,6 @@ const mockTodoAppCodeV1 = `
 
             function deleteTask(index) {
                 const taskText = tasks[index].text;
-                // FIX: Escape template literal to prevent evaluation in the outer scope.
                 if (!confirm(\`Are you sure you want to delete the task: "\${taskText}"?\`)) {
                     return;
                 }
@@ -1982,18 +1982,14 @@ Generating favicon...
 `,
   Coder: mockTodoAppCodeV1,
   Reviewer: `
-The code is well-structured and functional. It meets all core requirements.
+The code is well-structured and functional, with good accessibility foundations.
 
 **Suggested Improvements:**
 
 1.  **Error Handling:** The current implementation uses \`alert()\` for localStorage errors, which is disruptive. Replace these with a non-blocking UI notification. Create a dedicated error display element that can be dynamically populated and shown for a few seconds. The messages should be user-friendly, explaining that tasks could not be saved or loaded and suggesting possible reasons like private browsing mode or full storage.
-2.  **Editing Experience:** When a user edits a task, they should be able to press the 'Escape' key to cancel their changes. Add a keydown event listener to the edit input that listens for 'Escape', discards the edit, and re-renders the task. The auto-focus on edit is already correctly implemented.
-3.  **Accessibility:**
-    *   The main task input field is missing a proper label. Add an \`aria-label="Add a new task"\` to the \`<input>\` element for screen reader support.
-    *   The "Edit" and "Delete" buttons are not descriptive. Add an \`aria-label\` to each that includes the task's text, for example: \`aria-label="Delete task: 'Buy milk'"\`.
-    *   The task completion checkbox is also missing a descriptive label. Add an \`aria-label\` that includes the task text, for example: \`aria-label="Mark task as complete: 'Buy milk'"\`.
+2.  **Editing Experience:** When a user edits a task, they should be able to press the 'Escape' key to cancel their changes. Add a keydown event listener to the edit input that listens for 'Escape', discards the edit, and re-renders the task.
 
-Please apply these fixes.
+Please apply these changes to enhance the user experience.
 `,
   Patcher: mockTodoAppCodeV2,
   Deployer: `
