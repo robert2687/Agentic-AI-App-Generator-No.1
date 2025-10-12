@@ -1,3 +1,4 @@
+
 import { GenerateContentResponse } from "@google/genai";
 import type { Agent } from '../types';
 import { ai, withRetry } from './geminiClient';
@@ -182,9 +183,12 @@ const mockTodoAppCodeV1 = `
         .task-content {
             flex-grow: 1;
             word-break: break-word;
+            transition: opacity 0.3s ease-out, text-decoration-color 0.3s ease-out;
+            text-decoration: line-through;
+            text-decoration-color: transparent;
         }
         .task-content.done {
-            text-decoration: line-through;
+            text-decoration-color: var(--text-color);
             opacity: 0.6;
         }
         .task-content.edit-mode {
@@ -615,9 +619,12 @@ const mockTodoAppCodeV2 = `
         .task-content {
             flex-grow: 1;
             word-break: break-word;
+            transition: opacity 0.3s ease-out, text-decoration-color 0.3s ease-out;
+            text-decoration: line-through;
+            text-decoration-color: transparent;
         }
         .task-content.done {
-            text-decoration: line-through;
+            text-decoration-color: var(--text-color);
             opacity: 0.6;
         }
         .task-content.edit-mode {
@@ -1129,9 +1136,12 @@ const mockTodoAppCodeV3 = `
         .task-content {
             flex-grow: 1;
             word-break: break-word;
+            transition: opacity 0.3s ease-out, text-decoration-color 0.3s ease-out;
+            text-decoration: line-through;
+            text-decoration-color: transparent;
         }
         .task-content.done {
-            text-decoration: line-through;
+            text-decoration-color: var(--text-color);
             opacity: 0.6;
         }
         .task-content.edit-mode {
@@ -1616,9 +1626,12 @@ const mockTodoAppCodeV4 = `
         }
         .task-title {
             font-weight: 500;
+            transition: opacity 0.3s ease-out, text-decoration-color 0.3s ease-out;
+            text-decoration: line-through;
+            text-decoration-color: transparent;
         }
         .task-title.done {
-            text-decoration: line-through;
+            text-decoration-color: var(--text-color);
             opacity: 0.6;
         }
         .task-description {
@@ -1626,6 +1639,7 @@ const mockTodoAppCodeV4 = `
             color: var(--text-color-secondary);
             margin-top: var(--spacing-sm);
             white-space: pre-wrap; /* Preserve line breaks */
+            transition: opacity 0.3s ease-out;
         }
         .task-description.done {
             opacity: 0.6;
