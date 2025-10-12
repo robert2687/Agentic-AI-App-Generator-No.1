@@ -230,6 +230,18 @@ const mockTodoAppCodeV1 = `
             color: white;
         }
 
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border-width: 0;
+        }
+
         /* Responsive Styles */
         @media (max-width: 640px) {
             body {
@@ -249,7 +261,8 @@ const mockTodoAppCodeV1 = `
     <main>
         <h1>Task Manager</h1>
         <form id="task-form">
-            <input type="text" id="task-input" placeholder="Add a new task..." autocomplete="off" aria-label="Add a new task">
+            <label for="task-input" class="sr-only">Add a new task</label>
+            <input type="text" id="task-input" placeholder="Add a new task..." autocomplete="off">
             <button type="submit" class="add-btn">Add Task</button>
         </form>
         <p id="task-counter" class="task-counter"></p>
@@ -678,6 +691,18 @@ const mockTodoAppCodeV2 = `
             transform: translateY(0);
         }
 
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border-width: 0;
+        }
+
         /* Responsive Styles */
         @media (max-width: 640px) {
             body {
@@ -697,7 +722,8 @@ const mockTodoAppCodeV2 = `
     <main>
         <h1>Task Manager</h1>
         <form id="task-form">
-            <input type="text" id="task-input" placeholder="Add a new task..." autocomplete="off" aria-label="Add a new task">
+            <label for="task-input" class="sr-only">Add a new task</label>
+            <input type="text" id="task-input" placeholder="Add a new task..." autocomplete="off">
             <button type="submit" class="add-btn">Add Task</button>
         </form>
         <p id="task-counter" class="task-counter"></p>
@@ -1151,6 +1177,18 @@ const mockTodoAppCodeV3 = `
             color: white;
         }
 
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border-width: 0;
+        }
+
         /* Responsive Styles */
         @media (max-width: 640px) {
             body {
@@ -1170,7 +1208,8 @@ const mockTodoAppCodeV3 = `
     <main>
         <h1>Task Manager</h1>
         <form id="task-form">
-            <input type="text" id="task-input" placeholder="Add a new task..." autocomplete="off" aria-label="Add a new task">
+            <label for="task-input" class="sr-only">Add a new task</label>
+            <input type="text" id="task-input" placeholder="Add a new task..." autocomplete="off">
             <button type="submit" class="add-btn">Add Task</button>
         </form>
         <div class="controls">
@@ -1651,6 +1690,17 @@ const mockTodoAppCodeV4 = `
             background-color: var(--delete-color);
             color: white;
         }
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border-width: 0;
+        }
         /* Responsive Styles */
         @media (max-width: 640px) {
             body {
@@ -1664,10 +1714,12 @@ const mockTodoAppCodeV4 = `
         <h1>Task Manager</h1>
         <form id="task-form">
              <div class="form-row">
-                <input type="text" id="task-input" placeholder="Task title..." autocomplete="off" aria-label="Add a new task title" required>
+                <label for="task-input" class="sr-only">Add a new task title</label>
+                <input type="text" id="task-input" placeholder="Task title..." autocomplete="off" required>
                 <button type="submit" class="add-btn">Add Task</button>
             </div>
-            <textarea id="task-description-input" placeholder="Description (optional)..." aria-label="Add a task description"></textarea>
+            <label for="task-description-input" class="sr-only">Add a task description</label>
+            <textarea id="task-description-input" placeholder="Description (optional)..."></textarea>
         </form>
         <div class="controls">
             <p id="task-counter" class="task-counter"></p>
