@@ -1,6 +1,5 @@
-
 import React from 'react';
-import ReactDiffViewer from 'react-diff-viewer';
+import { diffLines, type Change } from 'diff';
 
 interface DiffViewerProps {
   oldValue: string;
@@ -10,53 +9,40 @@ interface DiffViewerProps {
 export const DiffViewer: React.FC<DiffViewerProps> = ({ oldValue, newValue }) => {
   const oldText = oldValue ?? '';
   const newText = newValue ?? '';
-  
+
   if (oldText === newText) {
     return null;
   }
 
+  const changes: Change[] = diffLines(oldText, newText);
+
   return (
     <div className="mt-4 text-sm rounded-lg overflow-hidden border border-slate-700/70">
-      <h4 className="text-xs font-bold bg-slate-800/80 px-3 py-1.5 text-slate-400 border-b border-slate-700/70">Code Difference from Previous Step</h4>
-      <ReactDiffViewer
-        oldValue={oldText}
-        newValue={newText}
-        splitView={false}
-        showDiffOnly={true}
-        styles={{
-          variables: {
-            dark: {
-              color: '#e2e8f0',
-              background: '#0f172a', // slate-950
-              emptyBackground: '#1e293b', // slate-800
-              addedBackground: 'rgba(16, 185, 129, 0.15)', // emerald-500
-              addedColor: '#e2e8f0',
-              removedBackground: 'rgba(244, 63, 94, 0.15)', // rose-500
-              removedColor: '#e2e8f0',
-              wordAddedBackground: 'rgba(16, 185, 129, 0.3)',
-              wordRemovedBackground: 'rgba(244, 63, 94, 0.3)',
-            },
-          },
-          diffContainer: {
-            backgroundColor: '#0f172a',
-            border: 'none',
-          },
-          gutter: {
-            backgroundColor: '#1e293b',
-            minWidth: '50px',
-            padding: '0 10px',
-            '&:hover': {
-                backgroundColor: '#334155',
-            }
-          },
-          line: {
-              lineHeight: '1.6em',
-              fontFamily: 'monospace',
-          }
-        }}
-        useDarkTheme={true}
-        compareMethod="diffWords"
-      />
+      <h4 className="text-xs font-bold bg-slate-800/80 px-3 py-1.5 text-slate-400 border-b border-slate-700/70 font-sans">
+        Code Difference from Previous Step
+      </h4>
+      <div className="font-mono text-sm bg-slate-950 p-2">
+        {changes.map((part, partIndex) => {
+          const style = {
+            background: part.added
+              ? 'rgba(16, 185, 129, 0.15)'
+              : part.removed
+              ? 'rgba(244, 63, 94, 0.15)'
+              : 'transparent',
+          };
+          const prefix = part.added ? '+' : part.removed ? '-' : ' ';
+          // `diffLines` includes the newline in `part.value`, so we can split by it.
+          // We remove the last empty string if the value ends with a newline.
+          const lines = part.value.endsWith('\n') ? part.value.slice(0, -1).split('\n') : part.value.split('\n');
+
+          return lines.map((line, lineIndex) => (
+            <div key={`${partIndex}-${lineIndex}`} style={style} className="flex">
+              <span className="w-8 text-center select-none opacity-50 flex-shrink-0">{prefix}</span>
+              <span className="whitespace-pre-wrap flex-grow">{line}</span>
+            </div>
+          ));
+        })}
+      </div>
     </div>
   );
 };
