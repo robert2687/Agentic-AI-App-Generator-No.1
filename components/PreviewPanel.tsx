@@ -15,6 +15,7 @@ import CodeIcon from './icons/CodeIcon';
 import LogIcon from './icons/LogIcon';
 import AuditInspector from './audit/AuditInspector';
 import DownloadIcon from './icons/DownloadIcon';
+import { logger } from '../services/loggerInstance';
 
 
 interface PreviewPanelProps {
@@ -57,9 +58,9 @@ const PreviewPanel: React.FC<PreviewPanelProps> = ({
   };
   
   const handleExportLogs = () => {
-      if (!auditLog || auditLog.length === 0) return;
-      
-      const jsonString = JSON.stringify(auditLog, null, 2);
+      const jsonString = logger.exportJSON();
+      if (!jsonString || jsonString === '[]') return;
+
       const blob = new Blob([jsonString], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');

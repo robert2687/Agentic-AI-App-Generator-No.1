@@ -1,12 +1,11 @@
 
 import { AgentName, AuditLogEntry, AuditLogEntryType } from '../../../types';
 
-export class AuditLogger {
-  private logUpdater: (entry: AuditLogEntry) => void;
+export class AuditLogger extends EventTarget {
   private logs: AuditLogEntry[] = [];
 
-  constructor(logUpdater: (entry: AuditLogEntry) => void) {
-    this.logUpdater = logUpdater;
+  constructor() {
+    super();
   }
 
   private log(
@@ -23,7 +22,7 @@ export class AuditLogger {
       ...details,
     };
     this.logs.push(entry);
-    this.logUpdater(entry);
+    this.dispatchEvent(new CustomEvent('log', { detail: entry }));
   }
 
   info(agentName: AgentName | 'Orchestrator', message: string) {
@@ -35,8 +34,9 @@ export class AuditLogger {
   }
 
   chunk(agentName: AgentName, message:string) {
-    // For performance, we don't log every chunk to the main audit log UI,
-    // but this hook is available for more detailed debugging if needed.
+    // For performance, we don't dispatch events for every chunk,
+    // as it could flood the React state updates. This hook is available
+    // for more detailed debugging if needed via console logs.
     // console.log(`[CHUNK: ${agentName}]: ${message}`);
   }
 
@@ -46,6 +46,14 @@ export class AuditLogger {
 
   error(agentName: AgentName | 'Orchestrator', message: string, details: Partial<Omit<AuditLogEntry, 'timestamp' | 'agentName' | 'type' | 'message'>> = {}) {
     this.log(agentName, 'error', message, details);
+  }
+
+  /**
+   * Returns a copy of all recorded log entries.
+   * @returns An array of AuditLogEntry objects.
+   */
+  public getLogs(): AuditLogEntry[] {
+    return [...this.logs];
   }
 
   /**

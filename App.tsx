@@ -11,6 +11,7 @@ import PreviewPanel from './components/PreviewPanel';
 import PreviewModal from './components/PreviewModal';
 import DeploymentModal from './components/DeploymentModal';
 import { Orchestrator } from './services/orchestrator';
+import { logger } from './services/loggerInstance';
 
 const App: React.FC = () => {
   const [agents, setAgents] = useState<Agent[]>(INITIAL_AGENTS);
@@ -40,10 +41,6 @@ const App: React.FC = () => {
       )
     );
   }, []);
-
-  const handleLogEntry = useCallback((entry: AuditLogEntry) => {
-    setAuditLog(prevLog => [...prevLog, entry]);
-  }, []);
   
   const handleFinalCode = useCallback((code: string) => {
     setFinalCode(code);
@@ -67,16 +64,28 @@ const App: React.FC = () => {
   }, [handleAgentUpdate]);
 
   useEffect(() => {
+    // Subscribe to the singleton logger instance
+    const handleLog = (event: Event) => {
+      const entry = (event as CustomEvent<AuditLogEntry>).detail;
+      setAuditLog(prevLog => [...prevLog, entry]);
+    };
+    logger.addEventListener('log', handleLog);
+
+    return () => {
+      logger.removeEventListener('log', handleLog);
+    };
+  }, []);
+
+  useEffect(() => {
     if (!orchestratorRef.current) {
       orchestratorRef.current = new Orchestrator({
         onAgentUpdate: handleAgentUpdate,
-        onLogEntry: handleLogEntry,
         onFinalCode: handleFinalCode,
         onWorkflowComplete: handleWorkflowComplete,
         onWorkflowError: handleWorkflowError,
       });
     }
-  }, [handleAgentUpdate, handleLogEntry, handleFinalCode, handleWorkflowComplete, handleWorkflowError]);
+  }, [handleAgentUpdate, handleFinalCode, handleWorkflowComplete, handleWorkflowError]);
 
   const resetState = useCallback(() => {
     setAgents(INITIAL_AGENTS);
@@ -115,7 +124,9 @@ const App: React.FC = () => {
       }
       return a;
     }));
-    setAuditLog(prev => [...prev, { timestamp: Date.now(), agentName: 'Orchestrator', type: 'info', message: `Starting refinement cycle with prompt: "${refinementPrompt}"` }]);
+    // Note: The logger is now a singleton, so info logs are sent from the source (orchestrator) directly.
+    // We can remove this manual log entry here for better separation of concerns.
+    // setAuditLog(prev => [...prev, { timestamp: Date.now(), agentName: 'Orchestrator', type: 'info', message: `Starting refinement cycle with prompt: "${refinementPrompt}"` }]);
     setSelectedAgentId(5); // Focus on Reviewer
 
     await orchestratorRef.current.runRefinement(refinementPrompt, finalCode);
