@@ -2,13 +2,14 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import UserIcon from './icons/UserIcon';
 import SpinnerIcon from './icons/SpinnerIcon';
+import PremiumIcon from './icons/PremiumIcon';
 
 interface HeaderProps {
     onSignIn: () => void;
 }
 
 const Header: React.FC<HeaderProps> = ({ onSignIn }) => {
-    const { user, signOut, loading } = useAuth();
+    const { user, signOut, loading, isPremium } = useAuth();
     const [menuOpen, setMenuOpen] = useState(false);
     const menuRef = useRef<HTMLDivElement>(null);
 
@@ -49,6 +50,11 @@ const Header: React.FC<HeaderProps> = ({ onSignIn }) => {
                             >
                                 <UserIcon className="w-5 h-5" />
                                 <span className="text-sm hidden md:inline">{user.email}</span>
+                                {isPremium && (
+                                    <span title="Premium Member" className="text-amber-400">
+                                        <PremiumIcon className="w-4 h-4" />
+                                    </span>
+                                )}
                             </button>
                             {menuOpen && (
                                 <div className="absolute right-0 mt-2 w-48 bg-surface-dark border border-border-dark rounded-md shadow-lg z-20 p-2">

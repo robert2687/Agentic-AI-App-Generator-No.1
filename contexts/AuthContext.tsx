@@ -7,6 +7,7 @@ interface AuthContextType {
   user: User | null;
   signOut: () => Promise<void>;
   loading: boolean;
+  isPremium: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -15,6 +16,33 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isPremium, setIsPremium] = useState<boolean>(false);
+
+  const checkPremiumStatus = async () => {
+    if (!supabase) {
+      setIsPremium(false);
+      return false;
+    }
+    try {
+      const { data, error } = await supabase
+        .from('entitlements')
+        .select('status')
+        .eq('product_id', 'premium_unlock')
+        .eq('status', 'active')
+        .limit(1);
+
+      if (error) throw error;
+      
+      const premiumStatus = (data?.length ?? 0) > 0;
+      setIsPremium(premiumStatus);
+      return premiumStatus;
+    } catch (error) {
+      console.error('Error checking premium status:', error);
+      setIsPremium(false);
+      return false;
+    }
+  };
+
 
   useEffect(() => {
     if (!supabase) {
@@ -27,6 +55,11 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         const { data: { session } } = await supabase.auth.getSession();
         setSession(session);
         setUser(session?.user ?? null);
+        if (session?.user) {
+          await checkPremiumStatus();
+        } else {
+          setIsPremium(false);
+        }
       } catch (error) {
         console.error("Error fetching session:", error);
       } finally {
@@ -36,9 +69,14 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     getSession();
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
       setSession(session);
       setUser(session?.user ?? null);
+      if (session?.user) {
+        await checkPremiumStatus();
+      } else {
+        setIsPremium(false);
+      }
     });
 
     return () => {
@@ -51,6 +89,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       const { error } = await supabase.auth.signOut();
       if (error) console.error('Error signing out:', error);
     }
+    // State will be cleared by onAuthStateChange listener
   };
 
   const value = {
@@ -58,6 +97,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     user,
     signOut,
     loading,
+    isPremium,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

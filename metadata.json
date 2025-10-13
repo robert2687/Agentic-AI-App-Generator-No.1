@@ -1,5 +1,9 @@
 {
   "name": "Copy of Agentic AI App Generator No.1",
   "description": "A web application that simulates a team of specialized AI agents collaborating to generate a complete, production-ready application based on a user's prompt. The agents work sequentially, from planning to deployment.",
-  "requestFramePermissions": []
+  "requestFramePermissions": [],
+  "env": {
+    "SUPABASE_URL": "https://buyggnfpbgitgibebilf.supabase.co",
+    "SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ1eWdnbmZwYmdpdGdpYmViaWxmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjAzMTE3MTcsImV4cCI6MjA3NTg4NzcxN30.e9VIivPfr7KchZr1f7GOFyzny_BIFfveuUEmFWjAAY0"
+  }
 }

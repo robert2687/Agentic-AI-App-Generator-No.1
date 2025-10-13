@@ -2,6 +2,7 @@ import React from 'react';
 import EyeIcon from './icons/EyeIcon';
 import ErrorIcon from './icons/ErrorIcon';
 import UserIcon from './icons/UserIcon';
+import PremiumIcon from './icons/PremiumIcon';
 
 interface PromptInputProps {
   projectGoal: string;
@@ -17,11 +18,12 @@ interface PromptInputProps {
   isError: boolean;
   errorText: string | null;
   disabled?: boolean;
+  isPremium: boolean;
 }
 
 const PromptInput: React.FC<PromptInputProps> = ({ 
   projectGoal, setProjectGoal, onStart, onReset, onPreview, isGenerating, isComplete,
-  refinementPrompt, setRefinementPrompt, onRefine, isError, errorText, disabled = false
+  refinementPrompt, setRefinementPrompt, onRefine, isError, errorText, disabled = false, isPremium
 }) => {
   
   if (isError) {
@@ -53,6 +55,23 @@ const PromptInput: React.FC<PromptInputProps> = ({
                 Please sign in to start generating applications. Your projects will be saved to your account.
             </p>
         </div>
+    );
+  }
+  
+  if (!isPremium) {
+    return (
+      <div className="bg-slate-800/50 rounded-lg p-6 flex flex-col gap-3 text-center items-center border-2 border-amber-500/30">
+        <PremiumIcon className="w-10 h-10 text-amber-400" />
+        <h2 className="text-xl font-bold text-amber-300">Upgrade to Premium</h2>
+        <p className="text-slate-400/90 text-sm max-w-md mt-1">
+            Unlock the full power of the AI Agent team. Upgrade now to generate, refine, and deploy unlimited applications with priority access.
+        </p>
+        <button
+          className="mt-4 bg-amber-500 text-slate-900 font-bold py-2 px-6 rounded-md hover:bg-amber-400 transition-colors"
+        >
+            Go Premium
+        </button>
+      </div>
     );
   }
 

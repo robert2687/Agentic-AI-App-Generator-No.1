@@ -37,7 +37,7 @@ const AppContent: React.FC = () => {
   const [mobileView, setMobileView] = useState<'home' | 'audit' | 'preview'>('home');
 
   const orchestratorRef = useRef<Orchestrator | null>(null);
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, isPremium } = useAuth();
 
   const handleAgentUpdate = useCallback((updatedAgent: Agent) => {
     setAgents(prevAgents =>
@@ -172,7 +172,7 @@ const AppContent: React.FC = () => {
     ? 'grid-cols-1'
     : 'grid-cols-1 lg:grid-cols-[minmax(0,_2fr)_minmax(0,_3fr)]';
     
-  const isInteractionDisabled = !user && !authLoading;
+  const isInteractionDisabled = authLoading || !user;
 
   return (
     <div className="bg-slate-900 text-white min-h-screen font-sans pb-20 lg:pb-0">
@@ -196,6 +196,7 @@ const AppContent: React.FC = () => {
               isError={isError}
               errorText={errorText}
               disabled={isInteractionDisabled}
+              isPremium={isPremium}
             />
             <div className="bg-slate-800/50 rounded-lg p-4 flex flex-col gap-4">
               <h2 className="text-lg font-bold text-sky-400">Agent Workflow</h2>
@@ -231,6 +232,7 @@ const AppContent: React.FC = () => {
               deployerAgent={deployerAgent}
               auditLog={auditLog}
               disabled={isInteractionDisabled}
+              isPremium={isPremium}
             />
           </div>
         </div>
@@ -253,6 +255,7 @@ const AppContent: React.FC = () => {
                 isError={isError}
                 errorText={errorText}
                 disabled={isInteractionDisabled}
+                isPremium={isPremium}
               />
               <div className="bg-slate-800/50 rounded-lg p-4 flex flex-col gap-4">
                 <h2 className="text-lg font-bold text-sky-400">Agent Workflow</h2>
@@ -290,6 +293,7 @@ const AppContent: React.FC = () => {
                   deployerAgent={deployerAgent}
                   auditLog={auditLog}
                   disabled={isInteractionDisabled}
+                  isPremium={isPremium}
                 />
             </div>
           )}

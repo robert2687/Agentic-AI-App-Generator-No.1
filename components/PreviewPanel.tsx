@@ -16,6 +16,7 @@ import AuditInspector from './AuditInspector';
 import DownloadIcon from './icons/DownloadIcon';
 import { logger } from '../services/loggerInstance';
 import MoreVerticalIcon from './icons/MoreVerticalIcon';
+import PremiumIcon from './icons/PremiumIcon';
 
 interface PreviewPanelProps {
   code: string | null;
@@ -29,11 +30,12 @@ interface PreviewPanelProps {
   deployerAgent?: Agent;
   auditLog: AuditLogEntry[];
   disabled?: boolean;
+  isPremium: boolean;
 }
 
 const PreviewPanel: React.FC<PreviewPanelProps> = ({ 
   code, isZenMode, onToggleZenMode, isGenerating, currentAgent, totalAgents,
-  isWorkflowComplete, onDeploy, deployerAgent, auditLog, disabled = false
+  isWorkflowComplete, onDeploy, deployerAgent, auditLog, disabled = false, isPremium
 }) => {
   const [activeTab, setActiveTab] = useState<'preview' | 'code' | 'logs'>('preview');
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -98,7 +100,7 @@ const PreviewPanel: React.FC<PreviewPanelProps> = ({
     <>
       <button
         onClick={onDeploy}
-        disabled={!isWorkflowComplete || isDeployerRunning || isGenerating || disabled}
+        disabled={!isWorkflowComplete || isDeployerRunning || isGenerating || disabled || !isPremium}
         className="flex items-center gap-2 bg-accent-indigo text-white font-bold py-1.5 px-3 rounded-md text-sm hover:bg-accent-indigo-hover disabled:bg-surface-highlight-dark disabled:text-text-tertiary-dark disabled:cursor-not-allowed transition-colors w-full lg:w-auto"
         aria-label={isWorkflowComplete ? "Deploy application" : "Complete generation to enable deployment"}
       >
@@ -146,6 +148,26 @@ const PreviewPanel: React.FC<PreviewPanelProps> = ({
     }
     return `${baseClasses} text-text-secondary-dark hover:bg-surface-highlight-dark`;
   };
+
+  let overlayContent: React.ReactNode | null = null;
+  if (disabled) {
+      overlayContent = (
+          <p className="text-text-secondary-dark text-center">Please sign in to view the application preview.</p>
+      );
+  } else if (!isPremium) {
+      overlayContent = (
+          <div className="text-center flex flex-col items-center gap-3">
+              <PremiumIcon className="w-10 h-10 text-amber-400" />
+              <h3 className="text-xl font-bold text-amber-300">Premium Feature</h3>
+              <p className="text-slate-400/90 text-sm max-w-sm">
+                  Application generation and preview are available for premium members.
+              </p>
+              <button className="mt-2 bg-amber-500 text-slate-900 font-bold py-2 px-5 rounded-md hover:bg-amber-400 transition-colors">
+                  Upgrade Now
+              </button>
+          </div>
+      );
+  }
 
   return (
     <div className="flex flex-col h-full bg-background-dark rounded-lg">
@@ -233,29 +255,31 @@ const PreviewPanel: React.FC<PreviewPanelProps> = ({
             </div>
         )}
 
-        {disabled && (
-            <div className="absolute inset-0 bg-background-dark/80 backdrop-blur-sm flex flex-col items-center justify-center z-10">
-                <p className="text-text-secondary-dark">Please sign in to view the application preview.</p>
-            </div>
+        {overlayContent && (
+          <div className="absolute inset-0 bg-background-dark/90 backdrop-blur-sm flex flex-col items-center justify-center z-10 p-4">
+            {overlayContent}
+          </div>
         )}
-
-        {activeTab === 'preview' && (
-          <iframe
-            srcDoc={code || '<!DOCTYPE html><html><head></head><body style="display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; background-color: #fff; font-family: sans-serif; color: #666;">Waiting for Coder agent...</body></html>'}
-            title="Application Preview"
-            className={`w-full h-full border-0 bg-white ${disabled ? 'opacity-0' : ''}`}
-            sandbox="allow-scripts allow-forms allow-modals"
-          />
-        )}
-        {activeTab === 'code' && <CodePreviewPanel code={code} />}
-        {activeTab === 'logs' && <AuditInspector logs={auditLog} />}
+        
+        <div className={overlayContent ? 'opacity-0' : ''}>
+          {activeTab === 'preview' && (
+            <iframe
+              srcDoc={code || '<!DOCTYPE html><html><head></head><body style="display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; background-color: #fff; font-family: sans-serif; color: #666;">Waiting for Coder agent...</body></html>'}
+              title="Application Preview"
+              className={`w-full h-full border-0 bg-white`}
+              sandbox="allow-scripts allow-forms allow-modals"
+            />
+          )}
+          {activeTab === 'code' && <CodePreviewPanel code={code} />}
+          {activeTab === 'logs' && <AuditInspector logs={auditLog} />}
+        </div>
       </div>
       
       {/* Mobile Floating Action Button for Deploy */}
       {isWorkflowComplete && activeTab === 'preview' && (
         <button
           onClick={onDeploy}
-          disabled={isDeployerRunning || isGenerating || disabled}
+          disabled={isDeployerRunning || isGenerating || disabled || !isPremium}
           className="lg:hidden fixed bottom-24 right-6 bg-accent-indigo text-white rounded-full p-4 shadow-lg hover:bg-accent-indigo-hover disabled:bg-surface-highlight-dark disabled:text-text-tertiary-dark disabled:cursor-not-allowed transition-all transform hover:scale-110 active:scale-100 z-30"
           aria-label="Deploy application"
         >
