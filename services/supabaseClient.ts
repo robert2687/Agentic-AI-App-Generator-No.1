@@ -1,7 +1,8 @@
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = process.env.SUPABASE_URL;
-const supabaseAnonKey = process.env.SUPABASE_ANON_KEY;
+// Hardcode public Supabase values to fix an environment variable loading issue.
+const supabaseUrl = "https://buyggnfpbgitgibebilf.supabase.co";
+const supabaseAnonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ1eWdnbmZwYmdpdGdpYmViaWxmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjAzMTE3MTcsImV4cCI6MjA3NTg4NzcxN30.e9VIivPfr7KchZr1f7GOFyzny_BIFfveuUEmFWjAAY0";
 
 if (!supabaseUrl || !supabaseAnonKey) {
   console.warn("Supabase environment variables (SUPABASE_URL, SUPABASE_ANON_KEY) not set. Authentication will be disabled.");

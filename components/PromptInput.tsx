@@ -39,11 +39,18 @@ const PromptInput: React.FC<PromptInputProps> = ({
     }
     setIsTesting(true);
     try {
-        // Querying a non-existent table is a valid way to test DB connection.
-        // Supabase will return error 42P01 if the connection is good but the table is missing.
+        // A "table not found" error indicates a successful connection to the database itself,
+        // which is what we want to test. Supabase may return error code 42P01 or a specific message.
         const { error } = await supabase.from('profiles').select('*').limit(1);
-        if (error && error.code !== '42P01') {
-            throw error;
+        if (error) {
+            const isConnectionSuccessError = 
+                error.code === '42P01' || 
+                (error.message && error.message.includes('Could not find the table'));
+
+            if (!isConnectionSuccessError) {
+                // This is a real connection error, not the expected "table not found" error.
+                throw error;
+            }
         }
         alert('Supabase connection successful!');
     } catch (e: any) {

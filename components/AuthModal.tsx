@@ -64,7 +64,11 @@ const AuthModal: React.FC<AuthModalProps> = ({ onClose }) => {
     }
     const { error } = await supabase.auth.signInWithOAuth({ provider: 'google' });
     if (error) {
-        setError(error.message);
+        if (error.message.toLowerCase().includes('unsupported provider')) {
+            setError('Google Sign-In is not enabled. Please enable the Google provider in your Supabase project dashboard under Authentication > Providers.');
+        } else {
+            setError(error.message);
+        }
     }
   };
 
@@ -133,8 +137,8 @@ const AuthModal: React.FC<AuthModalProps> = ({ onClose }) => {
             {message && <div className="bg-green-900/40 text-green-300 text-sm p-3 rounded-md mb-4 text-center">{message}</div>}
             {error && (
                 <div className="bg-red-900/40 text-red-300 text-sm p-3 rounded-md mb-4">
-                    <div className="flex items-center gap-2">
-                        <ErrorIcon className="w-5 h-5 flex-shrink-0" />
+                    <div className="flex items-start gap-2">
+                        <ErrorIcon className="w-5 h-5 flex-shrink-0 mt-0.5" />
                         <span>{error}</span>
                     </div>
                      {showResend && (
