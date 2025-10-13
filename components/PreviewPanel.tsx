@@ -1,14 +1,19 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import ZenOnIcon from './icons/ZenOnIcon';
 import ZenOffIcon from './icons/ZenOffIcon';
 import CodePreviewPanel from './CodePreviewPanel';
-import type { Agent } from '../types';
+import type { Agent, AuditLogEntry } from '../types';
 import { AgentStatus } from '../types';
 import AgentIcon from './icons/AgentIcon';
 import SpinnerIcon from './icons/SpinnerIcon';
 import RocketIcon from './icons/RocketIcon';
 import FullScreenOnIcon from './icons/FullScreenOnIcon';
 import FullScreenOffIcon from './icons/FullScreenOffIcon';
+import EyeIcon from './icons/EyeIcon';
+import CodeIcon from './icons/CodeIcon';
+import LogIcon from './icons/LogIcon';
+import AuditLogPanel from './AuditLogPanel';
 
 
 interface PreviewPanelProps {
@@ -21,13 +26,14 @@ interface PreviewPanelProps {
   isWorkflowComplete: boolean;
   onDeploy: () => void;
   deployerAgent?: Agent;
+  auditLog: AuditLogEntry[];
 }
 
 const PreviewPanel: React.FC<PreviewPanelProps> = ({ 
   code, isZenMode, onToggleZenMode, isGenerating, currentAgent, totalAgents,
-  isWorkflowComplete, onDeploy, deployerAgent
+  isWorkflowComplete, onDeploy, deployerAgent, auditLog
 }) => {
-  const [activeTab, setActiveTab] = useState<'preview' | 'code'>('preview');
+  const [activeTab, setActiveTab] = useState<'preview' | 'code' | 'logs'>('preview');
   const [isFullscreen, setIsFullscreen] = useState(false);
   const fullscreenTargetRef = useRef<HTMLDivElement>(null);
   
@@ -65,17 +71,27 @@ const PreviewPanel: React.FC<PreviewPanelProps> = ({
           <div className="flex items-center bg-slate-800 rounded-md p-1 text-sm">
             <button
               onClick={() => setActiveTab('preview')}
-              className={`px-3 py-1 rounded-md transition-colors ${activeTab === 'preview' ? 'bg-sky-600 text-white' : 'text-slate-400 hover:bg-slate-700'}`}
+              className={`px-3 py-1 rounded-md transition-colors flex items-center gap-2 ${activeTab === 'preview' ? 'bg-sky-600 text-white' : 'text-slate-400 hover:bg-slate-700'}`}
               aria-pressed={activeTab === 'preview'}
             >
+              <EyeIcon className="w-4 h-4" />
               Preview
             </button>
             <button
               onClick={() => setActiveTab('code')}
-              className={`px-3 py-1 rounded-md transition-colors ${activeTab === 'code' ? 'bg-sky-600 text-white' : 'text-slate-400 hover:bg-slate-700'}`}
+              className={`px-3 py-1 rounded-md transition-colors flex items-center gap-2 ${activeTab === 'code' ? 'bg-sky-600 text-white' : 'text-slate-400 hover:bg-slate-700'}`}
               aria-pressed={activeTab === 'code'}
             >
+              <CodeIcon className="w-4 h-4" />
               Code
+            </button>
+             <button
+              onClick={() => setActiveTab('logs')}
+              className={`px-3 py-1 rounded-md transition-colors flex items-center gap-2 ${activeTab === 'logs' ? 'bg-sky-600 text-white' : 'text-slate-400 hover:bg-slate-700'}`}
+              aria-pressed={activeTab === 'logs'}
+            >
+              <LogIcon className="w-4 h-4" />
+              Logs
             </button>
           </div>
         </div>
@@ -127,16 +143,16 @@ const PreviewPanel: React.FC<PreviewPanelProps> = ({
             </div>
         )}
 
-        {activeTab === 'preview' ? (
+        {activeTab === 'preview' && (
           <iframe
             srcDoc={code || '<!DOCTYPE html><html><head></head><body style="display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; background-color: #fff; font-family: sans-serif; color: #666;">Waiting for Coder agent...</body></html>'}
             title="Application Preview"
             className="w-full h-full border-0 bg-white"
             sandbox="allow-scripts allow-forms allow-modals"
           />
-        ) : (
-          <CodePreviewPanel code={code} />
         )}
+        {activeTab === 'code' && <CodePreviewPanel code={code} />}
+        {activeTab === 'logs' && <AuditLogPanel logs={auditLog} />}
       </div>
     </div>
   );

@@ -6,7 +6,14 @@ export enum AgentStatus {
   ERROR = 'error',
 }
 
-export type AgentName = 'Planner' | 'Architect' | 'UX/UI Designer' | 'Coder' | 'Reviewer' | 'Patcher' | 'Deployer';
+export type AgentName =
+  | 'Planner'
+  | 'Architect'
+  | 'UX/UI Designer'
+  | 'Coder'
+  | 'Reviewer'
+  | 'Patcher'
+  | 'Deployer';
 
 export interface Agent {
   id: number;
@@ -17,4 +24,15 @@ export interface Agent {
   output: string | null;
   startedAt?: number;
   completedAt?: number;
+}
+
+export type AuditLogEntryType = 'start' | 'chunk' | 'end' | 'error' | 'info';
+
+export interface AuditLogEntry {
+  timestamp: number;
+  agentName: AgentName | 'Orchestrator';
+  type: AuditLogEntryType;
+  message: string;
+  provider?: string;
+  tokenCount?: number;
 }
