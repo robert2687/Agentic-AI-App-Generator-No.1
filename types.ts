@@ -35,4 +35,6 @@ export interface AuditLogEntry {
   message: string;
   provider?: string;
   tokenCount?: number;
+  prompt?: string;
+  output?: string;
 }

@@ -13,7 +13,8 @@ import FullScreenOffIcon from './icons/FullScreenOffIcon';
 import EyeIcon from './icons/EyeIcon';
 import CodeIcon from './icons/CodeIcon';
 import LogIcon from './icons/LogIcon';
-import AuditLogPanel from './AuditLogPanel';
+import AuditInspector from './audit/AuditInspector';
+import DownloadIcon from './icons/DownloadIcon';
 
 
 interface PreviewPanelProps {
@@ -54,6 +55,21 @@ const PreviewPanel: React.FC<PreviewPanelProps> = ({
       }
     }
   };
+  
+  const handleExportLogs = () => {
+      if (!auditLog || auditLog.length === 0) return;
+      
+      const jsonString = JSON.stringify(auditLog, null, 2);
+      const blob = new Blob([jsonString], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `agent-audit-log-${new Date().toISOString()}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    };
 
   useEffect(() => {
     const onFullscreenChange = () => {
@@ -109,6 +125,14 @@ const PreviewPanel: React.FC<PreviewPanelProps> = ({
                 )}
                 {isDeployerRunning ? 'Deploying...' : 'Deploy'}
             </button>
+             <button
+              onClick={handleExportLogs}
+              disabled={auditLog.length === 0}
+              className="text-slate-400 hover:text-white transition-colors rounded-full p-1.5 focus:outline-none focus:ring-2 focus:ring-sky-500 disabled:text-slate-600 disabled:cursor-not-allowed"
+              aria-label="Export audit logs as JSON"
+            >
+              <DownloadIcon className="w-5 h-5" />
+            </button>
 
             <button
               onClick={handleToggleFullscreen}
@@ -152,7 +176,7 @@ const PreviewPanel: React.FC<PreviewPanelProps> = ({
           />
         )}
         {activeTab === 'code' && <CodePreviewPanel code={code} />}
-        {activeTab === 'logs' && <AuditLogPanel logs={auditLog} />}
+        {activeTab === 'logs' && <AuditInspector logs={auditLog} />}
       </div>
     </div>
   );

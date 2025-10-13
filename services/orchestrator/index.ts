@@ -7,7 +7,7 @@ import { geminiProvider } from './providers/geminiProvider';
 import { mockProvider } from './providers/mockProvider';
 import type { Provider } from './types';
 import { validateAgentOutput } from './validation';
-import { AuditLogger } from '../auditLogger';
+import { AuditLogger } from './audit/auditLogger';
 
 const extractCode = (markdown: string, lang: string = 'html'): string | null => {
   const regex = new RegExp("```" + lang + "\\n([\\s\\S]*?)```");
@@ -68,11 +68,11 @@ export class Orchestrator {
       }
 
       this.updateAgentState(agent.id, { status: AgentStatus.COMPLETED, output: fullOutput, completedAt: Date.now() });
-      this.logger.end(agent.name, `Execution finished.`);
+      this.logger.end(agent.name, `Execution finished.`, { prompt: input, output: fullOutput });
       return fullOutput;
 
     } catch (error: any) {
-      this.logger.error(agent.name, `Execution failed: ${error.message}`);
+      this.logger.error(agent.name, `Execution failed: ${error.message}`, { prompt: input, output: error.message });
       throw error; // Re-throw to be caught by the run loop
     }
   }
@@ -103,6 +103,7 @@ export class Orchestrator {
   }
 
   public async run(projectGoal: string) {
+    this.logger.clear();
     this.agents = AGENTS_CONFIG.map(config => ({
       ...config,
       status: AgentStatus.PENDING,
