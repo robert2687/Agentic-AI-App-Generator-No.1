@@ -24,14 +24,10 @@ export class AuditLogger extends EventTarget {
     this.dispatchEvent(new CustomEvent('log', { detail: entry }));
   }
 
-  // FIX: Update `info` method to accept an optional `details` object as a third argument.
-  // This aligns with its usage in `Orchestrator`.
   info(agentName: AgentName | 'Orchestrator', message: string, details: Partial<Omit<AuditLogEntry, 'timestamp' | 'agentName' | 'type' | 'message'>> = {}) {
     this.log(agentName, 'info', message, details);
   }
   
-  // FIX: Update `start` method to accept an optional `details` object as a fourth argument.
-  // This aligns with its usage in `Orchestrator` where `prompt` information is passed, fixing the argument count mismatch.
   start(agentName: AgentName, message: string, provider: string, details: Partial<Omit<AuditLogEntry, 'timestamp' | 'agentName' | 'type' | 'message'>> = {}) {
     this.log(agentName, 'start', message, { provider, ...details });
   }

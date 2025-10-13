@@ -7,6 +7,10 @@ import { mockProvider } from './providers/mockProvider';
 import type { Provider } from './types';
 import { validateAgentOutput } from './validation';
 import { logger } from '../../runtime/loggerInstance';
+import { FunctionDeclaration, Type, Content, GenerateContentResponse, FunctionResponsePart } from '@google/genai';
+import { ai } from '../geminiClient';
+import { activeImageProvider, activeImageProviderName } from '../imageProvider';
+
 
 const extractCode = (markdown: string, lang: string = 'html'): string | null => {
   const regex = new RegExp("```" + lang + "\\n([\\s\\S]*?)```");
@@ -19,6 +23,25 @@ const extractCode = (markdown: string, lang: string = 'html'): string | null => 
     if (anyLangMatch) return anyLangMatch[1].trim();
   }
   return null;
+};
+
+const generateImageTool: FunctionDeclaration = {
+  name: 'generateImage',
+  description: 'Generates an image from a text prompt and returns a data URI.',
+  parameters: {
+    type: Type.OBJECT,
+    properties: {
+      prompt: {
+        type: Type.STRING,
+        description: 'A detailed, creative, and descriptive prompt for the image generation model. For logos, describe the style (e.g., minimalist, modern, geometric). For favicons, keep it very simple.',
+      },
+      aspectRatio: {
+        type: Type.STRING,
+        description: 'The desired aspect ratio of the image. Supported values are "1:1", "16:9", "9:16", "4:3", "3:4". Defaults to "1:1" if not specified.',
+      }
+    },
+    required: ['prompt'],
+  },
 };
 
 
@@ -55,8 +78,136 @@ export class Orchestrator {
       this.callbacks.onAgentUpdate(agent);
     }
   }
+  
+  private async executeUxUiDesignerAgent(agent: Agent, input: string): Promise<string> {
+    this.updateAgentState(agent.id, { status: AgentStatus.RUNNING, input, output: 'Thinking...', startedAt: Date.now() });
+
+    if (!ai) {
+      // This should ideally not be hit if the top-level check for the gemini provider is done correctly.
+      logger.error(agent.name, 'Gemini client not available for function calling.', {});
+      throw new Error('Gemini client not available for function calling.');
+    }
+
+    const MAX_RETRIES = 2;
+    let lastError: Error | null = null;
+
+    for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+        try {
+            logger.info(agent.name, `Attempt ${attempt} to generate design with function calling.`, { provider: 'gemini', retries: attempt, prompt: input });
+
+            const contents: Content[] = [{ role: 'user', parts: [{ text: input }] }];
+
+            // 1. First call to Gemini to see if it wants to call a function
+            const initialResponse: GenerateContentResponse = await ai.models.generateContent({
+                model: 'gemini-2.5-flash',
+                contents: contents,
+                config: {
+                    tools: [{ functionDeclarations: [generateImageTool] }],
+                },
+            });
+            
+            const functionCalls = initialResponse.functionCalls;
+
+            // Add Gemini's response to history before proceeding
+            contents.push(initialResponse.candidates[0].content);
+
+            if (functionCalls && functionCalls.length > 0) {
+                this.updateAgentState(agent.id, { output: `Received function call(s): \`${functionCalls.map(c => c.name).join(', ')}\`...` });
+
+                // 2. Execute the function(s)
+                const functionResponseParts: FunctionResponsePart[] = await Promise.all(
+                    functionCalls.map(async (call) => {
+                        if (call.name === 'generateImage') {
+                            const imagePrompt = call.args['prompt'] as string;
+                            const aspectRatio = call.args['aspectRatio'] as string | undefined;
+
+                            logger.info(agent.name, `Calling image provider '${activeImageProviderName}' with prompt: "${imagePrompt}"`, { prompt: imagePrompt });
+                            this.updateAgentState(agent.id, { output: `Generating image with prompt: "${imagePrompt}"...` });
+                            
+                            try {
+                                const imageResult = await activeImageProvider.generateImage(imagePrompt, { aspectRatio });
+                                return {
+                                    functionResponses: {
+                                        id: call.id, name: call.name,
+                                        response: { result: { imageDataUri: `data:${imageResult.mimeType};base64,${imageResult.base64}` } }
+                                    }
+                                };
+                            } catch (imgError: any) {
+                                logger.error(agent.name, `Image generation failed for prompt "${imagePrompt}": ${imgError.message}`, {});
+                                return {
+                                    functionResponses: {
+                                        id: call.id, name: call.name,
+                                        response: { error: `Image generation failed. Please provide an SVG placeholder instead. Error: ${imgError.message}` }
+                                    }
+                                };
+                            }
+                        }
+                        // Fallback for unknown function
+                        return { functionResponses: { id: call.id, name: call.name, response: { error: `Unknown function name: ${call.name}` } } };
+                    })
+                );
+                
+                // 3. Send the function response back to Gemini
+                if (functionResponseParts.length > 0) {
+                    contents.push({ role: 'tool', parts: functionResponseParts });
+                }
+
+                this.updateAgentState(agent.id, { output: `Image result processed. Compiling final design...` });
+                const stream = await ai.models.generateContentStream({ model: 'gemini-2.5-flash', contents });
+                
+                let finalOutput = "";
+                for await (const chunk of stream) {
+                    const chunkText = chunk.text;
+                    if (chunkText) {
+                        finalOutput += chunkText;
+                        this.updateAgentState(agent.id, { output: finalOutput });
+                    }
+                }
+
+                const validationResult = validateAgentOutput(agent.name, finalOutput);
+                if (validationResult.valid) {
+                    this.updateAgentState(agent.id, { status: AgentStatus.COMPLETED, output: finalOutput, completedAt: Date.now() });
+                    logger.info(agent.name, `Successfully generated design using function calling.`, { output: finalOutput });
+                    return finalOutput;
+                } else {
+                    throw new Error(`Validation failed after function call: ${validationResult.reason}`);
+                }
+
+            } else {
+                // No function call, just use the text response.
+                const output = initialResponse.text;
+                const validationResult = validateAgentOutput(agent.name, output);
+                if (validationResult.valid) {
+                    this.updateAgentState(agent.id, { status: AgentStatus.COMPLETED, output, completedAt: Date.now() });
+                    logger.info(agent.name, `Successfully generated design without function calling.`, { output });
+                    return output;
+                } else {
+                    throw new Error(`Validation failed on initial response: ${validationResult.reason}`);
+                }
+            }
+        } catch (error: any) {
+            lastError = error;
+            logger.error(agent.name, `Attempt ${attempt} failed: ${error.message}`, { valid: false, output: lastError?.message });
+        }
+    } // end retry loop
+
+    const finalErrorMessage = `UX/UI Designer agent failed after ${MAX_RETRIES} attempts. Last error: ${lastError?.message}`;
+    this.updateAgentState(agent.id, { status: AgentStatus.ERROR, output: lastError?.message || finalErrorMessage, completedAt: Date.now() });
+    throw new Error(finalErrorMessage);
+}
+
 
   private async executeAgent(agent: Agent, input: string): Promise<string> {
+    if (agent.name === 'UX/UI Designer' && this.providers.some(p => p.name === 'gemini')) {
+      try {
+        // Prioritize function calling path if Gemini is available
+        return await this.executeUxUiDesignerAgent(agent, input);
+      } catch (e: any) {
+        logger.error(agent.name, `Function calling path failed, falling back to standard providers. Error: ${e.message}`, {});
+        // Fall through to the standard provider loop below
+      }
+    }
+
     this.updateAgentState(agent.id, { status: AgentStatus.RUNNING, input, output: '', startedAt: Date.now() });
 
     const MAX_RETRIES_PER_PROVIDER = 2;
