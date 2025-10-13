@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import type { AuditLogEntry } from '../types';
 import DiffViewer from './DiffViewer';
@@ -7,31 +6,51 @@ import ErrorIcon from './icons/ErrorIcon';
 import LogIcon from './icons/LogIcon';
 import MarkdownRenderer from './MarkdownRenderer';
 
-const typeStyles: Record<AuditLogEntry['type'], { icon: React.ReactNode; text: string; border: string }> = {
-    start: { icon: <LogIcon className="w-4 h-4" />, text: 'text-sky-400', border: 'border-slate-700' },
-    end: { icon: <CheckIcon className="w-4 h-4" />, text: 'text-green-400', border: 'border-slate-700' },
-    error: { icon: <ErrorIcon className="w-4 h-4" />, text: 'text-red-400', border: 'border-red-700/50' },
-    info: { icon: <LogIcon className="w-4 h-4" />, text: 'text-indigo-400', border: 'border-slate-700' },
-    chunk: { icon: <LogIcon className="w-4 h-4" />, text: 'text-slate-500', border: 'border-slate-700' },
+type FilterType = 'all' | 'success' | 'error';
+
+const typeStyles = {
+    end: { icon: <CheckIcon className="w-4 h-4" />, color: 'text-status-success', border: 'border-border-dark' },
+    error: { icon: <ErrorIcon className="w-4 h-4" />, color: 'text-status-error', border: 'border-status-error' },
+    info: { icon: <LogIcon className="w-4 h-4" />, color: 'text-accent-indigo', border: 'border-border-dark' },
+    default: { icon: <LogIcon className="w-4 h-4" />, color: 'text-accent-primary', border: 'border-border-dark' },
+};
+
+const FilterChip: React.FC<{ label: string; filter: FilterType; activeFilter: FilterType; onClick: () => void; }> = ({ label, filter, activeFilter, onClick }) => {
+    const isActive = activeFilter === filter;
+    const activeClasses = 'bg-accent-primary-hover text-white';
+    const inactiveClasses = 'bg-surface-lighter-dark text-text-primary-dark';
+    return (
+        <button
+            onClick={onClick}
+            className={`py-2xs px-sm rounded-full text-xs font-semibold transition-colors ${isActive ? activeClasses : inactiveClasses}`}
+            aria-pressed={isActive}
+        >
+            {label}
+        </button>
+    );
 };
 
 const AuditInspector: React.FC<{ logs: AuditLogEntry[] }> = ({ logs }) => {
     const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
+    const [filter, setFilter] = useState<FilterType>('all');
     const scrollRef = useRef<HTMLDivElement>(null);
-    const listRef = useRef<HTMLUListElement>(null);
 
     useEffect(() => {
-        // Auto-scroll to the bottom when new logs are added
-        if (scrollRef.current && listRef.current) {
+        if (scrollRef.current) {
             scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
         }
     }, [logs.length]);
 
-    // Filter for logs that represent significant agent steps
     const relevantLogs = logs.filter(log => log.type === 'end' || log.type === 'error');
+    
+    const filteredLogs = relevantLogs.filter(log => {
+        if (filter === 'success') return log.type === 'end';
+        if (filter === 'error') return log.type === 'error';
+        return true;
+    });
 
-    const findPreviousOutputLog = (currentIndex: number): AuditLogEntry | null => {
-        for (let i = currentIndex - 1; i >= 0; i--) {
+    const findPreviousOutputLog = (currentIndexInRelevantLogs: number): AuditLogEntry | null => {
+        for (let i = currentIndexInRelevantLogs - 1; i >= 0; i--) {
             if (relevantLogs[i].output) {
                 return relevantLogs[i];
             }
@@ -40,63 +59,87 @@ const AuditInspector: React.FC<{ logs: AuditLogEntry[] }> = ({ logs }) => {
     };
 
     return (
-        <div ref={scrollRef} className="h-full bg-slate-950 p-4 overflow-y-auto font-sans text-sm">
-            {relevantLogs.length === 0 && (
-                <div className="text-slate-500 text-center py-8">
-                    Detailed agent logs will appear here...
-                </div>
-            )}
-            <ul ref={listRef} className="space-y-2">
-                {relevantLogs.map((log, index) => {
-                    const isExpanded = expandedIndex === index;
-                    const styles = typeStyles[log.type];
-                    const previousLog = findPreviousOutputLog(index);
-                    
-                    return (
-                        <li key={log.timestamp + log.agentName} className={`bg-slate-900/70 rounded-md border ${isExpanded ? 'ring-2 ring-indigo-500' : ''} ${styles.border} transition-all duration-200`}>
-                            <div
-                                className="flex items-center gap-3 p-2 cursor-pointer"
-                                onClick={() => setExpandedIndex(isExpanded ? null : index)}
-                                role="button"
-                                aria-expanded={isExpanded}
-                            >
-                                <div className={`flex-shrink-0 pt-0.5 ${styles.text}`}>{styles.icon}</div>
-                                <span className={`font-bold mr-2 ${log.agentName === 'Orchestrator' ? 'text-indigo-400' : 'text-slate-300'}`}>
-                                    {log.agentName}
-                                </span>
-                                <span className="text-slate-400 truncate flex-grow">{log.message}</span>
-                                <span className="text-slate-500 flex-shrink-0 text-xs">
-                                    {new Date(log.timestamp).toLocaleTimeString()}
-                                </span>
-                            </div>
+        <div className="h-full bg-[#020617] flex flex-col font-sans text-sm">
+             <div className="p-xs border-b border-border-dark flex-shrink-0 flex items-center gap-xs">
+                <FilterChip label="All" filter="all" activeFilter={filter} onClick={() => setFilter('all')} />
+                <FilterChip label="Success" filter="success" activeFilter={filter} onClick={() => setFilter('success')} />
+                <FilterChip label="Error" filter="error" activeFilter={filter} onClick={() => setFilter('error')} />
+            </div>
 
-                            {isExpanded && (
-                                <div className="border-t border-slate-700/50 p-4 bg-slate-800/30">
-                                    {log.prompt && (
-                                        <div className="mb-4">
-                                            <h4 className="font-bold text-indigo-400 text-xs mb-1 uppercase">Prompt</h4>
-                                            <div className="bg-slate-900 p-3 rounded-md text-xs text-slate-300 whitespace-pre-wrap font-mono max-h-48 overflow-y-auto ring-1 ring-slate-700">
-                                                {log.prompt}
+            <div ref={scrollRef} className="flex-grow p-sm overflow-y-auto">
+                {filteredLogs.length === 0 && (
+                    <div className="text-text-tertiary-dark text-center py-xl">
+                        No logs match the current filter.
+                    </div>
+                )}
+                <ul className="list-none p-0 m-0 flex flex-col gap-sm">
+                    {filteredLogs.map((log) => {
+                        const originalIndex = relevantLogs.findIndex(l => l.timestamp === log.timestamp && l.agentName === log.agentName);
+                        const isExpanded = expandedIndex === originalIndex;
+                        const styles = typeStyles[log.type as keyof typeof typeStyles] ?? typeStyles.default;
+                        const previousLog = findPreviousOutputLog(originalIndex);
+                        
+                        return (
+                            <li key={log.timestamp + log.agentName} className={`bg-slate-800/70 rounded-md border ${isExpanded ? 'border-accent-indigo' : styles.border} transition-colors ease-in-out`}>
+                                <div
+                                    className="p-sm cursor-pointer"
+                                    onClick={() => setExpandedIndex(isExpanded ? null : originalIndex)}
+                                    role="button"
+                                    aria-expanded={isExpanded}
+                                >
+                                    <div className="md:hidden">
+                                        <div className="flex justify-between items-center">
+                                            <span className={`font-bold ${log.agentName === 'Orchestrator' ? 'text-accent-indigo' : 'text-text-primary-dark'}`}>
+                                                {log.agentName}
+                                            </span>
+                                             <div className={`flex items-center gap-1.5 text-xs font-semibold ${styles.color}`}>
+                                                {styles.icon}
+                                                <span>{log.type === 'end' ? 'Success' : 'Failed'}</span>
                                             </div>
                                         </div>
-                                    )}
-                                    {log.output && (
-                                        <div className="mb-4">
-                                            <h4 className="font-bold text-indigo-400 text-xs mb-1 uppercase">Output</h4>
-                                            <div className="bg-slate-900 p-3 rounded-md max-h-72 overflow-y-auto ring-1 ring-slate-700">
-                                                <MarkdownRenderer content={log.output} />
-                                            </div>
-                                        </div>
-                                    )}
-                                    {previousLog?.output && log.output && (
-                                        <DiffViewer oldValue={previousLog.output} newValue={log.output} />
-                                    )}
+                                        <p className="text-text-secondary-dark text-xs mt-2xs truncate">{log.message}</p>
+                                    </div>
+
+                                    <div className="hidden md:flex items-center gap-3">
+                                        <div className={styles.color}>{styles.icon}</div>
+                                        <span className={`font-bold w-32 flex-shrink-0 ${log.agentName === 'Orchestrator' ? 'text-accent-indigo' : 'text-text-primary-dark'}`}>
+                                            {log.agentName}
+                                        </span>
+                                        <span className="truncate flex-grow text-text-secondary-dark">{log.message}</span>
+                                        <span className="flex-shrink-0 text-xs text-text-tertiary-dark">
+                                            {new Date(log.timestamp).toLocaleTimeString()}
+                                        </span>
+                                    </div>
                                 </div>
-                            )}
-                        </li>
-                    );
-                })}
-            </ul>
+
+                                {isExpanded && (
+                                    <div className="border-t border-border-light-dark p-md bg-slate-800/30">
+                                        {log.prompt && (
+                                            <div className="mb-md">
+                                                <h4 className="font-bold text-accent-indigo text-xs mb-2xs uppercase">Prompt</h4>
+                                                <div className="bg-background-dark p-sm rounded-md text-xs text-text-primary-dark whitespace-pre-wrap font-mono max-h-48 overflow-y-auto border border-border-dark">
+                                                    {log.prompt}
+                                                </div>
+                                            </div>
+                                        )}
+                                        {log.output && (
+                                            <div className="mb-md">
+                                                <h4 className="font-bold text-accent-indigo text-xs mb-2xs uppercase">Output</h4>
+                                                <div className="bg-background-dark p-sm rounded-md max-h-72 overflow-y-auto border border-border-dark">
+                                                    <MarkdownRenderer content={log.output} />
+                                                </div>
+                                            </div>
+                                        )}
+                                        {previousLog?.output && log.output && (
+                                            <DiffViewer oldValue={previousLog.output} newValue={log.output} />
+                                        )}
+                                    </div>
+                                )}
+                            </li>
+                        );
+                    })}
+                </ul>
+            </div>
         </div>
     );
 };

@@ -1,13 +1,77 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="dark">
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Agentic AI App Generator</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+    // This configuration will be dynamically replaced by the content of tailwind.config.js
+    // This is a placeholder to show how the CDN can be configured.
+    tailwind.config = {
+      darkMode: 'class',
+      content: [
+        "./index.html",
+        "./App.tsx",
+        "./components/**/*.{js,ts,jsx,tsx}",
+      ],
+      theme: {
+        extend: {
+          colors: {
+            'background-light': '#ffffff',
+            'background-dark': '#0f172a',
+            'surface-light': '#f5f5f5',
+            'surface-dark': '#1e293b',
+            'surface-lighter-dark': 'rgba(51, 65, 85, 0.5)',
+            'surface-highlight-dark': '#334155',
+            'border-dark': '#334155',
+            'border-light-dark': 'rgba(51, 65, 85, 0.5)',
+            'text-primary-light': '#111111',
+            'text-primary-dark': '#e2e8f0',
+            'text-secondary-light': '#555555',
+            'text-secondary-dark': '#94a3b8',
+            'text-tertiary-dark': '#64748b',
+            'accent-primary': '#38bdf8',
+            'accent-primary-hover': '#0ea5e9',
+            'accent-secondary': '#2dd4bf',
+            'accent-indigo': '#818cf8',
+            'status-success': '#4ade80',
+            'status-error': '#f87171',
+            'status-warning': '#facc15',
+            'status-error-muted': 'rgba(244, 63, 94, 0.1)',
+            'status-success-muted': 'rgba(16, 185, 129, 0.1)',
+            white: '#ffffff',
+            black: '#000000',
+            transparent: 'transparent',
+          },
+          spacing: {
+            '2xs': '4px', 'xs': '8px', 'sm': '12px', 'md': '16px', 'lg': '24px', 'xl': '32px',
+          },
+          fontFamily: {
+            sans: ["'Inter'", 'system-ui', 'sans-serif'],
+          },
+          fontSize: {
+            'xs': '0.75rem', 'sm': '0.875rem', 'base': '1rem', 'lg': '1.125rem', 'xl': '1.25rem', '2xl': '1.5rem',
+          },
+          fontWeight: {
+            'regular': 400, 'medium': 500, 'semibold': 600, 'bold': 700,
+          },
+          borderRadius: {
+            'sm': '4px', 'md': '6px', 'lg': '8px', 'full': '9999px',
+          },
+          boxShadow: {
+            'lg': '0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)',
+          },
+        },
+      },
+      plugins: [],
+    };
+    </script>
     <!-- Prism.js for syntax highlighting -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-okaidia.min.css" />
+    <!-- diff2html for responsive diffs -->
+    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/diff2html/bundles/css/diff2html.min.css" />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js" data-manual></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-markup.min.js"></script>
   <script type="importmap">
@@ -25,7 +89,7 @@
 }
 </script>
 </head>
-  <body class="bg-slate-900 text-slate-200">
+  <body class="font-sans bg-background-dark text-text-primary-dark">
     <div id="root"></div>
     <script type="module" src="/index.tsx"></script>
   </body>

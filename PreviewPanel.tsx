@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import ZenOnIcon from './icons/ZenOnIcon';
 import ZenOffIcon from './icons/ZenOffIcon';
@@ -64,33 +65,33 @@ const PreviewPanel: React.FC<PreviewPanelProps> = ({
 
   return (
     <div className="flex flex-col h-full bg-slate-900 rounded-lg">
-      <header className="flex items-center justify-between p-3 border-b border-slate-700/50 flex-shrink-0">
-        <div className="flex items-center gap-4">
-          <h2 className="font-bold text-base text-slate-200">Live Application</h2>
+      <header className="flex flex-wrap items-center justify-between gap-y-2 p-3 border-b border-slate-700/50 flex-shrink-0">
+        <div className="flex items-center gap-2 sm:gap-4">
+          <h2 className="font-bold text-base text-slate-200 hidden sm:block">Live Application</h2>
           <div className="flex items-center bg-slate-800 rounded-md p-1 text-sm">
             <button
               onClick={() => setActiveTab('preview')}
-              className={`px-3 py-1 rounded-md transition-colors flex items-center gap-2 ${activeTab === 'preview' ? 'bg-sky-600 text-white' : 'text-slate-400 hover:bg-slate-700'}`}
+              className={`px-2 sm:px-3 py-1 rounded-md transition-colors flex items-center gap-2 ${activeTab === 'preview' ? 'bg-sky-600 text-white' : 'text-slate-400 hover:bg-slate-700'}`}
               aria-pressed={activeTab === 'preview'}
             >
               <EyeIcon className="w-4 h-4" />
-              Preview
+              <span className="hidden sm:inline">Preview</span>
             </button>
             <button
               onClick={() => setActiveTab('code')}
-              className={`px-3 py-1 rounded-md transition-colors flex items-center gap-2 ${activeTab === 'code' ? 'bg-sky-600 text-white' : 'text-slate-400 hover:bg-slate-700'}`}
+              className={`px-2 sm:px-3 py-1 rounded-md transition-colors flex items-center gap-2 ${activeTab === 'code' ? 'bg-sky-600 text-white' : 'text-slate-400 hover:bg-slate-700'}`}
               aria-pressed={activeTab === 'code'}
             >
               <CodeIcon className="w-4 h-4" />
-              Code
+              <span className="hidden sm:inline">Code</span>
             </button>
              <button
               onClick={() => setActiveTab('logs')}
-              className={`px-3 py-1 rounded-md transition-colors flex items-center gap-2 ${activeTab === 'logs' ? 'bg-sky-600 text-white' : 'text-slate-400 hover:bg-slate-700'}`}
+              className={`px-2 sm:px-3 py-1 rounded-md transition-colors flex items-center gap-2 ${activeTab === 'logs' ? 'bg-sky-600 text-white' : 'text-slate-400 hover:bg-slate-700'}`}
               aria-pressed={activeTab === 'logs'}
             >
               <LogIcon className="w-4 h-4" />
-              Logs
+              <span className="hidden sm:inline">Logs</span>
             </button>
           </div>
         </div>
@@ -98,7 +99,7 @@ const PreviewPanel: React.FC<PreviewPanelProps> = ({
             <button
                 onClick={onDeploy}
                 disabled={!isWorkflowComplete || isDeployerRunning || isGenerating}
-                className="flex items-center gap-2 bg-indigo-600 text-white font-bold py-1.5 px-3 rounded-md text-sm hover:bg-indigo-500 disabled:bg-slate-600 disabled:cursor-not-allowed transition-colors"
+                className="flex items-center gap-2 bg-indigo-600 text-white font-bold py-1.5 px-2 sm:px-3 rounded-md text-sm hover:bg-indigo-500 disabled:bg-slate-600 disabled:cursor-not-allowed transition-colors"
                 aria-label={isWorkflowComplete ? "Deploy application" : "Complete generation to enable deployment"}
             >
                 {isDeployerRunning ? (
@@ -106,7 +107,7 @@ const PreviewPanel: React.FC<PreviewPanelProps> = ({
                 ) : (
                     <RocketIcon className="w-4 h-4" />
                 )}
-                {isDeployerRunning ? 'Deploying...' : 'Deploy'}
+                <span className="hidden sm:inline">{isDeployerRunning ? 'Deploying...' : 'Deploy'}</span>
             </button>
 
             <button

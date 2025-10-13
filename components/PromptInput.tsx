@@ -71,7 +71,7 @@ const PromptInput: React.FC<PromptInputProps> = ({
           className="w-full h-32 p-2 bg-slate-700/50 rounded-md border border-slate-600 focus:border-sky-500 focus:ring-4 focus:ring-sky-500/30 focus:outline-none resize-none transition-colors mt-2"
           disabled={isGenerating || isComplete}
         />
-        <div className="flex gap-2 mt-2">
+        <div className="flex flex-col sm:flex-row gap-2 mt-2">
           <button
             onClick={handlePrimaryAction}
             disabled={isGenerating || (!isComplete && !projectGoal.trim())}

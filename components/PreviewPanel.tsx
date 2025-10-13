@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import ZenOnIcon from './icons/ZenOnIcon';
 import ZenOffIcon from './icons/ZenOffIcon';
@@ -16,7 +15,7 @@ import LogIcon from './icons/LogIcon';
 import AuditInspector from './AuditInspector';
 import DownloadIcon from './icons/DownloadIcon';
 import { logger } from '../services/loggerInstance';
-
+import MoreVerticalIcon from './icons/MoreVerticalIcon';
 
 interface PreviewPanelProps {
   code: string | null;
@@ -37,11 +36,25 @@ const PreviewPanel: React.FC<PreviewPanelProps> = ({
 }) => {
   const [activeTab, setActiveTab] = useState<'preview' | 'code' | 'logs'>('preview');
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
   const fullscreenTargetRef = useRef<HTMLDivElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
   
   const showZenGenerationOverlay = isZenMode && isGenerating && currentAgent;
 
   const isDeployerRunning = deployerAgent?.status === AgentStatus.RUNNING;
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setIsMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
 
   const handleToggleFullscreen = () => {
     if (!fullscreenTargetRef.current) return;
@@ -80,90 +93,141 @@ const PreviewPanel: React.FC<PreviewPanelProps> = ({
     return () => document.removeEventListener('fullscreenchange', onFullscreenChange);
   }, []);
 
+  const actionButtons = (
+    <>
+      <button
+        onClick={onDeploy}
+        disabled={!isWorkflowComplete || isDeployerRunning || isGenerating}
+        className="flex items-center gap-2 bg-accent-indigo text-white font-bold py-1.5 px-3 rounded-md text-sm hover:bg-indigo-500 disabled:bg-slate-600 disabled:cursor-not-allowed transition-colors w-full lg:w-auto"
+        aria-label={isWorkflowComplete ? "Deploy application" : "Complete generation to enable deployment"}
+      >
+        {isDeployerRunning ? (
+          <SpinnerIcon className="w-4 h-4" />
+        ) : (
+          <RocketIcon className="w-4 h-4" />
+        )}
+        <span>{isDeployerRunning ? 'Deploying...' : 'Deploy'}</span>
+      </button>
+      <button
+        onClick={handleExportLogs}
+        disabled={auditLog.length === 0}
+        className="flex items-center gap-2 text-text-secondary-dark hover:bg-surface-highlight-dark p-2 rounded-md transition-colors disabled:text-text-tertiary-dark disabled:cursor-not-allowed w-full lg:w-auto lg:p-1.5 lg:rounded-full lg:bg-transparent"
+        aria-label="Export audit logs as JSON"
+      >
+        <DownloadIcon className="w-5 h-5" />
+        <span className="lg:hidden">Export Logs</span>
+      </button>
+
+      <button
+        onClick={handleToggleFullscreen}
+        className="flex items-center gap-2 text-text-secondary-dark hover:bg-surface-highlight-dark p-2 rounded-md transition-colors w-full lg:w-auto lg:p-1.5 lg:rounded-full lg:bg-transparent"
+        aria-label={isFullscreen ? "Exit Full Screen" : "Enter Full Screen"}
+      >
+        {isFullscreen ? <FullScreenOffIcon className="w-5 h-5" /> : <FullScreenOnIcon className="w-5 h-5" />}
+        <span className="lg:hidden">{isFullscreen ? "Exit Full Screen" : "Full Screen"}</span>
+      </button>
+      
+      <button
+        onClick={onToggleZenMode}
+        className="flex items-center gap-2 text-text-secondary-dark hover:bg-surface-highlight-dark p-2 rounded-md transition-colors w-full lg:w-auto lg:p-1.5 lg:rounded-full lg:bg-transparent"
+        aria-label={isZenMode ? "Exit Zen Mode" : "Enter Zen Mode"}
+      >
+        {isZenMode ? <ZenOffIcon className="w-5 h-5" /> : <ZenOnIcon className="w-5 h-5" />}
+        <span className="lg:hidden">{isZenMode ? "Exit Zen Mode" : "Zen Mode"}</span>
+      </button>
+    </>
+  );
+
+  const getTabClassName = (tabName: 'preview' | 'code' | 'logs'): string => {
+    const baseClasses = 'py-2xs px-sm rounded-md transition-colors flex items-center gap-xs text-sm';
+    if (activeTab === tabName) {
+      return `${baseClasses} bg-accent-primary-hover text-white`;
+    }
+    return `${baseClasses} text-text-secondary-dark hover:bg-surface-highlight-dark`;
+  };
+
   return (
-    <div className="flex flex-col h-full bg-slate-900 rounded-lg">
-      <header className="flex items-center justify-between p-3 border-b border-slate-700/50 flex-shrink-0">
-        <div className="flex items-center gap-4">
-          <h2 className="font-bold text-base text-slate-200">Live Application</h2>
-          <div className="flex items-center bg-slate-800 rounded-md p-1 text-sm">
+    <div className="flex flex-col h-full bg-background-dark rounded-lg">
+      <header className="flex flex-wrap items-center justify-between gap-y-2 p-sm border-b border-border-light-dark flex-shrink-0">
+        <div className="flex items-center gap-2 sm:gap-4">
+          <h2 className="font-bold text-base text-text-primary-dark hidden sm:block">Live Application</h2>
+          <div className="flex items-center rounded-md p-2xs text-sm bg-surface-dark">
             <button
+              className={getTabClassName('preview')}
               onClick={() => setActiveTab('preview')}
-              className={`px-3 py-1 rounded-md transition-colors flex items-center gap-2 ${activeTab === 'preview' ? 'bg-sky-600 text-white' : 'text-slate-400 hover:bg-slate-700'}`}
               aria-pressed={activeTab === 'preview'}
             >
               <EyeIcon className="w-4 h-4" />
-              Preview
+              <span className="hidden sm:inline">Preview</span>
             </button>
             <button
+              className={getTabClassName('code')}
               onClick={() => setActiveTab('code')}
-              className={`px-3 py-1 rounded-md transition-colors flex items-center gap-2 ${activeTab === 'code' ? 'bg-sky-600 text-white' : 'text-slate-400 hover:bg-slate-700'}`}
               aria-pressed={activeTab === 'code'}
             >
               <CodeIcon className="w-4 h-4" />
-              Code
+              <span className="hidden sm:inline">Code</span>
             </button>
              <button
+              className={getTabClassName('logs')}
               onClick={() => setActiveTab('logs')}
-              className={`px-3 py-1 rounded-md transition-colors flex items-center gap-2 ${activeTab === 'logs' ? 'bg-sky-600 text-white' : 'text-slate-400 hover:bg-slate-700'}`}
               aria-pressed={activeTab === 'logs'}
             >
               <LogIcon className="w-4 h-4" />
-              Logs
+              <span className="hidden sm:inline">Logs</span>
             </button>
           </div>
         </div>
-        <div className="flex items-center gap-2">
-            <button
-                onClick={onDeploy}
-                disabled={!isWorkflowComplete || isDeployerRunning || isGenerating}
-                className="flex items-center gap-2 bg-indigo-600 text-white font-bold py-1.5 px-3 rounded-md text-sm hover:bg-indigo-500 disabled:bg-slate-600 disabled:cursor-not-allowed transition-colors"
-                aria-label={isWorkflowComplete ? "Deploy application" : "Complete generation to enable deployment"}
-            >
-                {isDeployerRunning ? (
-                    <SpinnerIcon className="w-4 h-4" />
-                ) : (
-                    <RocketIcon className="w-4 h-4" />
-                )}
-                {isDeployerRunning ? 'Deploying...' : 'Deploy'}
-            </button>
-             <button
-              onClick={handleExportLogs}
-              disabled={auditLog.length === 0}
-              className="text-slate-400 hover:text-white transition-colors rounded-full p-1.5 focus:outline-none focus:ring-2 focus:ring-sky-500 disabled:text-slate-600 disabled:cursor-not-allowed"
-              aria-label="Export audit logs as JSON"
-            >
-              <DownloadIcon className="w-5 h-5" />
-            </button>
-
-            <button
-              onClick={handleToggleFullscreen}
-              className="text-slate-400 hover:text-white transition-colors rounded-full p-1.5 focus:outline-none focus:ring-2 focus:ring-sky-500"
-              aria-label={isFullscreen ? "Exit Full Screen" : "Enter Full Screen"}
-            >
-              {isFullscreen ? <FullScreenOffIcon className="w-5 h-5" /> : <FullScreenOnIcon className="w-5 h-5" />}
-            </button>
-            
-            <button
-              onClick={onToggleZenMode}
-              className="text-slate-400 hover:text-white transition-colors rounded-full p-1.5 focus:outline-none focus:ring-2 focus:ring-sky-500"
-              aria-label={isZenMode ? "Exit Zen Mode" : "Enter Zen Mode"}
-            >
-              {isZenMode ? <ZenOffIcon className="w-5 h-5" /> : <ZenOnIcon className="w-5 h-5" />}
-            </button>
+        
+        {/* Desktop Buttons */}
+        <div className="hidden lg:flex items-center gap-2">
+          {actionButtons}
         </div>
+        
+        {/* Mobile Kebab Menu */}
+        <div ref={menuRef} className="relative lg:hidden">
+          <button
+            onClick={() => setIsMenuOpen(prev => !prev)}
+            className="text-text-secondary-dark hover:text-white transition-colors rounded-full p-1.5 focus:outline-none focus:ring-2 focus:ring-accent-primary"
+            aria-label="More options"
+            aria-haspopup="true"
+            aria-expanded={isMenuOpen}
+          >
+            <MoreVerticalIcon className="w-5 h-5" />
+          </button>
+          {isMenuOpen && (
+            <div className="absolute right-0 mt-2 w-48 bg-surface-dark border border-border-dark rounded-md shadow-lg z-20 p-2 flex flex-col gap-1">
+              {React.Children.map(actionButtons, (button) => {
+                const buttonElement = button as React.ReactElement<any>;
+                if (buttonElement.props.onClick === onDeploy) {
+                  return null;
+                }
+                return React.cloneElement(buttonElement, {
+                  onClick: () => {
+                    if (buttonElement.props.onClick) {
+                      buttonElement.props.onClick();
+                    }
+                    setIsMenuOpen(false);
+                  },
+                })
+              })}
+            </div>
+          )}
+        </div>
+
       </header>
-      <div ref={fullscreenTargetRef} className="flex-grow rounded-b-lg overflow-hidden relative bg-slate-900">
+      <div ref={fullscreenTargetRef} className="flex-grow rounded-b-lg overflow-hidden relative bg-background-dark">
          {showZenGenerationOverlay && (
-            <div className="absolute inset-0 bg-slate-900/90 backdrop-blur-sm flex flex-col items-center justify-center z-10 animate-fade-in transition-opacity duration-300">
+            <div className="absolute inset-0 bg-background-dark/90 backdrop-blur-sm flex flex-col items-center justify-center z-10 animate-fade-in transition-opacity duration-300">
                 <div className="text-center p-8 rounded-lg">
                     <div className="flex items-center justify-center gap-4 mb-4">
-                        <AgentIcon name={currentAgent.name} className="w-10 h-10 text-sky-400" />
-                        <h3 className="text-3xl font-bold text-slate-100">{currentAgent.name}</h3>
+                        <AgentIcon name={currentAgent.name} className="w-10 h-10 text-accent-primary" />
+                        <h3 className="text-3xl font-bold text-text-primary-dark">{currentAgent.name}</h3>
                     </div>
-                    <p className="text-slate-300 text-lg mb-6">
+                    <p className="text-text-secondary-dark text-lg mb-6">
                         Step {currentAgent.id} of {totalAgents -1}: Generating...
                     </p>
-                    <SpinnerIcon className="w-12 h-12 text-sky-500 mx-auto" />
+                    <SpinnerIcon className="w-12 h-12 text-accent-primary-hover mx-auto" />
                 </div>
             </div>
         )}
@@ -179,6 +243,18 @@ const PreviewPanel: React.FC<PreviewPanelProps> = ({
         {activeTab === 'code' && <CodePreviewPanel code={code} />}
         {activeTab === 'logs' && <AuditInspector logs={auditLog} />}
       </div>
+      
+      {/* Mobile Floating Action Button for Deploy */}
+      {isWorkflowComplete && activeTab === 'preview' && (
+        <button
+          onClick={onDeploy}
+          disabled={isDeployerRunning || isGenerating}
+          className="lg:hidden fixed bottom-24 right-6 bg-accent-indigo text-white rounded-full p-4 shadow-lg hover:bg-indigo-500 disabled:bg-slate-600 disabled:cursor-not-allowed transition-all transform hover:scale-110 active:scale-100 z-30"
+          aria-label="Deploy application"
+        >
+          <RocketIcon className="w-6 h-6" />
+        </button>
+      )}
     </div>
   );
 };
