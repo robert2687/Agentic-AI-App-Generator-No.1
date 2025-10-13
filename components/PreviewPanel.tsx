@@ -15,7 +15,7 @@ import CodeIcon from './icons/CodeIcon';
 import LogIcon from './icons/LogIcon';
 import AuditInspector from './audit/AuditInspector';
 import DownloadIcon from './icons/DownloadIcon';
-import { logger } from '../services/loggerInstance';
+import { logger } from '../runtime/loggerInstance';
 
 
 interface PreviewPanelProps {

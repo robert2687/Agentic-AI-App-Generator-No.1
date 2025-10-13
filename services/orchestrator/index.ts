@@ -2,12 +2,11 @@
 import { AGENTS_CONFIG } from '../../constants';
 import type { Agent, AgentName } from '../../types';
 import { AgentStatus } from '../../types';
-import { activeImageProvider, activeImageProviderName, placeholderImageService } from '../imageProvider';
 import { geminiProvider } from './providers/geminiProvider';
 import { mockProvider } from './providers/mockProvider';
 import type { Provider } from './types';
 import { validateAgentOutput } from './validation';
-import { logger } from '../loggerInstance';
+import { logger } from '../../runtime/loggerInstance';
 
 const extractCode = (markdown: string, lang: string = 'html'): string | null => {
   const regex = new RegExp("```" + lang + "\\n([\\s\\S]*?)```");
@@ -32,13 +31,21 @@ interface OrchestratorCallbacks {
 
 export class Orchestrator {
   private agents: Agent[] = [];
-  private provider: Provider;
+  private providers: Provider[];
   private callbacks: OrchestratorCallbacks;
 
   constructor(callbacks: OrchestratorCallbacks) {
     this.callbacks = callbacks;
-    this.provider = process.env.API_KEY ? geminiProvider : mockProvider;
-    logger.info('Orchestrator', `Initialized with provider: ${this.provider.name}`);
+    
+    // Set up provider list with fallback mechanism
+    this.providers = [];
+    if (process.env.API_KEY) {
+      this.providers.push(geminiProvider);
+    }
+    // The mock provider serves as the ultimate fallback if real providers fail or are not configured.
+    this.providers.push(mockProvider);
+    
+    logger.info('Orchestrator', `Initialized with providers: ${this.providers.map(p => p.name).join(', ')}`);
   }
 
   private updateAgentState(id: number, updates: Partial<Agent>) {
@@ -51,27 +58,62 @@ export class Orchestrator {
 
   private async executeAgent(agent: Agent, input: string): Promise<string> {
     this.updateAgentState(agent.id, { status: AgentStatus.RUNNING, input, output: '', startedAt: Date.now() });
-    logger.start(agent.name, `Executing with provider ${this.provider.name}...`, this.provider.name);
+
+    const MAX_RETRIES_PER_PROVIDER = 2;
+    let lastOutput: string | null = null;
+
+    for (const provider of this.providers) {
+      for (let i = 0; i < MAX_RETRIES_PER_PROVIDER; i++) {
+        const attempt = i + 1;
+        
+        // Use a single log entry per attempt for cleaner CI reporting.
+        const logDetails: any = {
+          provider: provider.name,
+          retries: attempt,
+          prompt: input,
+        };
+
+        try {
+          let currentOutput = "";
+          // Clear previous agent output before new attempt
+          this.updateAgentState(agent.id, { output: '' });
+          
+          await provider.call(input, (chunk) => {
+            currentOutput += chunk;
+            this.updateAgentState(agent.id, { output: currentOutput });
+          });
+          
+          const validationResult = validateAgentOutput(agent.name, currentOutput);
+          lastOutput = currentOutput;
+          logDetails.output = currentOutput;
+          logDetails.valid = validationResult.valid;
+          
+          if (validationResult.valid) {
+            this.updateAgentState(agent.id, { status: AgentStatus.COMPLETED, output: currentOutput, completedAt: Date.now() });
+            logger.info(agent.name, `Succeeded with ${provider.name} on attempt ${attempt}.`, logDetails);
+            return currentOutput; // Success!
+          } else {
+            logDetails.validationError = validationResult.reason;
+            const validationError = `Validation failed for ${agent.name} with ${provider.name} on attempt ${attempt}. Reason: ${validationResult.reason}`;
+            logger.error(agent.name, validationError, logDetails);
+            // This will continue to the next retry/provider
+          }
+        } catch (error: any) {
+          const apiError = `API call failed for ${agent.name} with ${provider.name} on attempt ${attempt}: ${error.message}`;
+          lastOutput = error.message;
+          logDetails.output = lastOutput;
+          logDetails.valid = false;
+          logger.error(agent.name, apiError, logDetails);
+          // This will continue to the next retry/provider
+        }
+      } // end retries loop
+    } // end providers loop
     
-    let fullOutput = "";
-    try {
-      fullOutput = await this.provider.call(input, (chunk) => {
-        this.updateAgentState(agent.id, { output: (this.agents.find(a=>a.id === agent.id)?.output || '') + chunk });
-        logger.chunk(agent.name, `Received chunk.`);
-      });
-      
-      if (!validateAgentOutput(agent.name, fullOutput)) {
-        throw new Error(`Agent output validation failed. The response may be incomplete or malformed.`);
-      }
-
-      this.updateAgentState(agent.id, { status: AgentStatus.COMPLETED, output: fullOutput, completedAt: Date.now() });
-      logger.end(agent.name, `Execution finished.`, { prompt: input, output: fullOutput });
-      return fullOutput;
-
-    } catch (error: any) {
-      logger.error(agent.name, `Execution failed: ${error.message}`, { prompt: input, output: error.message });
-      throw error; // Re-throw to be caught by the run loop
-    }
+    // If we've exhausted all providers and retries
+    const finalErrorMessage = `Agent ${agent.name} failed to generate a valid response after all retries with all configured providers.`;
+    this.updateAgentState(agent.id, { status: AgentStatus.ERROR, output: lastOutput || finalErrorMessage, completedAt: Date.now() });
+    logger.error(agent.name, finalErrorMessage, { output: lastOutput });
+    throw new Error(finalErrorMessage);
   }
 
   private async runWorkflow(initialPrompt: string, startingAgentName: AgentName) {
@@ -128,7 +170,11 @@ export class Orchestrator {
 
     logger.info('Deployer', 'Starting deployment instructions generation.');
     const prompt = `**Application Code:**\n\`\`\`html\n${code}\n\`\`\`\n\n**Agent:** Deployer\n**Task:**\n${deployer.role}`;
-    await this.executeAgent(deployer, prompt);
+    // Use a separate, simpler execution for single-task agents like Deployer
+    try {
+        await this.executeAgent(deployer, prompt);
+    } catch (error: any) {
+        this.callbacks.onWorkflowError(error, deployer);
+    }
   }
-
 }

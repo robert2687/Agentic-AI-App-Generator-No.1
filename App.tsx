@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import type { Agent, AgentName, AuditLogEntry } from './types';
 import { AgentStatus } from './types';
@@ -11,7 +10,7 @@ import PreviewPanel from './components/PreviewPanel';
 import PreviewModal from './components/PreviewModal';
 import DeploymentModal from './components/DeploymentModal';
 import { Orchestrator } from './services/orchestrator';
-import { logger } from './services/loggerInstance';
+import { logger } from './runtime/loggerInstance';
 
 const App: React.FC = () => {
   const [agents, setAgents] = useState<Agent[]>(INITIAL_AGENTS);
@@ -90,7 +89,8 @@ const App: React.FC = () => {
   const resetState = useCallback(() => {
     setAgents(INITIAL_AGENTS);
     setSelectedAgentId(1);
-    setProjectGoal('');
+    // Do not reset project goal so user can easily retry
+    // setProjectGoal(''); 
     setRefinementPrompt('');
     setIsGenerating(false);
     setIsComplete(false);
@@ -100,14 +100,26 @@ const App: React.FC = () => {
     setErrorText(null);
     setRecoveryContext(null);
     setShowDeploymentModal(false);
+    logger.clear();
   }, []);
   
   const startGeneration = useCallback(async () => {
     if (!projectGoal.trim() || !orchestratorRef.current) return;
-    resetState();
+    // Instead of full reset, just clear the results of the previous run
+    setAgents(INITIAL_AGENTS);
+    setSelectedAgentId(1);
+    setRefinementPrompt('');
     setIsGenerating(true);
+    setIsComplete(false);
+    setFinalCode(null);
+    setAuditLog([]);
+    setIsError(false);
+    setErrorText(null);
+    setRecoveryContext(null);
+    setShowDeploymentModal(false);
+
     await orchestratorRef.current.run(projectGoal);
-  }, [projectGoal, resetState]);
+  }, [projectGoal]);
 
   const startRefinement = useCallback(async () => {
     if (!refinementPrompt.trim() || !finalCode || !orchestratorRef.current) return;
@@ -124,9 +136,6 @@ const App: React.FC = () => {
       }
       return a;
     }));
-    // Note: The logger is now a singleton, so info logs are sent from the source (orchestrator) directly.
-    // We can remove this manual log entry here for better separation of concerns.
-    // setAuditLog(prev => [...prev, { timestamp: Date.now(), agentName: 'Orchestrator', type: 'info', message: `Starting refinement cycle with prompt: "${refinementPrompt}"` }]);
     setSelectedAgentId(5); // Focus on Reviewer
 
     await orchestratorRef.current.runRefinement(refinementPrompt, finalCode);

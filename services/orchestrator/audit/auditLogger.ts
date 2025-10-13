@@ -1,4 +1,3 @@
-
 import { AgentName, AuditLogEntry, AuditLogEntryType } from '../../../types';
 
 export class AuditLogger extends EventTarget {
@@ -25,12 +24,16 @@ export class AuditLogger extends EventTarget {
     this.dispatchEvent(new CustomEvent('log', { detail: entry }));
   }
 
-  info(agentName: AgentName | 'Orchestrator', message: string) {
-    this.log(agentName, 'info', message);
+  // FIX: Update `info` method to accept an optional `details` object as a third argument.
+  // This aligns with its usage in `Orchestrator`.
+  info(agentName: AgentName | 'Orchestrator', message: string, details: Partial<Omit<AuditLogEntry, 'timestamp' | 'agentName' | 'type' | 'message'>> = {}) {
+    this.log(agentName, 'info', message, details);
   }
   
-  start(agentName: AgentName, message: string, provider: string) {
-    this.log(agentName, 'start', message, { provider });
+  // FIX: Update `start` method to accept an optional `details` object as a fourth argument.
+  // This aligns with its usage in `Orchestrator` where `prompt` information is passed, fixing the argument count mismatch.
+  start(agentName: AgentName, message: string, provider: string, details: Partial<Omit<AuditLogEntry, 'timestamp' | 'agentName' | 'type' | 'message'>> = {}) {
+    this.log(agentName, 'start', message, { provider, ...details });
   }
 
   chunk(agentName: AgentName, message:string) {

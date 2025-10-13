@@ -37,4 +37,7 @@ export interface AuditLogEntry {
   tokenCount?: number;
   prompt?: string;
   output?: string;
+  valid?: boolean;
+  retries?: number;
+  validationError?: string;
 }
