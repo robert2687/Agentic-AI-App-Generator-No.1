@@ -13,7 +13,7 @@ import FullScreenOffIcon from './icons/FullScreenOffIcon';
 import EyeIcon from './icons/EyeIcon';
 import CodeIcon from './icons/CodeIcon';
 import LogIcon from './icons/LogIcon';
-import AuditInspector from './audit/AuditInspector';
+import AuditInspector from './AuditInspector';
 import DownloadIcon from './icons/DownloadIcon';
 import { logger } from '../services/loggerInstance';
 
