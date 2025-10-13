@@ -12,8 +12,10 @@ import DeploymentModal from './components/DeploymentModal';
 import { Orchestrator } from './services/orchestrator';
 import { logger } from './services/loggerInstance';
 import BottomNav from './components/BottomNav';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
+import AuthModal from './components/AuthModal';
 
-const App: React.FC = () => {
+const AppContent: React.FC = () => {
   const [agents, setAgents] = useState<Agent[]>(INITIAL_AGENTS);
   const [selectedAgentId, setSelectedAgentId] = useState<number>(1);
   const [projectGoal, setProjectGoal] = useState<string>('');
@@ -28,12 +30,14 @@ const App: React.FC = () => {
   const [isZenMode, setIsZenMode] = useState<boolean>(false);
   const [showPreviewModal, setShowPreviewModal] = useState<boolean>(false);
   const [showDeploymentModal, setShowDeploymentModal] = useState<boolean>(false);
+  const [showAuthModal, setShowAuthModal] = useState<boolean>(false);
 
   const [auditLog, setAuditLog] = useState<AuditLogEntry[]>([]);
   const [recoveryContext, setRecoveryContext] = useState<{ failingAgentName: AgentName; errorMessage: string } | null>(null);
   const [mobileView, setMobileView] = useState<'home' | 'audit' | 'preview'>('home');
 
   const orchestratorRef = useRef<Orchestrator | null>(null);
+  const { user, loading: authLoading } = useAuth();
 
   const handleAgentUpdate = useCallback((updatedAgent: Agent) => {
     setAgents(prevAgents =>
@@ -167,10 +171,12 @@ const App: React.FC = () => {
   const desktopGridClasses = isZenMode
     ? 'grid-cols-1'
     : 'grid-cols-1 lg:grid-cols-[minmax(0,_2fr)_minmax(0,_3fr)]';
+    
+  const isInteractionDisabled = !user && !authLoading;
 
   return (
     <div className="bg-slate-900 text-white min-h-screen font-sans pb-20 lg:pb-0">
-      <Header />
+      <Header onSignIn={() => setShowAuthModal(true)} />
       <main className="max-w-screen-3xl mx-auto p-6">
         {/* Desktop Layout */}
         <div className={`hidden lg:grid ${desktopGridClasses} gap-6`}>
@@ -189,6 +195,7 @@ const App: React.FC = () => {
               onRefine={startRefinement}
               isError={isError}
               errorText={errorText}
+              disabled={isInteractionDisabled}
             />
             <div className="bg-slate-800/50 rounded-lg p-4 flex flex-col gap-4">
               <h2 className="text-lg font-bold text-sky-400">Agent Workflow</h2>
@@ -223,6 +230,7 @@ const App: React.FC = () => {
               onDeploy={startDeployment}
               deployerAgent={deployerAgent}
               auditLog={auditLog}
+              disabled={isInteractionDisabled}
             />
           </div>
         </div>
@@ -244,6 +252,7 @@ const App: React.FC = () => {
                 onRefine={startRefinement}
                 isError={isError}
                 errorText={errorText}
+                disabled={isInteractionDisabled}
               />
               <div className="bg-slate-800/50 rounded-lg p-4 flex flex-col gap-4">
                 <h2 className="text-lg font-bold text-sky-400">Agent Workflow</h2>
@@ -280,6 +289,7 @@ const App: React.FC = () => {
                   onDeploy={startDeployment}
                   deployerAgent={deployerAgent}
                   auditLog={auditLog}
+                  disabled={isInteractionDisabled}
                 />
             </div>
           )}
@@ -288,6 +298,7 @@ const App: React.FC = () => {
 
       <BottomNav activeView={mobileView} setActiveView={setMobileView} />
 
+      {showAuthModal && <AuthModal onClose={() => setShowAuthModal(false)} />}
       {showPreviewModal && finalCode && (
         <PreviewModal code={finalCode} onClose={() => setShowPreviewModal(false)} />
       )}
@@ -297,5 +308,12 @@ const App: React.FC = () => {
     </div>
   );
 };
+
+const App: React.FC = () => (
+    <AuthProvider>
+        <AppContent />
+    </AuthProvider>
+);
+
 
 export default App;

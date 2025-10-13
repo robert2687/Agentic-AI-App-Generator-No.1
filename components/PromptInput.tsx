@@ -1,7 +1,7 @@
-
 import React from 'react';
 import EyeIcon from './icons/EyeIcon';
 import ErrorIcon from './icons/ErrorIcon';
+import UserIcon from './icons/UserIcon';
 
 interface PromptInputProps {
   projectGoal: string;
@@ -16,11 +16,12 @@ interface PromptInputProps {
   onRefine: () => void;
   isError: boolean;
   errorText: string | null;
+  disabled?: boolean;
 }
 
 const PromptInput: React.FC<PromptInputProps> = ({ 
   projectGoal, setProjectGoal, onStart, onReset, onPreview, isGenerating, isComplete,
-  refinementPrompt, setRefinementPrompt, onRefine, isError, errorText
+  refinementPrompt, setRefinementPrompt, onRefine, isError, errorText, disabled = false
 }) => {
   
   if (isError) {
@@ -40,6 +41,18 @@ const PromptInput: React.FC<PromptInputProps> = ({
           Reset and Try Again
         </button>
       </div>
+    );
+  }
+
+  if (disabled) {
+    return (
+        <div className="bg-slate-800/50 rounded-lg p-6 flex flex-col gap-3 text-center items-center">
+            <UserIcon className="w-8 h-8 text-sky-400" />
+            <h2 className="text-lg font-bold text-sky-300">Sign In to Begin</h2>
+            <p className="text-slate-400/90 text-sm max-w-sm">
+                Please sign in to start generating applications. Your projects will be saved to your account.
+            </p>
+        </div>
     );
   }
 

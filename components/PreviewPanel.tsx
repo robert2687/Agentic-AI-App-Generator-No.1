@@ -28,11 +28,12 @@ interface PreviewPanelProps {
   onDeploy: () => void;
   deployerAgent?: Agent;
   auditLog: AuditLogEntry[];
+  disabled?: boolean;
 }
 
 const PreviewPanel: React.FC<PreviewPanelProps> = ({ 
   code, isZenMode, onToggleZenMode, isGenerating, currentAgent, totalAgents,
-  isWorkflowComplete, onDeploy, deployerAgent, auditLog
+  isWorkflowComplete, onDeploy, deployerAgent, auditLog, disabled = false
 }) => {
   const [activeTab, setActiveTab] = useState<'preview' | 'code' | 'logs'>('preview');
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -97,7 +98,7 @@ const PreviewPanel: React.FC<PreviewPanelProps> = ({
     <>
       <button
         onClick={onDeploy}
-        disabled={!isWorkflowComplete || isDeployerRunning || isGenerating}
+        disabled={!isWorkflowComplete || isDeployerRunning || isGenerating || disabled}
         className="flex items-center gap-2 bg-accent-indigo text-white font-bold py-1.5 px-3 rounded-md text-sm hover:bg-accent-indigo-hover disabled:bg-surface-highlight-dark disabled:text-text-tertiary-dark disabled:cursor-not-allowed transition-colors w-full lg:w-auto"
         aria-label={isWorkflowComplete ? "Deploy application" : "Complete generation to enable deployment"}
       >
@@ -110,7 +111,7 @@ const PreviewPanel: React.FC<PreviewPanelProps> = ({
       </button>
       <button
         onClick={handleExportLogs}
-        disabled={auditLog.length === 0}
+        disabled={auditLog.length === 0 || disabled}
         className="flex items-center gap-2 text-text-secondary-dark hover:bg-surface-highlight-dark p-2 rounded-md transition-colors disabled:text-text-tertiary-dark disabled:cursor-not-allowed w-full lg:w-auto lg:p-1.5 lg:rounded-full lg:bg-transparent"
         aria-label="Export audit logs as JSON"
       >
@@ -232,11 +233,17 @@ const PreviewPanel: React.FC<PreviewPanelProps> = ({
             </div>
         )}
 
+        {disabled && (
+            <div className="absolute inset-0 bg-background-dark/80 backdrop-blur-sm flex flex-col items-center justify-center z-10">
+                <p className="text-text-secondary-dark">Please sign in to view the application preview.</p>
+            </div>
+        )}
+
         {activeTab === 'preview' && (
           <iframe
             srcDoc={code || '<!DOCTYPE html><html><head></head><body style="display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; background-color: #fff; font-family: sans-serif; color: #666;">Waiting for Coder agent...</body></html>'}
             title="Application Preview"
-            className="w-full h-full border-0 bg-white"
+            className={`w-full h-full border-0 bg-white ${disabled ? 'opacity-0' : ''}`}
             sandbox="allow-scripts allow-forms allow-modals"
           />
         )}
@@ -248,7 +255,7 @@ const PreviewPanel: React.FC<PreviewPanelProps> = ({
       {isWorkflowComplete && activeTab === 'preview' && (
         <button
           onClick={onDeploy}
-          disabled={isDeployerRunning || isGenerating}
+          disabled={isDeployerRunning || isGenerating || disabled}
           className="lg:hidden fixed bottom-24 right-6 bg-accent-indigo text-white rounded-full p-4 shadow-lg hover:bg-accent-indigo-hover disabled:bg-surface-highlight-dark disabled:text-text-tertiary-dark disabled:cursor-not-allowed transition-all transform hover:scale-110 active:scale-100 z-30"
           aria-label="Deploy application"
         >
