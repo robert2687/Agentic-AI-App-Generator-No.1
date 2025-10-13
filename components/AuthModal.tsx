@@ -15,12 +15,15 @@ const AuthModal: React.FC<AuthModalProps> = ({ onClose }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
+  const [showResend, setShowResend] = useState(false);
+  const [resendLoading, setResendLoading] = useState(false);
 
   const handleAuthAction = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
     setMessage(null);
+    setShowResend(false);
 
     if (!supabase) {
         setError("Authentication service is not configured.");
@@ -46,6 +49,9 @@ const AuthModal: React.FC<AuthModalProps> = ({ onClose }) => {
         }
     } catch (error: any) {
         setError(error.error_description || error.message);
+        if (error.message && error.message.toLowerCase().includes('email not confirmed')) {
+            setShowResend(true);
+        }
     } finally {
         setLoading(false);
     }
@@ -59,6 +65,27 @@ const AuthModal: React.FC<AuthModalProps> = ({ onClose }) => {
     const { error } = await supabase.auth.signInWithOAuth({ provider: 'google' });
     if (error) {
         setError(error.message);
+    }
+  };
+
+  const handleResendConfirmation = async () => {
+    if (!supabase || !email) return;
+    setResendLoading(true);
+    setError(null);
+    setMessage(null);
+
+    try {
+        const { error } = await supabase.auth.resend({
+            type: 'signup',
+            email: email,
+        });
+        if (error) throw error;
+        setMessage('Confirmation email sent again. Please check your inbox.');
+        setShowResend(false);
+    } catch (error: any) {
+        setError(error.error_description || error.message);
+    } finally {
+        setResendLoading(false);
     }
   };
 
@@ -105,9 +132,20 @@ const AuthModal: React.FC<AuthModalProps> = ({ onClose }) => {
 
             {message && <div className="bg-green-900/40 text-green-300 text-sm p-3 rounded-md mb-4 text-center">{message}</div>}
             {error && (
-                <div className="bg-red-900/40 text-red-300 text-sm p-3 rounded-md mb-4 flex items-center gap-2">
-                    <ErrorIcon className="w-5 h-5 flex-shrink-0" />
-                    <span>{error}</span>
+                <div className="bg-red-900/40 text-red-300 text-sm p-3 rounded-md mb-4">
+                    <div className="flex items-center gap-2">
+                        <ErrorIcon className="w-5 h-5 flex-shrink-0" />
+                        <span>{error}</span>
+                    </div>
+                     {showResend && (
+                        <button 
+                            onClick={handleResendConfirmation}
+                            disabled={resendLoading}
+                            className="w-full text-left mt-2 text-sky-300 hover:text-sky-200 font-semibold underline text-xs disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            {resendLoading ? 'Sending...' : 'Resend confirmation email'}
+                        </button>
+                    )}
                 </div>
             )}
 
@@ -151,6 +189,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ onClose }) => {
                         setView(view === 'sign_in' ? 'sign_up' : 'sign_in');
                         setError(null);
                         setMessage(null);
+                        setShowResend(false);
                     }}
                     className="font-semibold text-sky-400 hover:text-sky-300 ml-1"
                 >

@@ -196,6 +196,7 @@ const AppContent: React.FC = () => {
               isError={isError}
               errorText={errorText}
               disabled={isInteractionDisabled}
+              authLoading={authLoading}
               isPremium={isPremium}
             />
             <div className="bg-slate-800/50 rounded-lg p-4 flex flex-col gap-4">
@@ -255,6 +256,7 @@ const AppContent: React.FC = () => {
                 isError={isError}
                 errorText={errorText}
                 disabled={isInteractionDisabled}
+                authLoading={authLoading}
                 isPremium={isPremium}
               />
               <div className="bg-slate-800/50 rounded-lg p-4 flex flex-col gap-4">

@@ -9,5 +9,14 @@ if (!supabaseUrl || !supabaseAnonKey) {
 
 // The client is exported as potentially null, and consuming code must handle this case.
 export const supabase = (supabaseUrl && supabaseAnonKey) 
-  ? createClient(supabaseUrl, supabaseAnonKey) 
+  ? createClient(supabaseUrl, supabaseAnonKey, {
+      auth: {
+        // Explicitly set persistSession to true. This is the default for browsers and uses localStorage.
+        persistSession: true,
+        // Automatically refreshes the token when it's about to expire. This is the default.
+        autoRefreshToken: true,
+        // Detects the session from the URL, which is important for OAuth and magic links on the web. This is the default.
+        detectSessionInUrl: true,
+      },
+    }) 
   : null;

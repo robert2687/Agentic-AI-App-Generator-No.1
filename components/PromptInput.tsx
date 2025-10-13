@@ -1,8 +1,11 @@
-import React from 'react';
+import React, { useState } from 'react';
 import EyeIcon from './icons/EyeIcon';
 import ErrorIcon from './icons/ErrorIcon';
 import UserIcon from './icons/UserIcon';
 import PremiumIcon from './icons/PremiumIcon';
+import { supabase } from '../services/supabaseClient';
+import ConnectionIcon from './icons/ConnectionIcon';
+import SpinnerIcon from './icons/SpinnerIcon';
 
 interface PromptInputProps {
   projectGoal: string;
@@ -18,14 +21,38 @@ interface PromptInputProps {
   isError: boolean;
   errorText: string | null;
   disabled?: boolean;
+  authLoading?: boolean;
   isPremium: boolean;
 }
 
 const PromptInput: React.FC<PromptInputProps> = ({ 
   projectGoal, setProjectGoal, onStart, onReset, onPreview, isGenerating, isComplete,
-  refinementPrompt, setRefinementPrompt, onRefine, isError, errorText, disabled = false, isPremium
+  refinementPrompt, setRefinementPrompt, onRefine, isError, errorText, 
+  disabled = false, authLoading = false, isPremium
 }) => {
-  
+  const [isTesting, setIsTesting] = useState(false);
+
+  const testSupabaseConnection = async () => {
+    if (!supabase) {
+        alert('Supabase client is not initialized. Check environment variables in metadata.json.');
+        return;
+    }
+    setIsTesting(true);
+    try {
+        // Querying a non-existent table is a valid way to test DB connection.
+        // Supabase will return error 42P01 if the connection is good but the table is missing.
+        const { error } = await supabase.from('profiles').select('*').limit(1);
+        if (error && error.code !== '42P01') {
+            throw error;
+        }
+        alert('Supabase connection successful!');
+    } catch (e: any) {
+        alert(`Supabase connection error: ${e.message ?? 'Unknown error'}`);
+    } finally {
+        setIsTesting(false);
+    }
+  };
+
   if (isError) {
     return (
       <div className="bg-red-900/40 border border-red-700/60 rounded-lg p-4 flex flex-col gap-3 text-center animate-fade-in">
@@ -48,12 +75,44 @@ const PromptInput: React.FC<PromptInputProps> = ({
 
   if (disabled) {
     return (
-        <div className="bg-slate-800/50 rounded-lg p-6 flex flex-col gap-3 text-center items-center">
+        <div className="bg-slate-800/50 rounded-lg p-6 flex flex-col gap-4 text-center items-center">
             <UserIcon className="w-8 h-8 text-sky-400" />
             <h2 className="text-lg font-bold text-sky-300">Sign In to Begin</h2>
             <p className="text-slate-400/90 text-sm max-w-sm">
                 Please sign in to start generating applications. Your projects will be saved to your account.
             </p>
+            <div className="border-t border-slate-700/50 w-full mt-2 pt-4">
+                <button
+                    onClick={testSupabaseConnection}
+                    disabled={isTesting || authLoading}
+                    className="w-full flex items-center justify-center gap-2 text-xs text-slate-400 hover:text-slate-200 disabled:text-slate-500 disabled:cursor-wait transition-colors"
+                >
+                    {isTesting ? (
+                        <>
+                            <SpinnerIcon className="w-4 h-4" />
+                            <span>Testing...</span>
+                        </>
+                    ) : authLoading ? (
+                        <>
+                           <SpinnerIcon className="w-4 h-4" />
+                            <span>Authenticating...</span>
+                        </>
+                    ) : (
+                        <>
+                            <ConnectionIcon className="w-4 h-4" />
+                            <span>Test Supabase Connection</span>
+                        </>
+                    )}
+                </button>
+            </div>
+             <div className="mt-4 pt-4 border-t border-slate-700/50 text-xs text-slate-500 text-left w-full">
+                <p className="font-semibold text-slate-400 mb-1">💡 Developer Tip:</p>
+                <p>
+                    For OAuth providers (like Google) to work correctly, ensure this application's URL is added to the 
+                    <code className="bg-slate-700 text-rose-400 rounded px-1 py-0.5 text-[11px] mx-1">Redirect URLs</code> 
+                    list in your Supabase project's authentication settings.
+                </p>
+            </div>
         </div>
     );
   }
