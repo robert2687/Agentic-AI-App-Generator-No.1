@@ -1,6 +1,6 @@
 import fs from 'fs';
 import path from 'path';
-import { logger } from '../runtime/loggerInstance.js';
+import { logger } from '../services/loggerInstance.js';
 
 // This script is intended to be run from the project root in a Node.js environment.
 const outDir = path.resolve(process.cwd(), 'artifacts');

@@ -6,7 +6,7 @@ import { geminiProvider } from './providers/geminiProvider';
 import { mockProvider } from './providers/mockProvider';
 import type { Provider } from './types';
 import { validateAgentOutput } from './validation';
-import { logger } from '../../runtime/loggerInstance';
+import { logger } from '../loggerInstance';
 import { FunctionDeclaration, Type, Content, GenerateContentResponse, FunctionResponsePart } from '@google/genai';
 import { ai } from '../geminiClient';
 import { activeImageProvider, activeImageProviderName } from '../imageProvider';

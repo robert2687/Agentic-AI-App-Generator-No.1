@@ -10,7 +10,7 @@ import PreviewPanel from './components/PreviewPanel';
 import PreviewModal from './components/PreviewModal';
 import DeploymentModal from './components/DeploymentModal';
 import { Orchestrator } from './services/orchestrator';
-import { logger } from './runtime/loggerInstance';
+import { logger } from './services/loggerInstance';
 
 const App: React.FC = () => {
   const [agents, setAgents] = useState<Agent[]>(INITIAL_AGENTS);
