@@ -6,6 +6,9 @@ import PremiumIcon from './icons/PremiumIcon';
 import { supabase } from '../services/supabaseClient';
 import ConnectionIcon from './icons/ConnectionIcon';
 import SpinnerIcon from './icons/SpinnerIcon';
+import CopyIcon from './icons/CopyIcon';
+import CheckIcon from './icons/CheckIcon';
+import type { User } from '@supabase/supabase-js';
 
 interface PromptInputProps {
   projectGoal: string;
@@ -23,14 +26,20 @@ interface PromptInputProps {
   disabled?: boolean;
   authLoading?: boolean;
   isPremium: boolean;
+  premiumCheckError: string | null;
+  user: User | null;
+  checkPremiumStatus: () => Promise<boolean>;
 }
 
 const PromptInput: React.FC<PromptInputProps> = ({ 
   projectGoal, setProjectGoal, onStart, onReset, onPreview, isGenerating, isComplete,
   refinementPrompt, setRefinementPrompt, onRefine, isError, errorText, 
-  disabled = false, authLoading = false, isPremium
+  disabled = false, authLoading = false, isPremium, premiumCheckError,
+  user, checkPremiumStatus
 }) => {
   const [isTesting, setIsTesting] = useState(false);
+  const [isSqlCopied, setIsSqlCopied] = useState(false);
+  const [isGranting, setIsGranting] = useState(false);
 
   const testSupabaseConnection = async () => {
     if (!supabase) {
@@ -39,8 +48,6 @@ const PromptInput: React.FC<PromptInputProps> = ({
     }
     setIsTesting(true);
     try {
-        // A "table not found" error indicates a successful connection to the database itself,
-        // which is what we want to test. Supabase may return error code 42P01 or a specific message.
         const { error } = await supabase.from('profiles').select('*').limit(1);
         if (error) {
             const isConnectionSuccessError = 
@@ -48,7 +55,6 @@ const PromptInput: React.FC<PromptInputProps> = ({
                 (error.message && error.message.includes('Could not find the table'));
 
             if (!isConnectionSuccessError) {
-                // This is a real connection error, not the expected "table not found" error.
                 throw error;
             }
         }
@@ -59,6 +65,91 @@ const PromptInput: React.FC<PromptInputProps> = ({
         setIsTesting(false);
     }
   };
+
+  const sqlScript = `-- Create the table to store user entitlements
+CREATE TABLE IF NOT EXISTS public.entitlements (
+  user_id uuid REFERENCES auth.users ON DELETE CASCADE,
+  product_id TEXT NOT NULL,
+  status TEXT NOT NULL CHECK (status IN ('active', 'expired', 'pending')),
+  updated_at TIMESTPTZ DEFAULT NOW(),
+  PRIMARY KEY (user_id, product_id)
+);
+
+-- Enable Row Level Security (RLS) on the table
+ALTER TABLE public.entitlements ENABLE ROW LEVEL SECURITY;
+
+-- RLS POLICIES
+-- 1. Users can only read their own entitlements
+CREATE POLICY "Users can read their own entitlements"
+ON public.entitlements
+FOR SELECT USING (auth.uid() = user_id);
+
+-- 2. Prevent users from directly inserting entitlements
+CREATE POLICY "No direct insert by users"
+ON public.entitlements
+FOR INSERT WITH CHECK (false);
+
+-- 3. Prevent users from directly updating entitlements
+CREATE POLICY "No direct update by users"
+ON public.entitlements
+FOR UPDATE USING (false);
+
+-- 4. Prevent users from directly deleting entitlements
+CREATE POLICY "No direct delete by users"
+ON public.entitlements
+FOR DELETE USING (false);
+
+-- RPC FUNCTION
+-- Create a function to grant premium access. This bypasses RLS.
+-- Make sure to run this as a database superuser.
+CREATE OR REPLACE FUNCTION grant_premium_access(p_user_id UUID)
+RETURNS VOID AS $$
+BEGIN
+  INSERT INTO public.entitlements (user_id, product_id, status)
+  VALUES (p_user_id, 'premium_unlock', 'active')
+  ON CONFLICT (user_id, product_id)
+  DO UPDATE SET status = 'active', updated_at = NOW();
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;`;
+
+  const handleCopySql = () => {
+    navigator.clipboard.writeText(sqlScript).then(() => {
+        setIsSqlCopied(true);
+        setTimeout(() => setIsSqlCopied(false), 2500);
+    }, (err) => {
+        console.error('Could not copy text: ', err);
+    });
+  };
+
+  const sqlScriptBlock = (
+     <div className="mt-2 p-3 bg-slate-900/70 rounded-md border border-slate-600">
+        <p className="mb-2 text-slate-300">This app requires a database table and function to manage premium features. Please copy the script below and run it in your Supabase project's SQL Editor:</p>
+        <div className="relative group">
+            <pre className="text-[10px] bg-slate-950 p-3 pr-16 rounded overflow-x-auto text-sky-300">
+                <code>
+                    {sqlScript}
+                </code>
+            </pre>
+            <button
+                onClick={handleCopySql}
+                className="absolute top-2 right-2 flex items-center gap-1.5 bg-slate-700/80 hover:bg-slate-600/80 text-slate-300 font-sans text-xs px-2 py-1 rounded-md transition-colors opacity-50 group-hover:opacity-100"
+                aria-label="Copy SQL script to clipboard"
+            >
+                {isSqlCopied ? (
+                    <>
+                        <CheckIcon className="w-3.5 h-3.5 text-green-400" />
+                        Copied!
+                    </>
+                ) : (
+                    <>
+                        <CopyIcon className="w-3.5 h-3.5" />
+                        Copy
+                    </>
+                )}
+            </button>
+        </div>
+    </div>
+  );
 
   if (isError) {
     return (
@@ -76,6 +167,21 @@ const PromptInput: React.FC<PromptInputProps> = ({
         >
           Reset and Try Again
         </button>
+      </div>
+    );
+  }
+
+  if (premiumCheckError) {
+    return (
+      <div className="bg-amber-900/40 border border-amber-700/60 rounded-lg p-6 flex flex-col gap-4 items-center">
+        <ErrorIcon className="w-8 h-8 text-amber-400" />
+        <h2 className="text-lg font-bold text-amber-300">Database Setup Required</h2>
+        <p className="text-amber-300/90 text-sm max-w-md text-center">
+            {premiumCheckError}
+        </p>
+        <div className="mt-4 pt-4 border-t border-amber-700/50 text-xs text-slate-500 text-left w-full">
+            {sqlScriptBlock}
+        </div>
       </div>
     );
   }
@@ -112,30 +218,69 @@ const PromptInput: React.FC<PromptInputProps> = ({
                     )}
                 </button>
             </div>
-             <div className="mt-4 pt-4 border-t border-slate-700/50 text-xs text-slate-500 text-left w-full">
-                <p className="font-semibold text-slate-400 mb-1">💡 Developer Tip:</p>
-                <p>
-                    For OAuth providers (like Google) to work correctly, ensure this application's URL is added to the 
-                    <code className="bg-slate-700 text-rose-400 rounded px-1 py-0.5 text-[11px] mx-1">Redirect URLs</code> 
-                    list in your Supabase project's authentication settings.
-                </p>
+            <div className="mt-4 pt-4 border-t border-slate-700/50 text-xs text-slate-500 text-left w-full">
+                <p className="font-semibold text-slate-400 mb-2">💡 Developer Tips:</p>
+                <ul className="list-disc list-inside space-y-2">
+                    <li>
+                        For OAuth (e.g., Google) to work, add this app's URL to the 
+                        <code className="bg-slate-700 text-rose-400 rounded px-1 py-0.5 text-[11px] mx-1">Redirect URLs</code> 
+                        list in your Supabase project's auth settings.
+                    </li>
+                    <li>
+                        <details>
+                            <summary className="cursor-pointer hover:text-slate-200">
+                                Getting a database error or need to set up premium features?
+                            </summary>
+                            {sqlScriptBlock}
+                        </details>
+                    </li>
+                </ul>
             </div>
         </div>
     );
   }
   
   if (!isPremium) {
+    const handleGrantPremium = async () => {
+      if (!user || !supabase) return;
+      setIsGranting(true);
+      try {
+        const { error } = await supabase.rpc('grant_premium_access', {
+          p_user_id: user.id,
+        });
+
+        if (error) {
+          // If the function doesn't exist, provide a helpful error.
+          if (error.code === '42883') {
+            alert("The 'grant_premium_access' function is missing. Please run the full SQL script from the developer tips in your Supabase project to create it.");
+          } else {
+            throw error;
+          }
+        } else {
+          // Success! Re-check status, which will trigger a re-render.
+          await checkPremiumStatus();
+        }
+      } catch (e: any) {
+        alert(`Error granting premium access: ${e.message}`);
+      } finally {
+        setIsGranting(false);
+      }
+    };
+    
     return (
       <div className="bg-slate-800/50 rounded-lg p-6 flex flex-col gap-3 text-center items-center border-2 border-amber-500/30">
         <PremiumIcon className="w-10 h-10 text-amber-400" />
         <h2 className="text-xl font-bold text-amber-300">Upgrade to Premium</h2>
         <p className="text-slate-400/90 text-sm max-w-md mt-1">
-            Unlock the full power of the AI Agent team. Upgrade now to generate, refine, and deploy unlimited applications with priority access.
+            Unlock the full power of the AI Agent team. This is a demo app, so you can grant yourself premium access for free to test the generation flow.
         </p>
         <button
-          className="mt-4 bg-amber-500 text-slate-900 font-bold py-2 px-6 rounded-md hover:bg-amber-400 transition-colors"
+          onClick={handleGrantPremium}
+          disabled={isGranting}
+          className="mt-4 w-full bg-amber-500 text-slate-900 font-bold py-2 px-6 rounded-md hover:bg-amber-400 transition-colors flex items-center justify-center gap-2 disabled:bg-amber-500/50 disabled:cursor-wait"
         >
-            Go Premium
+          {isGranting ? <SpinnerIcon className="w-5 h-5" /> : <PremiumIcon className="w-5 h-5" />}
+          {isGranting ? 'Granting...' : 'Grant Premium Access'}
         </button>
       </div>
     );

@@ -8,6 +8,8 @@ interface AuthContextType {
   signOut: () => Promise<void>;
   loading: boolean;
   isPremium: boolean;
+  premiumCheckError: string | null;
+  checkPremiumStatus: () => Promise<boolean>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -17,27 +19,43 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [isPremium, setIsPremium] = useState<boolean>(false);
+  const [premiumCheckError, setPremiumCheckError] = useState<string | null>(null);
 
-  const checkPremiumStatus = async () => {
+  const checkPremiumStatus = async (): Promise<boolean> => {
+    setPremiumCheckError(null);
     if (!supabase) {
       setIsPremium(false);
       return false;
     }
     try {
+      const { data: { user } } = await supabase.auth.getUser();
+
+      if (!user) {
+        setIsPremium(false);
+        return false;
+      }
+      
       const { data, error } = await supabase
         .from('entitlements')
         .select('status')
+        .eq('user_id', user.id)
         .eq('product_id', 'premium_unlock')
         .eq('status', 'active')
         .limit(1);
 
-      if (error) throw error;
+      if (error) {
+        throw error;
+      }
       
       const premiumStatus = (data?.length ?? 0) > 0;
       setIsPremium(premiumStatus);
       return premiumStatus;
-    } catch (error) {
-      console.error('Error checking premium status:', error);
+    } catch (error: any) {
+      const errorMessage = error.message || error;
+      console.error('Error checking premium status:', errorMessage);
+      if (typeof errorMessage === 'string' && errorMessage.includes("Could not find the table 'public.entitlements'")) {
+        setPremiumCheckError("The 'entitlements' table is missing. Please create it in your Supabase project to enable premium features.");
+      }
       setIsPremium(false);
       return false;
     }
@@ -55,13 +73,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         const { data: { session } } = await supabase.auth.getSession();
         setSession(session);
         setUser(session?.user ?? null);
-        if (session?.user) {
-          await checkPremiumStatus();
-        } else {
-          setIsPremium(false);
-        }
-      } catch (error) {
-        console.error("Error fetching session:", error);
+        await checkPremiumStatus();
+      } catch (error: any) {
+        console.error("Error fetching session:", error.message || error);
       } finally {
         setLoading(false);
       }
@@ -72,7 +86,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
       setSession(session);
       setUser(session?.user ?? null);
-      if (session?.user) {
+      // Don't reset premium status immediately, wait for the check
+      if (session) {
         await checkPremiumStatus();
       } else {
         setIsPremium(false);
@@ -89,7 +104,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       const { error } = await supabase.auth.signOut();
       if (error) console.error('Error signing out:', error);
     }
-    // State will be cleared by onAuthStateChange listener
   };
 
   const value = {
@@ -98,6 +112,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     signOut,
     loading,
     isPremium,
+    premiumCheckError,
+    checkPremiumStatus,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

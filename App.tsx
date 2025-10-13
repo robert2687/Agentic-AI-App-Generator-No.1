@@ -37,7 +37,7 @@ const AppContent: React.FC = () => {
   const [mobileView, setMobileView] = useState<'home' | 'audit' | 'preview'>('home');
 
   const orchestratorRef = useRef<Orchestrator | null>(null);
-  const { user, loading: authLoading, isPremium } = useAuth();
+  const { user, loading: authLoading, isPremium, premiumCheckError, checkPremiumStatus } = useAuth();
 
   const handleAgentUpdate = useCallback((updatedAgent: Agent) => {
     setAgents(prevAgents =>
@@ -198,6 +198,9 @@ const AppContent: React.FC = () => {
               disabled={isInteractionDisabled}
               authLoading={authLoading}
               isPremium={isPremium}
+              premiumCheckError={premiumCheckError}
+              user={user}
+              checkPremiumStatus={checkPremiumStatus}
             />
             <div className="bg-slate-800/50 rounded-lg p-4 flex flex-col gap-4">
               <h2 className="text-lg font-bold text-sky-400">Agent Workflow</h2>
@@ -234,6 +237,7 @@ const AppContent: React.FC = () => {
               auditLog={auditLog}
               disabled={isInteractionDisabled}
               isPremium={isPremium}
+              premiumCheckError={premiumCheckError}
             />
           </div>
         </div>
@@ -258,6 +262,9 @@ const AppContent: React.FC = () => {
                 disabled={isInteractionDisabled}
                 authLoading={authLoading}
                 isPremium={isPremium}
+                premiumCheckError={premiumCheckError}
+                user={user}
+                checkPremiumStatus={checkPremiumStatus}
               />
               <div className="bg-slate-800/50 rounded-lg p-4 flex flex-col gap-4">
                 <h2 className="text-lg font-bold text-sky-400">Agent Workflow</h2>
@@ -296,6 +303,7 @@ const AppContent: React.FC = () => {
                   auditLog={auditLog}
                   disabled={isInteractionDisabled}
                   isPremium={isPremium}
+                  premiumCheckError={premiumCheckError}
                 />
             </div>
           )}
