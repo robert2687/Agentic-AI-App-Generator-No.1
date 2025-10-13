@@ -1,3 +1,4 @@
+
 import type { Provider } from '../types';
 import { generateMockLogoBase64, generateMockFaviconBase64 } from '../../placeholderUtils';
 
@@ -2199,24 +2200,38 @@ const mockResponses: Record<string, string> = {
 1.  **Purpose & Core Features:**
     *   Create a single-page web application for personal task management.
     *   Core features: Add, View, Edit, Delete, and Mark tasks as complete.
-    *   Data must persist on page reload.
+    *   Data must persist on page reload using Local Storage.
 
 2.  **User Flow:**
     *   User opens the app and sees their existing tasks.
-    *   User types a new task into an input field and clicks "Add". The task appears in the list.
-    *   User clicks a checkbox to mark a task as complete. The task's appearance changes.
-    *   User clicks "Edit" to modify a task's text.
-    *   User clicks "Delete" to remove a task.
-    *   All changes are saved automatically.
+    *   User types a new task into an input field and clicks "Add".
+    *   User clicks a checkbox to mark a task as complete.
+    *   User clicks "Edit" to modify a task's text, and "Delete" to remove it.
 
 3.  **Technical Stack:**
-    *   **Frontend:** Plain HTML, CSS, and JavaScript. No external libraries or frameworks are needed.
+    *   **Frontend:** A single, self-contained HTML file with plain HTML, CSS, and JavaScript. No external libraries or frameworks.
     *   **Storage:** Browser Local Storage.
-    *   **Deployment:** The entire application must be contained in a single \`index.html\` file.
 
-4.  **Visual Asset Suggestions:**
-    *   **Logo:** A simple, modern logo featuring a checkmark or a stylized letter 'T'. The color palette should be calming yet motivating, perhaps using blues and greens.
-    *   **Icons:** Consistent icons for "Edit" and "Delete" actions. A pencil for edit, and a trash can for delete.
+4.  **Design System Guidelines:**
+    *   **Colors:**
+        *   \`--background-color: #1e293b;\` (slate-800)
+        *   \`--surface-color: #334155;\` (slate-700)
+        *   \`--text-color: #e2e8f0;\` (slate-200)
+        *   \`--primary-color: #38bdf8;\` (sky-500)
+        *   \`--delete-color: #f43f5e;\` (rose-500)
+    *   **Typography:**
+        *   \`--font-family-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;\`
+    *   **Spacing:**
+        *   \`--spacing-md: 0.75rem;\`
+        *   \`--spacing-lg: 1rem;\`
+        *   \`--spacing-2xl: 2rem;\`
+    *   **Borders:**
+        *   \`--border-radius: 0.375rem;\`
+
+5.  **Visual Asset Suggestions:**
+    *   **Logo:** A simple, modern logo featuring a checkmark.
+    *   **Favicon:** A matching 16x16 favicon.
+    *   **Icons:** Clean, vector icons for "Edit" and "Delete" actions.
 `,
   Architect: `
 ### **System Architecture: Single-File Task Manager**
@@ -2258,24 +2273,91 @@ const mockResponses: Record<string, string> = {
 ---
 
 **Favicon Data URI:**
-\`${mockFaviconUri}\`
+\`data:image/svg+xml;base64,${generateMockFaviconBase64()}\`
 
 ---
+
 \`\`\`css
-/* General Styles */
-body {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    background-color: #1a202c;
-    color: #e2e8f0;
-    margin: 0;
-    padding: 2rem;
+:root {
+    /* Colors */
+    --background-color: #1e293b;
+    --surface-color: #334155;
+    --text-color: #e2e8f0;
+    --primary-color: #38bdf8;
+    --delete-color: #f43f5e;
+    
+    /* Typography */
+    --font-family-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    
+    /* Spacing */
+    --spacing-md: 0.75rem;
+    --spacing-lg: 1rem;
+    --spacing-2xl: 2rem;
+    
+    /* Borders */
+    --border-radius: 0.375rem;
 }
-/* ... etc ... */
+
+body {
+    font-family: var(--font-family-sans);
+    background-color: var(--background-color);
+    color: var(--text-color);
+    margin: 0;
+    padding: var(--spacing-2xl);
+    display: flex;
+    justify-content: center;
+}
+
+main {
+    width: 100%;
+    max-width: 600px;
+}
+
+h1 {
+    color: var(--primary-color);
+    text-align: center;
+}
+
+ul {
+    list-style: none;
+    padding: 0;
+}
+
+li {
+    background-color: var(--surface-color);
+    padding: var(--spacing-lg);
+    margin-bottom: var(--spacing-md);
+    border-radius: var(--border-radius);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+button {
+    background-color: var(--primary-color);
+    border: none;
+    color: var(--background-color);
+    padding: var(--spacing-md) var(--spacing-lg);
+    border-radius: var(--border-radius);
+    cursor: pointer;
+}
+
+.delete-btn {
+    background-color: var(--delete-color);
+}
 \`\`\`
 
-**Integration Guide:**
-- Apply the 'task-list' ID to the main UL element.
-- Use the 'add-task-btn' class for the submit button.
+---
+
+### **Integration Guide**
+
+1.  **Favicon:** Add a \`<link rel="icon" ...>\` tag to the \`<head>\` pointing to the Favicon Data URI.
+2.  **Logo:** This logo is for conceptual purposes. It should not be added to the HTML \`<body>\` by the Coder.
+3.  **Structure:**
+    *   Apply the generated CSS in a \`<style>\` tag in the \`<head>\`.
+    *   The main container should be a \`<main>\` element.
+    *   The task list should be a \`<ul>\` element. Each task should be an \`<li>\`.
+    *   The delete button for each task should have the class \`delete-btn\`.
 `,
   Coder: mockTodoAppCodeV1,
   Reviewer: `
@@ -2307,14 +2389,17 @@ class MockProvider implements Provider {
     public readonly name = 'mock';
 
     async call(prompt: string, onChunk: (chunk: string) => void): Promise<string> {
-        let agentName: string = 'Planner'; // Default
-        if (prompt.includes('**Planner**')) agentName = 'Planner';
-        if (prompt.includes('**Architect**')) agentName = 'Architect';
-        if (prompt.includes('**UX/UI Designer**')) agentName = 'UX/UI Designer';
-        if (prompt.includes('**Coder**')) agentName = 'Coder';
-        if (prompt.includes('**Reviewer**')) agentName = 'Reviewer';
-        if (prompt.includes('**Patcher**')) agentName = 'Patcher';
-        if (prompt.includes('**Deployer**')) agentName = 'Deployer';
+        // Default to Planner if no specific agent is identified in the prompt.
+        let agentName: string = 'Planner';
+        
+        // This logic checks for the agent's name in the prompt to determine which mock response to serve.
+        if (prompt.includes('**Agent:** Planner')) agentName = 'Planner';
+        if (prompt.includes('**Agent:** Architect')) agentName = 'Architect';
+        if (prompt.includes('**Agent:** UX/UI Designer')) agentName = 'UX/UI Designer';
+        if (prompt.includes('**Agent:** Coder')) agentName = 'Coder';
+        if (prompt.includes('**Agent:** Reviewer')) agentName = 'Reviewer';
+        if (prompt.includes('**Agent:** Patcher')) agentName = 'Patcher';
+        if (prompt.includes('**Agent:** Deployer')) agentName = 'Deployer';
         
         let mockOutput = mockResponses[agentName] || "Processing... Done.";
 

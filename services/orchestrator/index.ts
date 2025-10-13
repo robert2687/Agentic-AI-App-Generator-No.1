@@ -118,17 +118,24 @@ export class Orchestrator {
 
   private async runWorkflow(initialPrompt: string, startingAgentName: AgentName) {
     const startIndex = this.agents.findIndex(a => a.name === startingAgentName);
-    let currentInput = initialPrompt;
+    let previousAgentOutput = initialPrompt;
 
     for (let i = startIndex; i < this.agents.length; i++) {
       const agent = this.agents[i];
       if (agent.name === 'Deployer') continue; // Skip deployer in main flow
-      
+
+      // The first agent's prompt is already fully formed.
+      // For subsequent agents, we build the prompt from the previous output and the agent's role.
+      const promptForAgent = (i === startIndex)
+        ? previousAgentOutput
+        : `**Previous Agent's Output:**\n${previousAgentOutput}\n\n**Agent:** ${agent.name}\n**Task:**\n${agent.role}`;
+
       try {
-        currentInput = await this.executeAgent(agent, currentInput);
+        const output = await this.executeAgent(agent, promptForAgent);
+        previousAgentOutput = output; // This becomes the input for the next agent.
 
         if (agent.name === 'Coder' || agent.name === 'Patcher') {
-          const code = extractCode(currentInput, 'html');
+          const code = extractCode(output, 'html');
           if (code) {
             this.callbacks.onFinalCode(code);
           }
