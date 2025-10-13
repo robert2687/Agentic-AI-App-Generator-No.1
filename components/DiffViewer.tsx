@@ -22,7 +22,7 @@ export const DiffViewer: React.FC<DiffViewerProps> = ({ oldValue, newValue }) =>
         Code Difference from Previous Step
       </h4>
       <div className="font-mono text-xs bg-background-dark p-sm overflow-x-auto">
-        {changes.map((part, partIndex) => {
+        {changes.flatMap((part, partIndex) => {
           const partClasses = part.added
             ? 'bg-status-success-muted'
             : part.removed

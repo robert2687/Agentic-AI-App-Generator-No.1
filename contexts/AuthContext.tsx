@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import type { Session, User } from '@supabase/supabase-js';
 import { supabase } from '../services/supabaseClient';
+import { usePremiumStatus } from '../hooks/usePremiumStatus';
 
 interface AuthContextType {
   session: Session | null;
@@ -9,7 +10,7 @@ interface AuthContextType {
   loading: boolean;
   isPremium: boolean;
   premiumCheckError: string | null;
-  checkPremiumStatus: () => Promise<boolean>;
+  checkPremiumStatus: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -17,54 +18,19 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [isPremium, setIsPremium] = useState<boolean>(false);
-  const [premiumCheckError, setPremiumCheckError] = useState<string | null>(null);
+  const [authLoading, setAuthLoading] = useState(true);
 
-  const checkPremiumStatus = async (): Promise<boolean> => {
-    setPremiumCheckError(null);
-    if (!supabase) {
-      setIsPremium(false);
-      return false;
-    }
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-
-      if (!user) {
-        setIsPremium(false);
-        return false;
-      }
-      
-      const { data, error } = await supabase
-        .from('entitlements')
-        .select('status')
-        .eq('user_id', user.id)
-        .eq('product_id', 'premium_unlock')
-        .eq('status', 'active')
-        .limit(1);
-
-      if (error) {
-        throw error;
-      }
-      
-      const premiumStatus = (data?.length ?? 0) > 0;
-      setIsPremium(premiumStatus);
-      return premiumStatus;
-    } catch (error: any) {
-      const errorMessage = error.message || error;
-      console.error('Error checking premium status:', errorMessage);
-      if (typeof errorMessage === 'string' && errorMessage.includes("Could not find the table 'public.entitlements'")) {
-        setPremiumCheckError("The 'entitlements' table is missing. Please create it in your Supabase project to enable premium features.");
-      }
-      setIsPremium(false);
-      return false;
-    }
+  // All premium logic is now handled by the custom hook.
+  const { isPremium, error: premiumCheckError, loading: premiumLoading, refetch } = usePremiumStatus();
+  
+  // This function now simply triggers the hook to re-fetch status.
+  const checkPremiumStatus = async () => {
+    refetch();
   };
-
 
   useEffect(() => {
     if (!supabase) {
-      setLoading(false);
+      setAuthLoading(false);
       return;
     }
 
@@ -73,25 +39,18 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         const { data: { session } } = await supabase.auth.getSession();
         setSession(session);
         setUser(session?.user ?? null);
-        await checkPremiumStatus();
       } catch (error: any) {
         console.error("Error fetching session:", error.message || error);
       } finally {
-        setLoading(false);
+        setAuthLoading(false);
       }
     };
 
     getSession();
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
       setUser(session?.user ?? null);
-      // Don't reset premium status immediately, wait for the check
-      if (session) {
-        await checkPremiumStatus();
-      } else {
-        setIsPremium(false);
-      }
     });
 
     return () => {
@@ -110,9 +69,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     session,
     user,
     signOut,
-    loading,
+    loading: authLoading || premiumLoading, // Combine auth and premium loading states
     isPremium,
-    premiumCheckError,
+    premiumCheckError: premiumCheckError || null,
     checkPremiumStatus,
   };
 

@@ -3,17 +3,17 @@ import type { Agent, AgentName, AuditLogEntry } from './types';
 import { AgentStatus } from './types';
 import { INITIAL_AGENTS } from './constants';
 import Header from './components/Header';
-import PromptInput from './components/PromptInput';
-import AgentCard from './components/AgentCard';
-import AgentDetailView from './components/AgentDetailView';
-import PreviewPanel from './components/PreviewPanel';
 import PreviewModal from './components/PreviewModal';
 import DeploymentModal from './components/DeploymentModal';
 import { Orchestrator } from './services/orchestrator';
 import { logger } from './services/loggerInstance';
 import BottomNav from './components/BottomNav';
-import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { AuthProvider } from './contexts/AuthContext';
 import AuthModal from './components/AuthModal';
+import { withPremiumGate } from './hoc/withPremiumGate';
+import GeneratorWorkspace from './components/GeneratorWorkspace';
+
+const GatedGeneratorWorkspace = withPremiumGate(GeneratorWorkspace);
 
 const AppContent: React.FC = () => {
   const [agents, setAgents] = useState<Agent[]>(INITIAL_AGENTS);
@@ -37,7 +37,6 @@ const AppContent: React.FC = () => {
   const [mobileView, setMobileView] = useState<'home' | 'audit' | 'preview'>('home');
 
   const orchestratorRef = useRef<Orchestrator | null>(null);
-  const { user, loading: authLoading, isPremium, premiumCheckError, checkPremiumStatus } = useAuth();
 
   const handleAgentUpdate = useCallback((updatedAgent: Agent) => {
     setAgents(prevAgents =>
@@ -158,7 +157,6 @@ const AppContent: React.FC = () => {
     await orchestratorRef.current.runDeployment(finalCode);
   }, [finalCode, deployerAgent]);
 
-  const selectedAgent = agents.find(a => a.id === selectedAgentId) || agents[0];
   const currentAgent = agents.find(a => a.status === AgentStatus.RUNNING) || null;
 
   const handleSelectAgent = (agentId: number) => {
@@ -167,147 +165,38 @@ const AppContent: React.FC = () => {
       setMobileView('audit');
     }
   };
-
-  const desktopGridClasses = isZenMode
-    ? 'grid-cols-1'
-    : 'grid-cols-1 lg:grid-cols-[minmax(0,_2fr)_minmax(0,_3fr)]';
     
-  const isInteractionDisabled = authLoading || !user;
-
   return (
     <div className="bg-slate-900 text-white min-h-screen font-sans pb-20 lg:pb-0">
       <Header onSignIn={() => setShowAuthModal(true)} />
       <main className="max-w-screen-3xl mx-auto p-6">
-        {/* Desktop Layout */}
-        <div className={`hidden lg:grid ${desktopGridClasses} gap-6`}>
-          {/* Left Panel */}
-          <div className={`flex flex-col gap-6 transition-all duration-300 ${isZenMode ? 'lg:hidden' : ''}`}>
-            <PromptInput
-              projectGoal={projectGoal}
-              setProjectGoal={setProjectGoal}
-              onStart={startGeneration}
-              onReset={resetState}
-              onPreview={() => setShowPreviewModal(true)}
-              isGenerating={isGenerating}
-              isComplete={isComplete}
-              refinementPrompt={refinementPrompt}
-              setRefinementPrompt={setRefinementPrompt}
-              onRefine={startRefinement}
-              isError={isError}
-              errorText={errorText}
-              disabled={isInteractionDisabled}
-              authLoading={authLoading}
-              isPremium={isPremium}
-              premiumCheckError={premiumCheckError}
-              user={user}
-              checkPremiumStatus={checkPremiumStatus}
-            />
-            <div className="bg-slate-800/50 rounded-lg p-4 flex flex-col gap-4">
-              <h2 className="text-lg font-bold text-sky-400">Agent Workflow</h2>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {agents.map(agent => (
-                  <AgentCard
-                    key={agent.id}
-                    agent={agent}
-                    isSelected={selectedAgent.id === agent.id}
-                    isCurrent={currentAgent?.id === agent.id}
-                    isInRecoveryMode={!!recoveryContext}
-                    onClick={() => setSelectedAgentId(agent.id)}
-                  />
-                ))}
-              </div>
-            </div>
-            <div className="bg-slate-800/50 rounded-lg h-[500px]">
-              <AgentDetailView agent={selectedAgent} recoveryContext={recoveryContext} />
-            </div>
-          </div>
-
-          {/* Right Panel */}
-          <div className="bg-slate-800/50 rounded-lg h-full min-h-[80vh]">
-            <PreviewPanel
-              code={finalCode}
-              isZenMode={isZenMode}
-              onToggleZenMode={() => setIsZenMode(prev => !prev)}
-              isGenerating={isGenerating}
-              currentAgent={currentAgent}
-              totalAgents={agents.length}
-              isWorkflowComplete={isComplete}
-              onDeploy={startDeployment}
-              deployerAgent={deployerAgent}
-              auditLog={auditLog}
-              disabled={isInteractionDisabled}
-              isPremium={isPremium}
-              premiumCheckError={premiumCheckError}
-            />
-          </div>
-        </div>
-
-        {/* Mobile Layout */}
-        <div className="lg:hidden">
-          {mobileView === 'home' && (
-            <div className="flex flex-col gap-6">
-              <PromptInput
-                projectGoal={projectGoal}
-                setProjectGoal={setProjectGoal}
-                onStart={startGeneration}
-                onReset={resetState}
-                onPreview={() => setShowPreviewModal(true)}
-                isGenerating={isGenerating}
-                isComplete={isComplete}
-                refinementPrompt={refinementPrompt}
-                setRefinementPrompt={setRefinementPrompt}
-                onRefine={startRefinement}
-                isError={isError}
-                errorText={errorText}
-                disabled={isInteractionDisabled}
-                authLoading={authLoading}
-                isPremium={isPremium}
-                premiumCheckError={premiumCheckError}
-                user={user}
-                checkPremiumStatus={checkPremiumStatus}
-              />
-              <div className="bg-slate-800/50 rounded-lg p-4 flex flex-col gap-4">
-                <h2 className="text-lg font-bold text-sky-400">Agent Workflow</h2>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {agents.map(agent => (
-                    <AgentCard
-                      key={agent.id}
-                      agent={agent}
-                      isSelected={selectedAgent.id === agent.id}
-                      isCurrent={currentAgent?.id === agent.id}
-                      isInRecoveryMode={!!recoveryContext}
-                      onClick={() => handleSelectAgent(agent.id)}
-                    />
-                  ))}
-                </div>
-              </div>
-            </div>
-          )}
-          {mobileView === 'audit' && (
-             <div className="bg-slate-800/50 rounded-lg h-[calc(100vh-200px)]">
-              <AgentDetailView agent={selectedAgent} recoveryContext={recoveryContext} />
-            </div>
-          )}
-           {mobileView === 'preview' && (
-             <div className="bg-slate-800/50 rounded-lg h-[calc(100vh-200px)]">
-               <PreviewPanel
-                  code={finalCode}
-                  isZenMode={isZenMode}
-                  onToggleZenMode={() => setIsZenMode(prev => !prev)}
-                  isGenerating={isGenerating}
-                  currentAgent={currentAgent}
-                  totalAgents={agents.length}
-                  isWorkflowComplete={isComplete}
-                  onDeploy={startDeployment}
-                  deployerAgent={deployerAgent}
-                  auditLog={auditLog}
-                  disabled={isInteractionDisabled}
-                  isPremium={isPremium}
-                  premiumCheckError={premiumCheckError}
-                />
-            </div>
-          )}
-        </div>
+        <GatedGeneratorWorkspace
+          agents={agents}
+          selectedAgentId={selectedAgentId}
+          currentAgent={currentAgent}
+          recoveryContext={recoveryContext}
+          setSelectedAgentId={setSelectedAgentId}
+          isZenMode={isZenMode}
+          projectGoal={projectGoal}
+          setProjectGoal={setProjectGoal}
+          startGeneration={startGeneration}
+          resetState={resetState}
+          setShowPreviewModal={setShowPreviewModal}
+          isGenerating={isGenerating}
+          isComplete={isComplete}
+          refinementPrompt={refinementPrompt}
+          setRefinementPrompt={setRefinementPrompt}
+          startRefinement={startRefinement}
+          isError={isError}
+          errorText={errorText}
+          finalCode={finalCode}
+          setIsZenMode={setIsZenMode}
+          startDeployment={startDeployment}
+          deployerAgent={deployerAgent}
+          auditLog={auditLog}
+          handleSelectAgent={handleSelectAgent}
+          mobileView={mobileView}
+        />
       </main>
 
       <BottomNav activeView={mobileView} setActiveView={setMobileView} />

@@ -16,8 +16,6 @@ import AuditInspector from './AuditInspector';
 import DownloadIcon from './icons/DownloadIcon';
 import { logger } from '../services/loggerInstance';
 import MoreVerticalIcon from './icons/MoreVerticalIcon';
-import PremiumIcon from './icons/PremiumIcon';
-import ErrorIcon from './icons/ErrorIcon';
 
 interface PreviewPanelProps {
   code: string | null;
@@ -30,15 +28,11 @@ interface PreviewPanelProps {
   onDeploy: () => void;
   deployerAgent?: Agent;
   auditLog: AuditLogEntry[];
-  disabled?: boolean;
-  isPremium: boolean;
-  premiumCheckError: string | null;
 }
 
 const PreviewPanel: React.FC<PreviewPanelProps> = ({ 
   code, isZenMode, onToggleZenMode, isGenerating, currentAgent, totalAgents,
-  isWorkflowComplete, onDeploy, deployerAgent, auditLog, disabled = false, isPremium,
-  premiumCheckError
+  isWorkflowComplete, onDeploy, deployerAgent, auditLog
 }) => {
   const [activeTab, setActiveTab] = useState<'preview' | 'code' | 'logs'>('preview');
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -103,7 +97,7 @@ const PreviewPanel: React.FC<PreviewPanelProps> = ({
     <>
       <button
         onClick={onDeploy}
-        disabled={!isWorkflowComplete || isDeployerRunning || isGenerating || disabled || !isPremium || !!premiumCheckError}
+        disabled={!isWorkflowComplete || isDeployerRunning || isGenerating}
         className="flex items-center gap-2 bg-accent-indigo text-white font-bold py-1.5 px-3 rounded-md text-sm hover:bg-accent-indigo-hover disabled:bg-surface-highlight-dark disabled:text-text-tertiary-dark disabled:cursor-not-allowed transition-colors w-full lg:w-auto"
         aria-label={isWorkflowComplete ? "Deploy application" : "Complete generation to enable deployment"}
       >
@@ -116,7 +110,7 @@ const PreviewPanel: React.FC<PreviewPanelProps> = ({
       </button>
       <button
         onClick={handleExportLogs}
-        disabled={auditLog.length === 0 || disabled}
+        disabled={auditLog.length === 0}
         className="flex items-center gap-2 text-text-secondary-dark hover:bg-surface-highlight-dark p-2 rounded-md transition-colors disabled:text-text-tertiary-dark disabled:cursor-not-allowed w-full lg:w-auto lg:p-1.5 lg:rounded-full lg:bg-transparent"
         aria-label="Export audit logs as JSON"
       >
@@ -151,36 +145,6 @@ const PreviewPanel: React.FC<PreviewPanelProps> = ({
     }
     return `${baseClasses} text-text-secondary-dark hover:bg-surface-highlight-dark`;
   };
-
-  let overlayContent: React.ReactNode | null = null;
-  if (disabled) {
-      overlayContent = (
-          <p className="text-text-secondary-dark text-center">Please sign in to view the application preview.</p>
-      );
-  } else if (premiumCheckError) {
-      overlayContent = (
-          <div className="text-center flex flex-col items-center gap-3">
-              <ErrorIcon className="w-10 h-10 text-amber-400" />
-              <h3 className="text-xl font-bold text-amber-300">Database Setup Required</h3>
-              <p className="text-slate-400/90 text-sm max-w-sm">
-                  The preview is disabled because the 'entitlements' table is missing. Please see the main panel for setup instructions.
-              </p>
-          </div>
-      );
-  } else if (!isPremium) {
-      overlayContent = (
-          <div className="text-center flex flex-col items-center gap-3">
-              <PremiumIcon className="w-10 h-10 text-amber-400" />
-              <h3 className="text-xl font-bold text-amber-300">Premium Feature</h3>
-              <p className="text-slate-400/90 text-sm max-w-sm">
-                  Application generation and preview are available for premium members.
-              </p>
-              <button className="mt-2 bg-amber-500 text-slate-900 font-bold py-2 px-5 rounded-md hover:bg-amber-400 transition-colors">
-                  Upgrade Now
-              </button>
-          </div>
-      );
-  }
 
   return (
     <div className="flex flex-col h-full bg-background-dark rounded-lg">
@@ -267,14 +231,8 @@ const PreviewPanel: React.FC<PreviewPanelProps> = ({
                 </div>
             </div>
         )}
-
-        {overlayContent && (
-          <div className="absolute inset-0 bg-background-dark/90 backdrop-blur-sm flex flex-col items-center justify-center z-10 p-4">
-            {overlayContent}
-          </div>
-        )}
         
-        <div className={overlayContent ? 'opacity-0' : ''}>
+        <div>
           {activeTab === 'preview' && (
             <iframe
               srcDoc={code || '<!DOCTYPE html><html><head></head><body style="display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; background-color: #fff; font-family: sans-serif; color: #666;">Waiting for Coder agent...</body></html>'}
@@ -292,7 +250,7 @@ const PreviewPanel: React.FC<PreviewPanelProps> = ({
       {isWorkflowComplete && activeTab === 'preview' && (
         <button
           onClick={onDeploy}
-          disabled={isDeployerRunning || isGenerating || disabled || !isPremium || !!premiumCheckError}
+          disabled={isDeployerRunning || isGenerating}
           className="lg:hidden fixed bottom-24 right-6 bg-accent-indigo text-white rounded-full p-4 shadow-lg hover:bg-accent-indigo-hover disabled:bg-surface-highlight-dark disabled:text-text-tertiary-dark disabled:cursor-not-allowed transition-all transform hover:scale-110 active:scale-100 z-30"
           aria-label="Deploy application"
         >
