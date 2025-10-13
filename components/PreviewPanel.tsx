@@ -98,7 +98,7 @@ const PreviewPanel: React.FC<PreviewPanelProps> = ({
       <button
         onClick={onDeploy}
         disabled={!isWorkflowComplete || isDeployerRunning || isGenerating}
-        className="flex items-center gap-2 bg-accent-indigo text-white font-bold py-1.5 px-3 rounded-md text-sm hover:bg-indigo-500 disabled:bg-slate-600 disabled:cursor-not-allowed transition-colors w-full lg:w-auto"
+        className="flex items-center gap-2 bg-accent-indigo text-white font-bold py-1.5 px-3 rounded-md text-sm hover:bg-accent-indigo-hover disabled:bg-surface-highlight-dark disabled:text-text-tertiary-dark disabled:cursor-not-allowed transition-colors w-full lg:w-auto"
         aria-label={isWorkflowComplete ? "Deploy application" : "Complete generation to enable deployment"}
       >
         {isDeployerRunning ? (
@@ -249,7 +249,7 @@ const PreviewPanel: React.FC<PreviewPanelProps> = ({
         <button
           onClick={onDeploy}
           disabled={isDeployerRunning || isGenerating}
-          className="lg:hidden fixed bottom-24 right-6 bg-accent-indigo text-white rounded-full p-4 shadow-lg hover:bg-indigo-500 disabled:bg-slate-600 disabled:cursor-not-allowed transition-all transform hover:scale-110 active:scale-100 z-30"
+          className="lg:hidden fixed bottom-24 right-6 bg-accent-indigo text-white rounded-full p-4 shadow-lg hover:bg-accent-indigo-hover disabled:bg-surface-highlight-dark disabled:text-text-tertiary-dark disabled:cursor-not-allowed transition-all transform hover:scale-110 active:scale-100 z-30"
           aria-label="Deploy application"
         >
           <RocketIcon className="w-6 h-6" />

@@ -22,6 +22,7 @@ const colors = {
   'accent-primary-hover': '#0ea5e9',
   'accent-secondary': '#2dd4bf',
   'accent-indigo': '#818cf8',
+  'accent-indigo-hover': '#6366f1',
   'status-success': '#4ade80',
   'status-error': '#f87171',
   'status-warning': '#facc15',
