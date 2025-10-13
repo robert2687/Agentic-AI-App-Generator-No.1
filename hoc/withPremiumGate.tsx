@@ -1,37 +1,18 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { usePremiumStatus } from '../hooks/usePremiumStatus';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../services/supabaseClient';
 
 import SpinnerIcon from '../components/icons/SpinnerIcon';
 import ErrorIcon from '../components/icons/ErrorIcon';
-import PremiumIcon from '../components/icons/PremiumIcon';
 import UserIcon from '../components/icons/UserIcon';
 import CopyIcon from '../components/icons/CopyIcon';
 import CheckIcon from '../components/icons/CheckIcon';
+import Paywall from '../components/Paywall';
 
-export function withPremiumGate<P extends object>(
-  WrappedComponent: React.ComponentType<P>
-): React.FC<P> {
-  return function PremiumGateWrapper(props: P) {
-    const { user, loading: authLoading } = useAuth();
-    const { isPremium, loading: premiumLoading, error: premiumError, refetch } = usePremiumStatus();
-    const [isGranting, setIsGranting] = useState(false);
-
-    const loading = authLoading || premiumLoading;
-
-    if (loading) {
-      return (
-        <div className="flex flex-col items-center justify-center min-h-[400px] p-6 text-center bg-slate-800/50 rounded-lg">
-          <SpinnerIcon className="w-8 h-8 text-sky-400" />
-          <p className="mt-4 text-slate-400">Loading user session...</p>
-        </div>
-      );
-    }
-    
-    if (premiumError) {
-        const [isSqlCopied, setIsSqlCopied] = useState(false);
-        const sqlScript = `/**
+const PremiumErrorDisplay: React.FC<{ error: string }> = ({ error }) => {
+    const [isSqlCopied, setIsSqlCopied] = useState(false);
+    const sqlScript = `/**
 * 1. ENTITLEMENTS TABLE
 * Stores the current state of a user's premium access.
 */
@@ -175,56 +156,100 @@ LEFT JOIN LATERAL (
   LIMIT 1
 ) a ON true;`;
 
-        const handleCopySql = () => {
-          navigator.clipboard.writeText(sqlScript).then(() => {
-              setIsSqlCopied(true);
-              setTimeout(() => setIsSqlCopied(false), 2500);
-          }, (err) => {
-              console.error('Could not copy text: ', err);
-          });
-        };
+    const handleCopySql = () => {
+        navigator.clipboard.writeText(sqlScript).then(() => {
+            setIsSqlCopied(true);
+            setTimeout(() => setIsSqlCopied(false), 2500);
+        }, (err) => {
+            console.error('Could not copy text: ', err);
+        });
+    };
 
-        const sqlScriptBlock = (
-             <div className="mt-2 p-3 bg-slate-900/70 rounded-md border border-slate-600">
-                <p className="mb-2 text-slate-300">This app requires a database table and function to manage premium features. Please copy the script below and run it in your Supabase project's SQL Editor:</p>
-                <div className="relative group">
-                    <pre className="text-[10px] bg-slate-950 p-3 pr-16 rounded overflow-x-auto text-sky-300">
-                        <code>
-                            {sqlScript}
-                        </code>
-                    </pre>
-                    <button
-                        onClick={handleCopySql}
-                        className="absolute top-2 right-2 flex items-center gap-1.5 bg-slate-700/80 hover:bg-slate-600/80 text-slate-300 font-sans text-xs px-2 py-1 rounded-md transition-colors opacity-50 group-hover:opacity-100"
-                        aria-label="Copy SQL script to clipboard"
-                    >
-                        {isSqlCopied ? (
-                            <>
-                                <CheckIcon className="w-3.5 h-3.5 text-green-400" />
-                                Copied!
-                            </>
-                        ) : (
-                            <>
-                                <CopyIcon className="w-3.5 h-3.5" />
-                                Copy
-                            </>
-                        )}
-                    </button>
-                </div>
+    const sqlScriptBlock = (
+         <div className="mt-2 p-3 bg-slate-900/70 rounded-md border border-slate-600">
+            <p className="mb-2 text-slate-300">This app requires a database table and function to manage premium features. Please copy the script below and run it in your Supabase project's SQL Editor:</p>
+            <div className="relative group">
+                <pre className="text-[10px] bg-slate-950 p-3 pr-16 rounded overflow-x-auto text-sky-300">
+                    <code>
+                        {sqlScript}
+                    </code>
+                </pre>
+                <button
+                    onClick={handleCopySql}
+                    className="absolute top-2 right-2 flex items-center gap-1.5 bg-slate-700/80 hover:bg-slate-600/80 text-slate-300 font-sans text-xs px-2 py-1 rounded-md transition-colors opacity-50 group-hover:opacity-100"
+                    aria-label="Copy SQL script to clipboard"
+                >
+                    {isSqlCopied ? (
+                        <>
+                            <CheckIcon className="w-3.5 h-3.5 text-green-400" />
+                            Copied!
+                        </>
+                    ) : (
+                        <>
+                            <CopyIcon className="w-3.5 h-3.5" />
+                            Copy
+                        </>
+                    )}
+                </button>
             </div>
-        );
-        return (
-            <div className="bg-amber-900/40 border border-amber-700/60 rounded-lg p-6 flex flex-col gap-4 items-center">
-              <ErrorIcon className="w-8 h-8 text-amber-400" />
-              <h2 className="text-lg font-bold text-amber-300">Database Setup Required</h2>
-              <p className="text-amber-300/90 text-sm max-w-md text-center">
-                  {premiumError}
-              </p>
-              <div className="mt-4 pt-4 border-t border-amber-700/50 text-xs text-slate-500 text-left w-full">
-                  {sqlScriptBlock}
-              </div>
+        </div>
+    );
+
+    return (
+        <div className="bg-amber-900/40 border border-amber-700/60 rounded-lg p-6 flex flex-col gap-4 items-center">
+            <ErrorIcon className="w-8 h-8 text-amber-400" />
+            <h2 className="text-lg font-bold text-amber-300">Database Setup Required</h2>
+            <p className="text-amber-300/90 text-sm max-w-md text-center">
+                {error}
+            </p>
+            <div className="mt-4 pt-4 border-t border-amber-700/50 text-xs text-slate-500 text-left w-full">
+                {sqlScriptBlock}
             </div>
-        );
+        </div>
+    );
+};
+
+
+export function withPremiumGate<P extends object>(
+  WrappedComponent: React.ComponentType<P>
+): React.FC<P> {
+  return function PremiumGateWrapper(props: P) {
+    const { user, loading: authLoading } = useAuth();
+    const { isPremium, loading: premiumLoading, error: premiumError, refetch } = usePremiumStatus();
+    const [isGranting, setIsGranting] = useState(false);
+    const [isRestoring, setIsRestoring] = useState(false);
+    const [restoreMessage, setRestoreMessage] = useState<string | null>(null);
+
+    const loading = authLoading || premiumLoading;
+
+    const handleRestore = useCallback(async () => {
+      setIsRestoring(true);
+      setRestoreMessage(null);
+      try {
+        const hasPremium = await refetch();
+        // If the user gains premium, this component will unmount, so we only
+        // need to handle the case where they do not have premium.
+        if (!hasPremium) {
+          setRestoreMessage("No active premium subscription found for this account.");
+        }
+      } catch (e: any) {
+        setRestoreMessage(`Error: ${e.message || 'Could not check status.'}`);
+      } finally {
+        setIsRestoring(false);
+      }
+    }, [refetch]);
+
+    if (loading) {
+      return (
+        <div className="flex flex-col items-center justify-center min-h-[400px] p-6 text-center bg-slate-800/50 rounded-lg">
+          <SpinnerIcon className="w-8 h-8 text-sky-400" />
+          <p className="mt-4 text-slate-400">Loading user session...</p>
+        </div>
+      );
+    }
+    
+    if (premiumError) {
+        return <PremiumErrorDisplay error={premiumError} />;
     }
     
     if (!user) {
@@ -265,21 +290,13 @@ LEFT JOIN LATERAL (
           };
 
         return (
-            <div className="bg-slate-800/50 rounded-lg p-6 flex flex-col gap-3 text-center items-center border-2 border-amber-500/30">
-                <PremiumIcon className="w-10 h-10 text-amber-400" />
-                <h2 className="text-xl font-bold text-amber-300">Upgrade to Premium</h2>
-                <p className="text-slate-400/90 text-sm max-w-md mt-1">
-                    Unlock the full power of the AI Agent team. This is a demo app, so you can grant yourself premium access for free to test the generation flow.
-                </p>
-                <button
-                    onClick={handleGrantPremium}
-                    disabled={isGranting}
-                    className="mt-4 w-full bg-amber-500 text-slate-900 font-bold py-2 px-6 rounded-md hover:bg-amber-400 transition-colors flex items-center justify-center gap-2 disabled:bg-amber-500/50 disabled:cursor-wait"
-                >
-                    {isGranting ? <SpinnerIcon className="w-5 h-5" /> : <PremiumIcon className="w-5 h-5" />}
-                    {isGranting ? 'Granting...' : 'Grant Premium Access'}
-                </button>
-            </div>
+            <Paywall 
+                onGrantPremium={handleGrantPremium} 
+                isGranting={isGranting}
+                onRestore={handleRestore}
+                isRestoring={isRestoring}
+                restoreMessage={restoreMessage}
+            />
         );
     }
 

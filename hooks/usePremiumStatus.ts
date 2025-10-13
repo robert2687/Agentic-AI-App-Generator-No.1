@@ -25,11 +25,6 @@ export function usePremiumStatus() {
     loading: true,
   });
   const [user, setUser] = useState<User | null>(null);
-  const [trigger, setTrigger] = useState(0);
-
-  const refetch = useCallback(() => {
-    setTrigger(t => t + 1);
-  }, []);
 
   // Effect to get the current user and listen for auth state changes
   useEffect(() => {
@@ -58,68 +53,85 @@ export function usePremiumStatus() {
       authListener.subscription.unsubscribe();
     };
   }, []);
+  
+  const getStatus = useCallback(async (currentUser: User | null): Promise<boolean> => {
+    if (!supabase) {
+        setStatus({ isPremium: false, loading: false, error: 'Supabase client not available.' });
+        return false;
+    }
+    if (!currentUser) {
+      setStatus({ isPremium: false, loading: false });
+      return false;
+    }
 
-  // Effect to fetch premium status when the user or a manual trigger changes
+    setStatus(prev => ({ ...prev, isPremium: false, loading: true, error: undefined }));
+
+    try {
+      const { data, error } = await supabase
+        .from("entitlements_with_audit")
+        .select("*")
+        .eq("user_id", currentUser.id)
+        .maybeSingle();
+
+      if (error) throw error;
+
+      if (data) {
+        const newIsPremium = data.status === "active";
+        setStatus({
+          isPremium: newIsPremium,
+          lastChange: {
+            action: data.last_action,
+            oldStatus: data.old_status,
+            newStatus: data.new_status,
+            at: data.audit_created_at,
+          },
+          loading: false,
+        });
+        return newIsPremium;
+      } else {
+        setStatus({ isPremium: false, loading: false });
+        return false;
+      }
+    } catch (e: any) {
+      const errorMessage = e.message || e;
+      let userFriendlyError = "An error occurred while checking your premium status.";
+      if (typeof errorMessage === 'string' && (errorMessage.includes("relation \"public.entitlements_with_audit\" does not exist") || errorMessage.includes("Could not find the view"))) {
+         userFriendlyError = "The 'entitlements_with_audit' view is missing. Please run the full SQL script from the developer tips to create it.";
+      }
+      setStatus({
+        isPremium: false,
+        loading: false,
+        error: userFriendlyError,
+      });
+      return false;
+    }
+  }, []);
+
+  // Effect to fetch status when the user changes
   useEffect(() => {
-    if (!supabase) return;
-    
-    let mounted = true;
+      // Create a mutable-safe reference to the function.
+      const getStatusFunc = getStatus;
+      let mounted = true;
 
-    const getStatus = async () => {
-      if (!user) {
-        if (mounted) setStatus({ isPremium: false, loading: false });
-        return;
-      }
+      const fetchInitialStatus = () => {
+          if (mounted) {
+              getStatusFunc(user);
+          }
+      };
       
-      if (mounted) setStatus(prev => ({ ...prev, isPremium: false, loading: true, error: undefined }));
+      fetchInitialStatus();
 
-      try {
-        const { data, error } = await supabase
-          .from("entitlements_with_audit")
-          .select("*")
-          .eq("user_id", user.id)
-          .maybeSingle();
+      return () => {
+          mounted = false;
+      };
+  }, [user, getStatus]);
 
-        if (error) throw error;
-
-        if (mounted) {
-          if (data) {
-            setStatus({
-              isPremium: data.status === "active",
-              lastChange: {
-                action: data.last_action,
-                oldStatus: data.old_status,
-                newStatus: data.new_status,
-                at: data.audit_created_at,
-              },
-              loading: false,
-            });
-          } else {
-            setStatus({ isPremium: false, loading: false });
-          }
-        }
-      } catch (e: any) {
-        if (mounted) {
-          const errorMessage = e.message || e;
-          let userFriendlyError = "An error occurred while checking your premium status.";
-          if (typeof errorMessage === 'string' && (errorMessage.includes("relation \"public.entitlements_with_audit\" does not exist") || errorMessage.includes("Could not find the view"))) {
-             userFriendlyError = "The 'entitlements_with_audit' view is missing. Please run the full SQL script from the developer tips to create it.";
-          }
-          setStatus({
-            isPremium: false,
-            loading: false,
-            error: userFriendlyError,
-          });
-        }
-      }
-    };
-
-    getStatus();
-
-    return () => {
-      mounted = false;
-    };
-  }, [user, trigger]);
+  // The public refetch function now calls getStatus directly.
+  const refetch = useCallback(async (): Promise<boolean> => {
+    // We pass the current user from state to ensure the check is accurate,
+    // even if it's called while the user state is transitioning.
+    return await getStatus(user);
+  }, [getStatus, user]);
 
   return { ...status, refetch };
 }
