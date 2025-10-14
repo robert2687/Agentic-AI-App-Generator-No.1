@@ -39,6 +39,11 @@ const AppContent: React.FC = () => {
   const orchestratorRef = useRef<Orchestrator | null>(null);
 
   const handleAgentUpdate = useCallback((updatedAgent: Agent) => {
+    // A bit of a hack to handle the orchestrator clearing the agent state
+    if (!updatedAgent.id) {
+       setAgents(INITIAL_AGENTS);
+       return;
+    }
     setAgents(prevAgents =>
       prevAgents.map(agent =>
         agent.id === updatedAgent.id ? { ...agent, ...updatedAgent } : agent
@@ -167,9 +172,9 @@ const AppContent: React.FC = () => {
   };
     
   return (
-    <div className="bg-slate-900 text-white min-h-screen font-sans pb-20 lg:pb-0">
+    <div className="bg-background-dark text-text-primary-dark min-h-screen font-sans pb-20 lg:pb-0">
       <Header onSignIn={() => setShowAuthModal(true)} />
-      <main className="max-w-screen-3xl mx-auto p-6">
+      <main className="max-w-screen-3xl mx-auto p-lg">
         <GatedGeneratorWorkspace
           agents={agents}
           selectedAgentId={selectedAgentId}

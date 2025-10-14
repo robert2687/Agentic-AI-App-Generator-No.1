@@ -1,4 +1,3 @@
-
 import { AGENTS_CONFIG } from '../../constants';
 import type { Agent, AgentName } from '../../types';
 import { AgentStatus } from '../../types';
@@ -308,7 +307,7 @@ export class Orchestrator {
       output: null,
     }));
     // We need a fresh set of agents in the UI, so clear existing logs and agents
-    this.callbacks.onAgentUpdate({} as any); // Bit of a hack to trigger a re-render with cleared state
+    this.callbacks.onAgentUpdate({} as any); 
     this.agents.forEach(agent => this.callbacks.onAgentUpdate(agent));
     logger.info('Orchestrator', `Starting new generation for goal: "${projectGoal}"`);
 

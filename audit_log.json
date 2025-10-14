@@ -1,0 +1,48 @@
+
+[
+  {
+    "timestamp": 1718822401000,
+    "agentName": "Orchestrator",
+    "type": "info",
+    "message": "Initialized with providers: gemini, mock"
+  },
+  {
+    "timestamp": 1718822402000,
+    "agentName": "Orchestrator",
+    "type": "info",
+    "message": "Starting new generation for goal: \"A simple to-do list application\""
+  },
+  {
+    "timestamp": 1718822403000,
+    "agentName": "Planner",
+    "type": "end",
+    "message": "Succeeded with gemini on attempt 1.",
+    "provider": "gemini",
+    "tokenCount": 500,
+    "prompt": "**Project Goal:**\nA simple to-do list application...",
+    "output": "### Project Plan: Task Management Application...",
+    "valid": true,
+    "retries": 1
+  },
+  {
+    "timestamp": 1718822405000,
+    "agentName": "Architect",
+    "type": "error",
+    "message": "API call failed for Architect with gemini on attempt 1: Failed to get a response from the Gemini API.",
+    "provider": "gemini",
+    "output": "Failed to get a response from the Gemini API.",
+    "valid": false,
+    "retries": 1
+  },
+  {
+    "timestamp": 1718822406000,
+    "agentName": "Architect",
+    "type": "end",
+    "message": "Succeeded with mock on attempt 1.",
+    "provider": "mock",
+    "prompt": "**Previous Agent's Output:**\n### Project Plan: Task Management Application...",
+    "output": "### System Architecture: Single-File Task Manager...",
+    "valid": true,
+    "retries": 1
+  }
+]

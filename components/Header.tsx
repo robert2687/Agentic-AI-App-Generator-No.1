@@ -41,7 +41,7 @@ const Header: React.FC<HeaderProps> = ({ onSignIn }) => {
                 </div>
                 <div className="flex items-center gap-4">
                     {loading ? (
-                        <SpinnerIcon className="w-6 h-6 text-slate-400" />
+                        <SpinnerIcon className="w-6 h-6 text-text-secondary-dark" />
                     ) : user ? (
                         <div ref={menuRef} className="relative">
                             <button
@@ -51,7 +51,7 @@ const Header: React.FC<HeaderProps> = ({ onSignIn }) => {
                                 <UserIcon className="w-5 h-5" />
                                 <span className="text-sm hidden md:inline">{user.email}</span>
                                 {isPremium && (
-                                    <span title="Premium Member" className="text-amber-400">
+                                    <span title="Premium Member" className="text-status-warning">
                                         <PremiumIcon className="w-4 h-4" />
                                     </span>
                                 )}
@@ -70,7 +70,7 @@ const Header: React.FC<HeaderProps> = ({ onSignIn }) => {
                     ) : (
                         <button
                             onClick={onSignIn}
-                            className="bg-sky-600 text-white font-bold py-2 px-4 rounded-md hover:bg-sky-500 transition-colors text-sm"
+                            className="bg-accent-primary-hover text-white font-bold py-2 px-4 rounded-md hover:bg-accent-primary transition-colors text-sm"
                         >
                             Sign In
                         </button>

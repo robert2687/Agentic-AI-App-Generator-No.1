@@ -5,17 +5,13 @@
 const colors = {
   // Using a flat structure for CDN compatibility as per the user's example.
   // Format: 'token-name-light/dark' to be used like `bg-surface-light dark:bg-surface-dark`.
-  'background-light': '#ffffff',
   'background-dark': '#0f172a',
-  'surface-light': '#f5f5f5',
   'surface-dark': '#1e293b',
   'surface-lighter-dark': 'rgba(51, 65, 85, 0.5)',
   'surface-highlight-dark': '#334155',
   'border-dark': '#334155',
   'border-light-dark': 'rgba(51, 65, 85, 0.5)',
-  'text-primary-light': '#111111',
   'text-primary-dark': '#e2e8f0',
-  'text-secondary-light': '#555555',
   'text-secondary-dark': '#94a3b8',
   'text-tertiary-dark': '#64748b',
   'accent-primary': '#38bdf8',
@@ -80,8 +76,7 @@ module.exports = {
   darkMode: 'class',
   content: [
     "./index.html",
-    "./App.tsx",
-    "./components/**/*.{js,ts,jsx,tsx}",
+    "./**/*.{js,ts,jsx,tsx}",
   ],
   theme: {
     extend: {

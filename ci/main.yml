@@ -1,0 +1,68 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [ main ]
+  push:
+    branches: [ main ]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      
+      - name: Install dependencies
+        run: npm ci
+
+      # Placeholder for linting - assumes a lint script is defined in package.json
+      - name: Run linter
+        run: echo "Linting step placeholder..." # Replace with `npm run lint`
+
+      # Placeholder for tests - assumes a test script is defined in package.json
+      - name: Run tests
+        run: echo "Testing step placeholder..." # Replace with `npm test`
+
+      # Placeholder for building the application
+      - name: Build application
+        run: echo "Build step placeholder..." # Replace with `npm run build`
+
+      - name: Upload build artifacts
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-artifacts
+          path: |
+            dist/ # Assuming a 'dist' output directory
+            
+      - name: Generate Audit Report for PR
+        if: github.event_name == 'pull_request'
+        run: |
+          # Placeholder for running scripts that generate reports
+          echo "Generating audit log..."
+          # node ./scripts/exportAudit.js
+          echo "Generating diffs..."
+          # node ./scripts/exportDiffs.js
+          echo "Generating PR comment..."
+          # node ./scripts/postStickyAuditComment.js
+          echo "### 🤖 Agentic Audit Report Placeholder" > audit-comment.md
+
+      - name: Post Audit Comment to PR
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const commentBody = fs.readFileSync('audit-comment.md', 'utf8');
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: commentBody
+            });

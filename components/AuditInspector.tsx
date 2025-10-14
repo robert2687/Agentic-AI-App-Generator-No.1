@@ -59,7 +59,7 @@ const AuditInspector: React.FC<{ logs: AuditLogEntry[] }> = ({ logs }) => {
     };
 
     return (
-        <div className="h-full bg-[#020617] flex flex-col font-sans text-sm">
+        <div className="h-full bg-background-dark flex flex-col font-sans text-sm">
              <div className="p-xs border-b border-border-dark flex-shrink-0 flex items-center gap-xs">
                 <FilterChip label="All" filter="all" activeFilter={filter} onClick={() => setFilter('all')} />
                 <FilterChip label="Success" filter="success" activeFilter={filter} onClick={() => setFilter('success')} />
@@ -80,7 +80,7 @@ const AuditInspector: React.FC<{ logs: AuditLogEntry[] }> = ({ logs }) => {
                         const previousLog = findPreviousOutputLog(originalIndex);
                         
                         return (
-                            <li key={log.timestamp + log.agentName} className={`bg-slate-800/70 rounded-md border ${isExpanded ? 'border-accent-indigo' : styles.border} transition-colors ease-in-out`}>
+                            <li key={log.timestamp + log.agentName} className={`bg-surface-dark/70 rounded-md border ${isExpanded ? 'border-accent-indigo' : styles.border} transition-colors ease-in-out`}>
                                 <div
                                     className="p-sm cursor-pointer"
                                     onClick={() => setExpandedIndex(isExpanded ? null : originalIndex)}
@@ -113,7 +113,7 @@ const AuditInspector: React.FC<{ logs: AuditLogEntry[] }> = ({ logs }) => {
                                 </div>
 
                                 {isExpanded && (
-                                    <div className="border-t border-border-light-dark p-md bg-slate-800/30">
+                                    <div className="border-t border-border-light-dark p-md bg-surface-dark/30">
                                         {log.prompt && (
                                             <div className="mb-md">
                                                 <h4 className="font-bold text-accent-indigo text-xs mb-2xs uppercase">Prompt</h4>

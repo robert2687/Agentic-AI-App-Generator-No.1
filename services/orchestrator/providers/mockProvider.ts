@@ -1,4 +1,3 @@
-
 import type { Provider } from '../types';
 import { generateMockLogoBase64, generateMockFaviconBase64 } from '../../placeholderUtils';
 

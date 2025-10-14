@@ -36,7 +36,13 @@ const AuthModal: React.FC<AuthModalProps> = ({ onClose }) => {
         if (view === 'sign_up') {
             response = await supabase.auth.signUp({ email, password });
             if (!response.error && response.data.user) {
-                setMessage('Check your email for the confirmation link!');
+                if (response.data.session) {
+                    // Email verification is likely off, user is signed in.
+                    onClose();
+                } else {
+                    // Email verification is on.
+                    setMessage('Check your email for the confirmation link!');
+                }
             }
         } else {
             response = await supabase.auth.signInWithPassword({ email, password });
@@ -101,16 +107,16 @@ const AuthModal: React.FC<AuthModalProps> = ({ onClose }) => {
       aria-modal="true"
     >
       <div
-        className="bg-slate-900 rounded-lg shadow-2xl w-[95%] max-w-md flex flex-col ring-1 ring-slate-700/50"
+        className="bg-surface-dark rounded-lg shadow-lg w-[95%] max-w-md flex flex-col ring-1 ring-border-dark"
         onClick={(e) => e.stopPropagation()}
       >
-        <header className="flex items-center justify-between p-4 border-b border-slate-700/50">
-          <h2 className="font-bold text-lg text-slate-200">
+        <header className="flex items-center justify-between p-md border-b border-border-light-dark">
+          <h2 className="font-bold text-lg text-text-primary-dark">
             {view === 'sign_in' ? 'Sign In' : 'Create Account'}
           </h2>
           <button
             onClick={onClose}
-            className="text-slate-400 hover:text-white transition-colors rounded-full p-1 focus:outline-none focus:ring-2 focus:ring-sky-500"
+            className="text-text-secondary-dark hover:text-text-primary-dark transition-colors rounded-full p-1 focus:outline-none focus:ring-2 focus:ring-accent-primary"
             aria-label="Close authentication"
           >
             <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -119,24 +125,24 @@ const AuthModal: React.FC<AuthModalProps> = ({ onClose }) => {
           </button>
         </header>
 
-        <div className="p-6">
+        <div className="p-lg">
             <button
                 onClick={handleGoogleSignIn}
                 disabled={!supabase || loading}
-                className="w-full flex items-center justify-center gap-3 bg-slate-800 text-white font-semibold py-2.5 px-4 rounded-md hover:bg-slate-700 disabled:bg-slate-600 disabled:cursor-not-allowed transition-colors"
+                className="w-full flex items-center justify-center gap-3 bg-surface-highlight-dark text-text-primary-dark font-semibold py-2.5 px-4 rounded-md hover:bg-border-dark disabled:bg-surface-highlight-dark disabled:cursor-not-allowed transition-colors"
             >
                 <GoogleIcon className="w-5 h-5" />
                 Continue with Google
             </button>
-            <div className="my-4 flex items-center gap-2">
-                <hr className="w-full border-slate-700" />
-                <span className="text-slate-500 text-xs font-semibold">OR</span>
-                <hr className="w-full border-slate-700" />
+            <div className="my-md flex items-center gap-2">
+                <hr className="w-full border-border-light-dark" />
+                <span className="text-text-tertiary-dark text-xs font-semibold">OR</span>
+                <hr className="w-full border-border-light-dark" />
             </div>
 
-            {message && <div className="bg-green-900/40 text-green-300 text-sm p-3 rounded-md mb-4 text-center">{message}</div>}
+            {message && <div className="bg-status-success/20 text-status-success text-sm p-sm rounded-md mb-md text-center">{message}</div>}
             {error && (
-                <div className="bg-red-900/40 text-red-300 text-sm p-3 rounded-md mb-4">
+                <div className="bg-status-error/20 text-status-error text-sm p-sm rounded-md mb-md">
                     <div className="flex items-start gap-2">
                         <ErrorIcon className="w-5 h-5 flex-shrink-0 mt-0.5" />
                         <span>{error}</span>
@@ -145,7 +151,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ onClose }) => {
                         <button 
                             onClick={handleResendConfirmation}
                             disabled={resendLoading}
-                            className="w-full text-left mt-2 text-sky-300 hover:text-sky-200 font-semibold underline text-xs disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="w-full text-left mt-xs text-accent-primary hover:text-accent-primary-hover font-semibold underline text-xs disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                             {resendLoading ? 'Sending...' : 'Resend confirmation email'}
                         </button>
@@ -153,40 +159,40 @@ const AuthModal: React.FC<AuthModalProps> = ({ onClose }) => {
                 </div>
             )}
 
-            <form onSubmit={handleAuthAction} className="flex flex-col gap-4">
+            <form onSubmit={handleAuthAction} className="flex flex-col gap-md">
                 <div>
-                    <label htmlFor="email" className="text-sm font-medium text-slate-400">Email</label>
+                    <label htmlFor="email" className="text-sm font-medium text-text-secondary-dark">Email</label>
                     <input
                         id="email"
                         type="email"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                         placeholder="you@example.com"
-                        className="w-full mt-1 p-2 bg-slate-700/50 rounded-md border border-slate-600 focus:border-sky-500 focus:ring-4 focus:ring-sky-500/30 focus:outline-none transition-colors"
+                        className="w-full mt-1 p-xs bg-surface-lighter-dark rounded-md border border-border-dark focus:border-accent-primary focus:ring-4 focus:ring-accent-primary/30 focus:outline-none transition-colors"
                         required
                     />
                 </div>
                  <div>
-                    <label htmlFor="password"className="text-sm font-medium text-slate-400">Password</label>
+                    <label htmlFor="password"className="text-sm font-medium text-text-secondary-dark">Password</label>
                     <input
                         id="password"
                         type="password"
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         placeholder="••••••••"
-                        className="w-full mt-1 p-2 bg-slate-700/50 rounded-md border border-slate-600 focus:border-sky-500 focus:ring-4 focus:ring-sky-500/30 focus:outline-none transition-colors"
+                        className="w-full mt-1 p-xs bg-surface-lighter-dark rounded-md border border-border-dark focus:border-accent-primary focus:ring-4 focus:ring-accent-primary/30 focus:outline-none transition-colors"
                         required
                     />
                 </div>
                 <button
                     type="submit"
                     disabled={loading || !supabase}
-                    className="w-full bg-sky-600 text-white font-bold py-2.5 px-4 rounded-md hover:bg-sky-500 disabled:bg-slate-600 disabled:cursor-not-allowed transition-colors flex items-center justify-center"
+                    className="w-full bg-accent-primary-hover text-white font-bold py-2.5 px-4 rounded-md hover:bg-accent-primary disabled:bg-surface-highlight-dark disabled:cursor-not-allowed transition-colors flex items-center justify-center"
                 >
                     {loading ? <SpinnerIcon className="w-5 h-5" /> : (view === 'sign_in' ? 'Sign In' : 'Sign Up')}
                 </button>
             </form>
-            <p className="text-center text-sm text-slate-400 mt-4">
+            <p className="text-center text-sm text-text-secondary-dark mt-md">
                 {view === 'sign_in' ? "Don't have an account?" : "Already have an account?"}
                 <button
                     onClick={() => {
@@ -195,7 +201,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ onClose }) => {
                         setMessage(null);
                         setShowResend(false);
                     }}
-                    className="font-semibold text-sky-400 hover:text-sky-300 ml-1"
+                    className="font-semibold text-accent-primary hover:text-accent-primary-hover ml-1"
                 >
                     {view === 'sign_in' ? 'Sign Up' : 'Sign In'}
                 </button>

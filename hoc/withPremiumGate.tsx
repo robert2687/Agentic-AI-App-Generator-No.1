@@ -1,5 +1,4 @@
 import React, { useState, useCallback } from 'react';
-import { usePremiumStatus } from '../hooks/usePremiumStatus';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../services/supabaseClient';
 
@@ -10,8 +9,7 @@ import CopyIcon from '../components/icons/CopyIcon';
 import CheckIcon from '../components/icons/CheckIcon';
 import Paywall from '../components/Paywall';
 
-const PremiumErrorDisplay: React.FC<{ error: string }> = ({ error }) => {
-    const [isSqlCopied, setIsSqlCopied] = useState(false);
+const PremiumErrorDisplay: React.FC<{ error: string; onCopySql: () => void; isSqlCopied: boolean; }> = ({ error, onCopySql, isSqlCopied }) => {
     const sqlScript = `/**
 * 1. ENTITLEMENTS TABLE
 * Stores the current state of a user's premium access.
@@ -43,7 +41,7 @@ CREATE TABLE IF NOT EXISTS public.audit_logs (
   id BIGSERIAL PRIMARY KEY,
   user_id UUID REFERENCES auth.users ON DELETE CASCADE,
   product_id TEXT NOT NULL,
-  action TEXT NOT NULL CHECK (action IN ('insert', 'update', 'delete', 'verify')),
+  action TEXT NOT NULL CHECK (action IN ('insert', 'update', 'delete', 'verify', 'restore')),
   old_status TEXT,
   new_status TEXT,
   purchase_token TEXT,
@@ -61,7 +59,16 @@ CREATE POLICY IF NOT EXISTS "No direct delete by users on audit" ON public.audit
 
 
 /**
-* 3. AUDIT TRIGGER
+* 3. PERFORMANCE INDEXES
+* Add indexes to optimize queries, especially for the user-specific lookups and
+* the lateral join in the 'entitlements_with_audit' view.
+*/
+CREATE INDEX IF NOT EXISTS idx_entitlements_user ON public.entitlements(user_id);
+CREATE INDEX IF NOT EXISTS idx_audit_logs_user_product ON public.audit_logs(user_id, product_id, created_at DESC);
+
+
+/**
+* 4. AUDIT TRIGGER
 * This function and trigger automatically log any change to the entitlements
 * table into the audit_logs table, creating a reliable, immutable history.
 */
@@ -102,7 +109,7 @@ FOR EACH ROW EXECUTE FUNCTION public.log_entitlement_change();
 
 
 /**
-* 4. RPC FUNCTION
+* 5. RPC FUNCTION
 * This function grants premium access. The trigger above will automatically
 * create the audit trail. Run this function as a database superuser.
 */
@@ -125,85 +132,48 @@ BEGIN
     updated_at = NOW(),
     purchase_token = v_purchase_token;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
-
-
-/**
-* 5. CONSOLIDATED VIEW (Optional but Recommended)
-* This database view joins entitlements with the latest audit log entry,
-* making it easy to query the current status and last action in one go.
-*/
-DROP VIEW IF EXISTS public.entitlements_with_audit;
-
-CREATE VIEW public.entitlements_with_audit AS
-SELECT
-  e.user_id,
-  e.product_id,
-  e.status,
-  e.updated_at AS entitlement_updated_at,
-  a.action AS last_action,
-  a.old_status,
-  a.new_status,
-  a.purchase_token,
-  a.created_at AS audit_created_at
-FROM public.entitlements e
-LEFT JOIN LATERAL (
-  SELECT al.*
-  FROM public.audit_logs al
-  WHERE al.user_id = e.user_id
-    AND al.product_id = e.product_id
-  ORDER BY al.created_at DESC
-  LIMIT 1
-) a ON true;`;
+$$ LANGUAGE plpgsql SECURITY DEFINER;`;
 
     const handleCopySql = () => {
         navigator.clipboard.writeText(sqlScript).then(() => {
-            setIsSqlCopied(true);
-            setTimeout(() => setIsSqlCopied(false), 2500);
+            onCopySql();
         }, (err) => {
             console.error('Could not copy text: ', err);
         });
     };
 
-    const sqlScriptBlock = (
-         <div className="mt-2 p-3 bg-slate-900/70 rounded-md border border-slate-600">
-            <p className="mb-2 text-slate-300">This app requires a database table and function to manage premium features. Please copy the script below and run it in your Supabase project's SQL Editor:</p>
-            <div className="relative group">
-                <pre className="text-[10px] bg-slate-950 p-3 pr-16 rounded overflow-x-auto text-sky-300">
-                    <code>
-                        {sqlScript}
-                    </code>
-                </pre>
-                <button
-                    onClick={handleCopySql}
-                    className="absolute top-2 right-2 flex items-center gap-1.5 bg-slate-700/80 hover:bg-slate-600/80 text-slate-300 font-sans text-xs px-2 py-1 rounded-md transition-colors opacity-50 group-hover:opacity-100"
-                    aria-label="Copy SQL script to clipboard"
-                >
-                    {isSqlCopied ? (
-                        <>
-                            <CheckIcon className="w-3.5 h-3.5 text-green-400" />
-                            Copied!
-                        </>
-                    ) : (
-                        <>
-                            <CopyIcon className="w-3.5 h-3.5" />
-                            Copy
-                        </>
-                    )}
-                </button>
-            </div>
-        </div>
-    );
-
     return (
-        <div className="bg-amber-900/40 border border-amber-700/60 rounded-lg p-6 flex flex-col gap-4 items-center">
-            <ErrorIcon className="w-8 h-8 text-amber-400" />
-            <h2 className="text-lg font-bold text-amber-300">Database Setup Required</h2>
-            <p className="text-amber-300/90 text-sm max-w-md text-center">
+        <div className="bg-status-warning/20 border border-status-warning/50 rounded-lg p-lg flex flex-col gap-md items-center">
+            <ErrorIcon className="w-8 h-8 text-status-warning" />
+            <h2 className="text-lg font-bold text-status-warning">Database Setup Required</h2>
+            <p className="text-status-warning/90 text-sm max-w-2xl text-center">
                 {error}
             </p>
-            <div className="mt-4 pt-4 border-t border-amber-700/50 text-xs text-slate-500 text-left w-full">
-                {sqlScriptBlock}
+            <div className="w-full mt-md pt-md border-t border-status-warning/50">
+                <div className="relative group">
+                    <pre className="text-[10px] bg-background-dark p-sm pr-16 rounded-md overflow-x-auto text-accent-primary border border-border-dark">
+                        <code>
+                            {sqlScript}
+                        </code>
+                    </pre>
+                    <button
+                        onClick={handleCopySql}
+                        className="absolute top-2 right-2 flex items-center gap-1.5 bg-surface-dark/80 hover:bg-surface-highlight-dark/80 text-text-primary-dark font-sans text-xs px-2 py-1 rounded-md transition-colors opacity-50 group-hover:opacity-100"
+                        aria-label="Copy SQL script to clipboard"
+                    >
+                        {isSqlCopied ? (
+                            <>
+                                <CheckIcon className="w-3.5 h-3.5 text-status-success" />
+                                Copied!
+                            </>
+                        ) : (
+                            <>
+                                <CopyIcon className="w-3.5 h-3.5" />
+                                Copy
+                            </>
+                        )}
+                    </button>
+                </div>
             </div>
         </div>
     );
@@ -214,50 +184,48 @@ export function withPremiumGate<P extends object>(
   WrappedComponent: React.ComponentType<P>
 ): React.FC<P> {
   return function PremiumGateWrapper(props: P) {
-    const { user, loading: authLoading } = useAuth();
-    const { isPremium, loading: premiumLoading, error: premiumError, refetch } = usePremiumStatus();
+    const { user, loading: authLoading, isPremium, premiumCheckError } = useAuth();
     const [isGranting, setIsGranting] = useState(false);
-    const [isRestoring, setIsRestoring] = useState(false);
-    const [restoreMessage, setRestoreMessage] = useState<string | null>(null);
+    const [isSqlCopied, setIsSqlCopied] = useState(false);
 
-    const loading = authLoading || premiumLoading;
+    const loading = authLoading;
 
-    const handleRestore = useCallback(async () => {
-      setIsRestoring(true);
-      setRestoreMessage(null);
-      try {
-        const hasPremium = await refetch();
-        // If the user gains premium, this component will unmount, so we only
-        // need to handle the case where they do not have premium.
-        if (!hasPremium) {
-          setRestoreMessage("No active premium subscription found for this account.");
-        }
-      } catch (e: any) {
-        setRestoreMessage(`Error: ${e.message || 'Could not check status.'}`);
-      } finally {
-        setIsRestoring(false);
-      }
-    }, [refetch]);
+    const handleCopySql = useCallback(() => {
+        setIsSqlCopied(true);
+        setTimeout(() => setIsSqlCopied(false), 2500);
+    }, []);
 
     if (loading) {
       return (
-        <div className="flex flex-col items-center justify-center min-h-[400px] p-6 text-center bg-slate-800/50 rounded-lg">
-          <SpinnerIcon className="w-8 h-8 text-sky-400" />
-          <p className="mt-4 text-slate-400">Loading user session...</p>
+        <div className="flex flex-col items-center justify-center min-h-[400px] p-lg text-center bg-surface-lighter-dark rounded-lg">
+          <SpinnerIcon className="w-8 h-8 text-accent-primary" />
+          <p className="mt-md text-text-secondary-dark">Loading user session...</p>
         </div>
       );
     }
     
-    if (premiumError) {
-        return <PremiumErrorDisplay error={premiumError} />;
+    if (premiumCheckError) {
+        if (premiumCheckError.includes("database schema for premium features")) {
+            return <PremiumErrorDisplay error={premiumCheckError} onCopySql={handleCopySql} isSqlCopied={isSqlCopied} />;
+        }
+        
+        return (
+            <div className="bg-status-error/20 border border-status-error/50 rounded-lg p-lg flex flex-col gap-md items-center">
+                <ErrorIcon className="w-8 h-8 text-status-error" />
+                <h2 className="text-lg font-bold text-status-error">An Error Occurred</h2>
+                <p className="text-status-error/90 text-sm max-w-md text-center">
+                    {premiumCheckError}
+                </p>
+            </div>
+        );
     }
     
     if (!user) {
         return (
-            <div className="bg-slate-800/50 rounded-lg p-6 flex flex-col gap-4 text-center items-center">
-                <UserIcon className="w-8 h-8 text-sky-400" />
-                <h2 className="text-lg font-bold text-sky-300">Sign In to Begin</h2>
-                <p className="text-slate-400/90 text-sm max-w-sm">
+            <div className="bg-surface-lighter-dark rounded-lg p-lg flex flex-col gap-md text-center items-center">
+                <UserIcon className="w-8 h-8 text-accent-primary" />
+                <h2 className="text-lg font-bold text-accent-primary">Sign In to Begin</h2>
+                <p className="text-text-secondary-dark/90 text-sm max-w-sm">
                     Please sign in to start generating applications. Your projects will be saved to your account.
                 </p>
             </div>
@@ -269,19 +237,11 @@ export function withPremiumGate<P extends object>(
             if (!user || !supabase) return;
             setIsGranting(true);
             try {
-              const { error } = await supabase.rpc('grant_premium_access', {
-                p_user_id: user.id,
-              });
-      
-              if (error) {
-                if (error.code === '42883') {
-                  alert("The 'grant_premium_access' function is missing. Please run the full SQL script from the developer tips in your Supabase project to create it.");
-                } else {
-                  throw error;
-                }
-              } else {
-                refetch();
-              }
+              // This is a placeholder for a real payment flow. In this demo, we call an RPC.
+              const { error } = await supabase.rpc('grant_premium_access', { p_user_id: user.id });
+              if (error) throw error;
+              // The usePremiumStatus hook will automatically update upon auth state change or manual refetch.
+              // We can rely on the AuthProvider to re-render.
             } catch (e: any) {
               alert(`Error granting premium access: ${e.message}`);
             } finally {
@@ -293,9 +253,6 @@ export function withPremiumGate<P extends object>(
             <Paywall 
                 onGrantPremium={handleGrantPremium} 
                 isGranting={isGranting}
-                onRestore={handleRestore}
-                isRestoring={isRestoring}
-                restoreMessage={restoreMessage}
             />
         );
     }

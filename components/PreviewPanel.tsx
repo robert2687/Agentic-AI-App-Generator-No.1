@@ -199,6 +199,7 @@ const PreviewPanel: React.FC<PreviewPanelProps> = ({
             <div className="absolute right-0 mt-2 w-48 bg-surface-dark border border-border-dark rounded-md shadow-lg z-20 p-2 flex flex-col gap-1">
               {React.Children.map(actionButtons, (button) => {
                 const buttonElement = button as React.ReactElement<any>;
+                // Don't show deploy button inside mobile menu, it has a FAB
                 if (buttonElement.props.onClick === onDeploy) {
                   return null;
                 }
@@ -232,7 +233,7 @@ const PreviewPanel: React.FC<PreviewPanelProps> = ({
             </div>
         )}
         
-        <div>
+        <div className="w-full h-full">
           {activeTab === 'preview' && (
             <iframe
               srcDoc={code || '<!DOCTYPE html><html><head></head><body style="display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; background-color: #fff; font-family: sans-serif; color: #666;">Waiting for Coder agent...</body></html>'}
