@@ -3,6 +3,7 @@ import { generateMockLogoBase64, generateMockFaviconBase64 } from '../../placeho
 
 // Re-create mockFaviconUri for the mock responses using the centralized utility function.
 const mockFaviconUri = `data:image/svg+xml;base64,${generateMockFaviconBase64()}`;
+const mockManifestUri = `data:application/manifest+json;base64,eyJuYW1lIjoiVGFzayBNYW5hZ2VyIiwic2hvcnRfbmFtZSI6IlRhc2tzIiwic3RhcnRfdXJsIjoiLiIsImRpc3BsYXkiOiJzdGFuZGFsb25lIiwiYmFja2dyb3VuZF9jb2xvciI6IiMxZTI5M2IiLCJ0aGVtZV9jb2xvciI6IiMxZTI5M2IiLCJpY29ucyI6W3sic3JjIjoiZGF0YTppbWFnZS9zdmcreG1sO2Jhc2U2NCxQSE52WiEyVjZhVzFwYm1saGRHTXVZMjl0TDBsdmRtbGxkRkpsYm5WemN5MW9aR1ZzYkZOdlkzUWliM0owTDJWbGNuUnBaWE4wWDI5eVozZ3VZMjl0TDBsdmRtbGxkRkpsYm5WemN5MW9aR1ZzYkZOdlkzUXVZWE56S2lBOGNtVmpkWEpwZEhsc2FXTjVQU0pPYUhSdmJXVXVZMjl0S2lBOGRYQnliMjV2WDI1aGRHbHZiaTFoWkcxcGJtUmxQU0pvZEhSd2N6b3ZMM2QzZHk1M015NXdkWFlpSUhOMGFXOXVLU0JtYjNKdGN5QmpiR0ZqYXowaUlIZHBaSFJvUFNJd0p6RXdNQ0F4TURBeEtpQThMMmhsYldWdWRDMXphWHBsTG1sWlkxOXliM2RwaHlsb2NISnZiaUJoY25SNVBTSXhPREF3SlRJeUp6RXdNQ0JtYjNKdGN5QmpiR0ZqYXowaUlIZHBaSFJvUFNJd0p6RXdNQ0F4TURBeEtpQThMMmhsYldWdWRDMXphWHBsTG1sWlkxOXliM2RwZDNKdVlXMWxQU0pvZEhSd2N6b3ZMM2QzZHk1M015NXdkWEFpSUhOMGFXOXVLU0JtYjNKdGN5QmpiR0ZqYXowaUlIZHBaSFJvUFNJd0p6RXdNQ0F4TURBeEtpQTgiLCJ0eXBlIjoiaW1hZ2Uvc3ZnK3htbCIsInNpemVzIjoiMTkyeDE5MiJ9XX0=`;
 
 const mockTodoAppCodeV1 = `
 \`\`\`html
@@ -12,7 +13,9 @@ const mockTodoAppCodeV1 = `
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Task Manager</title>
+    <meta name="theme-color" content="#1e293b">
     <link rel="icon" type="image/svg+xml" href="${mockFaviconUri}">
+    <link rel="manifest" href="${mockManifestUri}">
     <style>
         :root {
             /* Colors */
@@ -491,6 +494,29 @@ const mockTodoAppCodeV1 = `
             
             taskForm.addEventListener('submit', addTask);
             initializeApp();
+
+            // PWA Service Worker Registration
+            const swCode = \`
+                const CACHE_NAME = 'task-manager-cache-v1';
+                self.addEventListener('install', e => e.waitUntil(self.skipWaiting()));
+                self.addEventListener('activate', e => e.waitUntil(self.clients.claim()));
+                self.addEventListener('fetch', e => {
+                    if (e.request.mode === 'navigate') {
+                        e.respondWith(fetch(e.request).catch(() => new Response("<h1>You are offline. Please check your internet connection.</h1>", { headers: { 'Content-Type': 'text/html' } })));
+                    }
+                });
+            \`;
+            try {
+                const swBlob = new Blob([swCode], { type: 'application/javascript' });
+                const swUrl = URL.createObjectURL(swBlob);
+                if ('serviceWorker' in navigator) {
+                    navigator.serviceWorker.register(swUrl)
+                        .then(reg => console.log('Service worker registered.', reg))
+                        .catch(err => console.error('Service worker registration failed.', err));
+                }
+            } catch (e) {
+                console.error('Could not register service worker.', e);
+            }
         });
     </script>
 </body>
@@ -506,7 +532,9 @@ const mockTodoAppCodeV2 = `
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Task Manager</title>
+    <meta name="theme-color" content="#1e293b">
     <link rel="icon" type="image/svg+xml" href="${mockFaviconUri}">
+    <link rel="manifest" href="${mockManifestUri}">
     <style>
         :root {
             /* Colors */
@@ -1048,6 +1076,29 @@ const mockTodoAppCodeV2 = `
             
             taskForm.addEventListener('submit', addTask);
             initializeApp();
+
+            // PWA Service Worker Registration
+            const swCode = \`
+                const CACHE_NAME = 'task-manager-cache-v1';
+                self.addEventListener('install', e => e.waitUntil(self.skipWaiting()));
+                self.addEventListener('activate', e => e.waitUntil(self.clients.claim()));
+                self.addEventListener('fetch', e => {
+                    if (e.request.mode === 'navigate') {
+                        e.respondWith(fetch(e.request).catch(() => new Response("<h1>You are offline. Please check your internet connection.</h1>", { headers: { 'Content-Type': 'text/html' } })));
+                    }
+                });
+            \`;
+            try {
+                const swBlob = new Blob([swCode], { type: 'application/javascript' });
+                const swUrl = URL.createObjectURL(swBlob);
+                if ('serviceWorker' in navigator) {
+                    navigator.serviceWorker.register(swUrl)
+                        .then(reg => console.log('Service worker registered.', reg))
+                        .catch(err => console.error('Service worker registration failed.', err));
+                }
+            } catch (e) {
+                console.error('Could not register service worker.', e);
+            }
         });
     </script>
 </body>
@@ -1063,7 +1114,9 @@ const mockTodoAppCodeV3 = `
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Task Manager</title>
+    <meta name="theme-color" content="#1e293b">
     <link rel="icon" type="image/svg+xml" href="${mockFaviconUri}">
+    <link rel="manifest" href="${mockManifestUri}">
     <style>
         :root {
             /* Colors */
@@ -1585,6 +1638,29 @@ const mockTodoAppCodeV3 = `
             taskForm.addEventListener('submit', addTask);
             clearAllBtn.addEventListener('click', clearAllTasks);
             initializeApp();
+            
+            // PWA Service Worker Registration
+            const swCode = \`
+                const CACHE_NAME = 'task-manager-cache-v1';
+                self.addEventListener('install', e => e.waitUntil(self.skipWaiting()));
+                self.addEventListener('activate', e => e.waitUntil(self.clients.claim()));
+                self.addEventListener('fetch', e => {
+                    if (e.request.mode === 'navigate') {
+                        e.respondWith(fetch(e.request).catch(() => new Response("<h1>You are offline. Please check your internet connection.</h1>", { headers: { 'Content-Type': 'text/html' } })));
+                    }
+                });
+            \`;
+            try {
+                const swBlob = new Blob([swCode], { type: 'application/javascript' });
+                const swUrl = URL.createObjectURL(swBlob);
+                if ('serviceWorker' in navigator) {
+                    navigator.serviceWorker.register(swUrl)
+                        .then(reg => console.log('Service worker registered.', reg))
+                        .catch(err => console.error('Service worker registration failed.', err));
+                }
+            } catch (e) {
+                console.error('Could not register service worker.', e);
+            }
         });
     </script>
 </body>
@@ -1600,7 +1676,9 @@ const mockTodoAppCodeV4 = `
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Task Manager</title>
+    <meta name="theme-color" content="#1e293b">
     <link rel="icon" type="image/svg+xml" href="${mockFaviconUri}">
+    <link rel="manifest" href="${mockManifestUri}">
     <style>
         :root {
             /* Colors */
@@ -2185,6 +2263,29 @@ const mockTodoAppCodeV4 = `
             taskForm.addEventListener('submit', addTask);
             clearAllBtn.addEventListener('click', clearAllTasks);
             initializeApp();
+            
+            // PWA Service Worker Registration
+            const swCode = \`
+                const CACHE_NAME = 'task-manager-cache-v1';
+                self.addEventListener('install', e => e.waitUntil(self.skipWaiting()));
+                self.addEventListener('activate', e => e.waitUntil(self.clients.claim()));
+                self.addEventListener('fetch', e => {
+                    if (e.request.mode === 'navigate') {
+                        e.respondWith(fetch(e.request).catch(() => new Response("<h1>You are offline. Please check your internet connection.</h1>", { headers: { 'Content-Type': 'text/html' } })));
+                    }
+                });
+            \`;
+            try {
+                const swBlob = new Blob([swCode], { type: 'application/javascript' });
+                const swUrl = URL.createObjectURL(swBlob);
+                if ('serviceWorker' in navigator) {
+                    navigator.serviceWorker.register(swUrl)
+                        .then(reg => console.log('Service worker registered.', reg))
+                        .catch(err => console.error('Service worker registration failed.', err));
+                }
+            } catch (e) {
+                console.error('Could not register service worker.', e);
+            }
         });
     </script>
 </body>
@@ -2380,6 +2481,29 @@ Deploying this self-contained HTML file is straightforward. You can use any stat
 2.  **Go to Netlify Drop:** Open [https://app.netlify.com/drop](https://app.netlify.com/drop) in your browser.
 3.  **Drag and Drop:** Drag your \`index.html\` file from your computer and drop it onto the Netlify Drop webpage.
 4.  **Done:** Netlify will instantly upload your file and provide you with a unique, shareable URL for your live application.
+
+**Option 2: Vercel**
+1.  **Save the File:** Save the final HTML code to your computer as \`index.html\`.
+2.  **Install Vercel CLI:** If you don't have it, install the Vercel command-line tool: \`npm install -g vercel\`.
+3.  **Deploy:** Open your terminal, navigate to the folder containing your file, and run the command \`vercel\`.
+4.  **Done:** Follow the on-screen prompts. Vercel will give you a live URL for your app.
+
+**Option 3: GitHub Pages**
+1.  **Create a Repository:** Create a new public repository on GitHub.
+2.  **Upload File:** Upload your \`index.html\` file to the repository.
+3.  **Enable Pages:** In your repository's settings, go to the "Pages" section.
+4.  **Select Source:** Under "Source," select the main branch and save.
+5.  **Done:** GitHub will publish your site and provide the URL.
+
+---
+
+### **Option 4: Google Play Store (via PWA/TWA)**
+Your application has been generated with Progressive Web App (PWA) features, making it eligible for the Google Play Store.
+
+1.  **Go to PWABuilder:** Open [https://www.pwabuilder.com/](https://www.pwabuilder.com/) in your browser.
+2.  **Enter your App URL:** Once you have deployed your app to a static host (like Netlify from Option 1), enter its live URL into PWABuilder.
+3.  **Generate Package:** Follow the on-screen instructions to analyze your PWA and generate the Android package (Trusted Web Activity - TWA).
+4.  **Submit to Play Store:** You will receive a project that you can open in Android Studio, sign, and submit to the Google Play Console.
 `,
 };
 

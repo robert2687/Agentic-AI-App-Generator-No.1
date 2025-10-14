@@ -1,4 +1,5 @@
 import { AgentName } from "../../types";
+import { validateCssOutput } from "./cssValidator";
 
 /**
  * Validates the output of an agent based on its role.
@@ -33,18 +34,28 @@ export function validateAgentOutput(agentName: AgentName, output: string | null)
         }
 
         case 'UX/UI Designer': {
-            const checks = [
-                { pass: output.includes('```css'), failReason: "Missing ```css code block for the stylesheet." },
-                { pass: output.includes('data:image/'), failReason: "Missing a data URI for the favicon or logo." },
-                { pass: output.includes(':root'), failReason: "Missing the :root pseudo-class for CSS variable definitions." },
-                { pass: output.includes('var(--'), failReason: "CSS variables were defined but never used with var()." }
-            ];
-
-            for (const check of checks) {
-                if (!check.pass) {
-                    return { valid: false, reason: check.failReason };
-                }
+            // General structural checks for the agent's output format.
+            if (!output.includes('data:image/')) {
+                return { valid: false, reason: "Missing a data URI for the favicon or logo." };
             }
+            if (!output.includes('```css')) {
+                return { valid: false, reason: "Missing ```css code block for the stylesheet." };
+            }
+
+            // Extract CSS content for detailed validation.
+            const cssBlockMatch = output.match(/```css\n([\s\S]*?)```/);
+            if (!cssBlockMatch || !cssBlockMatch[1] || !cssBlockMatch[1].trim()) {
+                return { valid: false, reason: "A valid CSS code block with content was not found. Ensure it starts with ```css followed by a newline." };
+            }
+
+            const cssContent = cssBlockMatch[1];
+            const cssErrors = validateCssOutput(cssContent);
+
+            if (cssErrors.length > 0) {
+                // Return the first, most actionable error to the orchestrator.
+                return { valid: false, reason: `CSS validation failed: ${cssErrors[0]}` };
+            }
+            
             return { valid: true };
         }
 

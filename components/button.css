@@ -1,0 +1,19 @@
+:root {
+  --color-primary: #3498db;
+  --color-secondary: #2ecc71;
+  --font-size-base: 16px;
+  --spacing-sm: 8px;
+  --spacing-md: 16px;
+}
+
+.button {
+  background-color: var(--color-primary);
+  color: #fff;
+  font-size: var(--font-size-base);
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-radius: 4px;
+}
+
+.button--secondary {
+  background-color: var(--color-secondary);
+}

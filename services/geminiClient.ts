@@ -22,14 +22,17 @@ export const withRetry = async <T>(apiCall: () => Promise<T>, maxRetries = 3): P
         try {
             return await apiCall();
         } catch (error: any) {
-            // Check if the error indicates a model overload (e.g., 503)
-            const isOverloaded = error.message && (error.message.includes('"code": 503') || error.message.includes('"status": "UNAVAILABLE"'));
-
-            if (isOverloaded && attempt < maxRetries) {
+            // Check for retryable errors (e.g., 500 for internal server error, 503 for unavailable).
+            const errorMessage = error.message || '';
+            const isRetryableError = errorMessage.includes('"code": 500') || 
+                                     errorMessage.includes('"code": 503') || 
+                                     errorMessage.includes('"status": "UNAVAILABLE"');
+            
+            if (isRetryableError && attempt < maxRetries) {
                 attempt++;
                 // Exponential backoff with jitter
                 const delay = Math.pow(2, attempt) * 1000 + Math.random() * 1000;
-                console.warn(`Model overloaded. Retrying in ${Math.round(delay / 1000)}s... (Attempt ${attempt})`);
+                console.warn(`API call failed with retryable error. Retrying in ${Math.round(delay / 1000)}s... (Attempt ${attempt})`);
                 await new Promise(resolve => setTimeout(resolve, delay));
             } else {
                 // Re-throw if it's not a retryable error or if max retries are reached

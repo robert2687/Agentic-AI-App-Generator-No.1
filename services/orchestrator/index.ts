@@ -1,3 +1,4 @@
+
 import { AGENTS_CONFIG } from '../../constants';
 import type { Agent, AgentName } from '../../types';
 import { AgentStatus } from '../../types';
@@ -7,7 +8,7 @@ import type { Provider } from './types';
 import { validateAgentOutput } from './validation';
 import { logger } from '../loggerInstance';
 import { FunctionDeclaration, Type, Content, GenerateContentResponse, FunctionResponsePart } from '@google/genai';
-import { ai } from '../geminiClient';
+import { ai, withRetry } from '../geminiClient';
 import { activeImageProvider, activeImageProviderName } from '../imageProvider';
 
 
@@ -97,13 +98,13 @@ export class Orchestrator {
             const contents: Content[] = [{ role: 'user', parts: [{ text: input }] }];
 
             // 1. First call to Gemini to see if it wants to call a function
-            const initialResponse: GenerateContentResponse = await ai.models.generateContent({
+            const initialResponse: GenerateContentResponse = await withRetry(() => ai.models.generateContent({
                 model: 'gemini-2.5-flash',
                 contents: contents,
                 config: {
                     tools: [{ functionDeclarations: [generateImageTool] }],
                 },
-            });
+            }));
             
             const functionCalls = initialResponse.functionCalls;
 
@@ -152,7 +153,9 @@ export class Orchestrator {
                 }
 
                 this.updateAgentState(agent.id, { output: `Image result processed. Compiling final design...` });
-                const stream = await ai.models.generateContentStream({ model: 'gemini-2.5-flash', contents });
+                // FIX: Add an explicit type annotation for `stream` to resolve a type inference issue where
+                // its type was being inferred as `unknown`, causing a compile error in the for-await-of loop.
+                const stream: AsyncIterable<GenerateContentResponse> = await withRetry(() => ai.models.generateContentStream({ model: 'gemini-2.5-flash', contents }));
                 
                 let finalOutput = "";
                 for await (const chunk of stream) {
