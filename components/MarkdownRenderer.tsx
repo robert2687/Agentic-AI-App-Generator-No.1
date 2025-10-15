@@ -6,7 +6,7 @@ const renderParagraphContent = (text: string) => {
   const parts = text.split(/(`[^`]+`|\*\*[^*]+\*\*)/g);
   return parts.map((part, i) => {
     if (part.startsWith('`') && part.endsWith('`')) {
-      return <code key={i} className="bg-slate-700 text-rose-400 rounded px-1.5 py-1 text-sm font-semibold">{part.slice(1, -1)}</code>;
+      return <code key={i} className="bg-surface-highlight dark:bg-surface-highlight-dark text-status-error dark:text-status-error-dark rounded px-1.5 py-1 text-sm font-semibold">{part.slice(1, -1)}</code>;
     }
     if (part.startsWith('**') && part.endsWith('**')) {
       return <strong key={i}>{part.slice(2, -2)}</strong>;
@@ -29,9 +29,9 @@ const NonCodeRenderer: React.FC<{ content: string }> = ({ content }) => {
         if (!trimmedPara) return null;
         
         // Headings
-        if (trimmedPara.startsWith('# ')) return <h1 key={i} className="text-2xl font-bold mt-6 mb-3 text-slate-100 border-b border-slate-700 pb-2">{renderParagraphContent(trimmedPara.substring(2))}</h1>;
-        if (trimmedPara.startsWith('## ')) return <h2 key={i} className="text-xl font-bold mt-5 mb-2 text-slate-100 border-b border-slate-700 pb-1">{renderParagraphContent(trimmedPara.substring(3))}</h2>;
-        if (trimmedPara.startsWith('### ')) return <h3 key={i} className="text-lg font-semibold mt-4 mb-2 text-slate-200">{renderParagraphContent(trimmedPara.substring(4))}</h3>;
+        if (trimmedPara.startsWith('# ')) return <h1 key={i} className="text-2xl font-bold mt-6 mb-3 text-text-primary dark:text-text-primary-dark border-b border-border dark:border-border-dark pb-2">{renderParagraphContent(trimmedPara.substring(2))}</h1>;
+        if (trimmedPara.startsWith('## ')) return <h2 key={i} className="text-xl font-bold mt-5 mb-2 text-text-primary dark:text-text-primary-dark border-b border-border dark:border-border-dark pb-1">{renderParagraphContent(trimmedPara.substring(3))}</h2>;
+        if (trimmedPara.startsWith('### ')) return <h3 key={i} className="text-lg font-semibold mt-4 mb-2 text-text-primary dark:text-text-primary-dark">{renderParagraphContent(trimmedPara.substring(4))}</h3>;
 
         // Lists (each line is a list item)
         if (trimmedPara.startsWith('* ') || trimmedPara.startsWith('- ')) {
@@ -74,6 +74,7 @@ const CodeBlock: React.FC<{ code: string; language: string | null }> = ({ code, 
     }
   };
 
+  // Note: Prism theme sets the background colors, so we don't need dark: variants here.
   return (
     <div className="bg-slate-950 rounded-md my-4 ring-1 ring-slate-700 relative group">
       <div className="flex justify-between items-center px-4 py-1 bg-slate-800/50 rounded-t-md text-xs font-sans">
@@ -106,7 +107,7 @@ const MarkdownRenderer: React.FC<{ content: string }> = ({ content }) => {
   const parts = content.split(/(```(?:[\s\S]*?)```)/g);
 
   return (
-    <div className="text-slate-300">
+    <div className="text-text-secondary dark:text-text-secondary-dark">
       {parts.map((part, index) => {
         if (!part) return null;
 

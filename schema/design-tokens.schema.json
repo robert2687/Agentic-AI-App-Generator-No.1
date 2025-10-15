@@ -1,0 +1,60 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Design Tokens Schema",
+  "type": "object",
+  "properties": {
+    "color": {
+      "type": "object",
+      "description": "Semantic color tokens",
+      "patternProperties": {
+        "^--color-[a-z-]+$": {
+          "type": "string",
+          "pattern": "^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$"
+        }
+      },
+      "additionalProperties": false
+    },
+    "spacing": {
+      "type": "object",
+      "description": "Spacing scale tokens",
+      "patternProperties": {
+        "^--spacing-[0-9]+$": {
+          "type": "string",
+          "pattern": "^[0-9]+(px|rem|em)$"
+        }
+      },
+      "additionalProperties": false
+    },
+    "font": {
+      "type": "object",
+      "description": "Typography tokens",
+      "properties": {
+        "family": {
+          "type": "string"
+        },
+        "sizes": {
+          "type": "object",
+          "patternProperties": {
+            "^--font-size-[a-z-]+$": {
+              "type": "string",
+              "pattern": "^[0-9]+(px|rem|em)$"
+            }
+          }
+        },
+        "weights": {
+          "type": "object",
+          "patternProperties": {
+            "^--font-weight-[a-z-]+$": {
+              "type": "integer",
+              "enum": [100,200,300,400,500,600,700,800,900]
+            }
+          }
+        }
+      },
+      "required": ["family", "sizes", "weights"],
+      "additionalProperties": false
+    }
+  },
+  "required": ["color", "spacing", "font"],
+  "additionalProperties": false
+}

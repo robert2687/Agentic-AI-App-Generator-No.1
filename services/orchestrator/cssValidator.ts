@@ -5,13 +5,16 @@
 export function validateCssOutput(css: string): string[] {
   const errors: string[] = [];
 
-  // Updated required design tokens as per user request
   const requiredVariables = [
-    '--color-primary',
-    '--color-secondary',
-    '--font-size-base',
-    '--spacing-sm',
-    '--spacing-md'
+    '--background-color',
+    '--surface-color',
+    '--text-color',
+    '--primary-color',
+    '--delete-color',
+    '--font-family-sans',
+    '--spacing-md',
+    '--spacing-lg',
+    '--border-radius',
   ];
 
   // Check for :root block. It's essential for defining variables.

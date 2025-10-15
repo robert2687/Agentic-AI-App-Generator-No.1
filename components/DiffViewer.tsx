@@ -17,11 +17,11 @@ export const DiffViewer: React.FC<DiffViewerProps> = ({ oldValue, newValue }) =>
   const changes: Change[] = diffLines(oldText, newText);
 
   return (
-    <div className="mt-lg text-sm rounded-lg overflow-hidden border border-border-dark">
-      <h4 className="text-xs font-bold bg-surface-dark px-sm py-xs text-text-secondary-dark border-b border-border-dark font-sans">
+    <div className="mt-lg text-sm rounded-lg overflow-hidden border border-border dark:border-border-dark">
+      <h4 className="text-xs font-bold bg-surface-lighter dark:bg-surface-dark px-sm py-xs text-text-secondary dark:text-text-secondary-dark border-b border-border dark:border-border-dark font-sans">
         Code Difference from Previous Step
       </h4>
-      <div className="font-mono text-xs bg-background-dark p-sm overflow-x-auto">
+      <div className="font-mono text-xs bg-surface dark:bg-background-dark p-sm overflow-x-auto">
         {changes.flatMap((part, partIndex) => {
           const partClasses = part.added
             ? 'bg-status-success-muted'
@@ -30,10 +30,10 @@ export const DiffViewer: React.FC<DiffViewerProps> = ({ oldValue, newValue }) =>
             : '';
           const prefix = part.added ? '+' : part.removed ? '-' : ' ';
           const prefixClasses = part.added
-            ? 'text-status-success'
+            ? 'text-status-success dark:text-status-success-dark'
             : part.removed
-            ? 'text-status-error'
-            : 'text-text-tertiary-dark';
+            ? 'text-status-error dark:text-status-error-dark'
+            : 'text-text-tertiary dark:text-text-tertiary-dark';
 
           // `diffLines` includes the newline in `part.value`.
           // We remove the last empty string if the value ends with a newline.
@@ -42,7 +42,7 @@ export const DiffViewer: React.FC<DiffViewerProps> = ({ oldValue, newValue }) =>
           return lines.map((line, lineIndex) => (
             <div key={`${partIndex}-${lineIndex}`} className={`flex ${partClasses}`}>
               <span className={`w-6 text-center select-none flex-shrink-0 ${prefixClasses}`}>{prefix}</span>
-              <span className="whitespace-pre-wrap flex-grow">{line}</span>
+              <span className="whitespace-pre-wrap flex-grow text-text-primary dark:text-text-primary-dark">{line}</span>
             </div>
           ));
         })}

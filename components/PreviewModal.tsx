@@ -24,12 +24,12 @@ const PreviewModal: React.FC<PreviewModalProps> = ({ code, onClose }) => {
       aria-modal="true"
       role="dialog"
     >
-      <div className="bg-slate-900 rounded-lg shadow-2xl w-[95%] h-[90%] flex flex-col ring-1 ring-slate-700/50">
-        <header className="flex items-center justify-between p-3 border-b border-slate-700/50 flex-shrink-0">
-          <h2 className="font-bold text-lg text-slate-200">Application Preview</h2>
+      <div className="bg-surface dark:bg-surface-dark rounded-lg shadow-2xl w-[95%] h-[90%] flex flex-col ring-1 ring-border dark:ring-border-dark">
+        <header className="flex items-center justify-between p-3 border-b border-border dark:border-border-dark flex-shrink-0">
+          <h2 className="font-bold text-lg text-text-primary dark:text-text-primary-dark">Application Preview</h2>
           <button 
             onClick={onClose} 
-            className="text-slate-400 hover:text-white transition-colors rounded-full p-1 focus:outline-none focus:ring-2 focus:ring-sky-500"
+            className="text-text-secondary dark:text-text-secondary-dark hover:text-text-primary dark:hover:text-text-primary-dark transition-colors rounded-full p-1 focus:outline-none focus:ring-2 focus:ring-accent-primary dark:focus:ring-accent-primary-dark"
             aria-label="Close preview"
           >
             <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">

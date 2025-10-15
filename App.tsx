@@ -172,7 +172,7 @@ const AppContent: React.FC = () => {
   };
     
   return (
-    <div className="bg-background-dark text-text-primary-dark min-h-screen font-sans pb-20 lg:pb-0">
+    <div className="bg-background dark:bg-background-dark text-text-primary dark:text-text-primary-dark min-h-screen font-sans pb-20 lg:pb-0 transition-colors duration-300">
       <Header onSignIn={() => setShowAuthModal(true)} />
       <main className="max-w-screen-3xl mx-auto p-lg">
         <GatedGeneratorWorkspace

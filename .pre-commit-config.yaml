@@ -1,0 +1,37 @@
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.6.0
+    hooks:
+      - id: check-yaml
+      - id: check-json
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+
+  - repo: https://github.com/pre-commit/mirrors-eslint
+    rev: v9.5.0
+    hooks:
+      - id: eslint
+        files: \.(js|jsx|ts|tsx)$
+        additional_dependencies:
+          - eslint
+          - eslint-plugin-jsx-a11y
+          - eslint-config-prettier
+
+  - repo: https://github.com/pre-commit/mirrors-stylelint
+    rev: v16.9.0
+    hooks:
+      - id: stylelint
+        files: \.(css|scss)$
+        additional_dependencies:
+          - stylelint
+          - stylelint-config-standard
+          - stylelint-config-prettier
+          - stylelint-declaration-use-variable
+
+  - repo: local
+    hooks:
+      - id: validate-design-tokens
+        name: Validate design-tokens.json against schema
+        entry: npx ajv validate -s schema/design-tokens.schema.json -d design-tokens.json
+        language: system
+        files: ^design-tokens\.json$

@@ -3,8 +3,32 @@
 // For the CDN, this file's content will be used to construct the config object.
 
 const colors = {
-  // Using a flat structure for CDN compatibility as per the user's example.
-  // Format: 'token-name-light/dark' to be used like `bg-surface-light dark:bg-surface-dark`.
+  // Light Theme (Default)
+  background: '#f8fafc', // slate-50
+  surface: '#ffffff',
+  'surface-lighter': '#f1f5f9', // slate-100
+  'surface-highlight': '#e2e8f0', // slate-200
+  border: '#cbd5e1', // slate-300
+  'border-light': '#e2e8f0', // slate-200
+  'text-primary': '#1e293b', // slate-800
+  'text-secondary': '#475569', // slate-600
+  'text-tertiary': '#94a3b8', // slate-400
+
+  'accent-primary': '#0ea5e9', // sky-500
+  'accent-primary-hover': '#0284c7', // sky-600
+  'accent-secondary': '#0d9488', // teal-600
+  'accent-indigo': '#6366f1', // indigo-500
+  'accent-indigo-hover': '#4f46e5', // indigo-600
+
+  'status-success': '#16a34a', // green-600
+  'status-error': '#dc2626', // red-600
+  'status-warning': '#facc15', // amber-400 (kept yellow for visibility in both themes)
+  
+  // Muted colors for backgrounds, can be shared between themes
+  'status-error-muted': 'rgba(244, 63, 94, 0.1)',
+  'status-success-muted': 'rgba(16, 185, 129, 0.1)',
+  
+  // Specific dark theme colors for use with dark: prefix
   'background-dark': '#0f172a',
   'surface-dark': '#1e293b',
   'surface-lighter-dark': 'rgba(51, 65, 85, 0.5)',
@@ -14,17 +38,17 @@ const colors = {
   'text-primary-dark': '#e2e8f0',
   'text-secondary-dark': '#94a3b8',
   'text-tertiary-dark': '#64748b',
-  'accent-primary': '#38bdf8',
-  'accent-primary-hover': '#0ea5e9',
-  'accent-secondary': '#2dd4bf',
-  'accent-indigo': '#818cf8',
-  'accent-indigo-hover': '#6366f1',
-  'status-success': '#4ade80',
-  'status-error': '#f87171',
-  'status-warning': '#facc15',
-  'status-error-muted': 'rgba(244, 63, 94, 0.1)',
-  'status-success-muted': 'rgba(16, 185, 129, 0.1)',
-  // Add white/black for explicit overrides if needed
+  
+  'accent-primary-dark': '#38bdf8', // sky-400 (lighter for dark bg)
+  'accent-primary-hover-dark': '#0ea5e9', // sky-500
+  'accent-secondary-dark': '#2dd4bf', // teal-400
+  'accent-indigo-dark': '#818cf8', // indigo-400
+  'accent-indigo-hover-dark': '#6366f1', // indigo-500
+
+  'status-success-dark': '#4ade80', // green-400
+  'status-error-dark': '#f87171', // red-400
+
+  // Standard colors
   white: '#ffffff',
   black: '#000000',
   transparent: 'transparent',
@@ -41,6 +65,7 @@ const spacing = {
 
 const typography = {
   sans: ["'Inter'", 'system-ui', 'sans-serif'],
+  mono: ["'JetBrains Mono'", 'ui-monospace', 'monospace'],
 };
 
 const fontSize = {
@@ -50,6 +75,7 @@ const fontSize = {
   'lg': '1.125rem',
   'xl': '1.25rem',
   '2xl': '1.5rem',
+  '3xl': '1.875rem',
 };
 
 const fontWeight = {
@@ -87,6 +113,15 @@ module.exports = {
       fontWeight: fontWeight,
       borderRadius: borderRadius,
       boxShadow: boxShadow,
+      animation: {
+        'fade-in': 'fadeIn 0.5s ease-out forwards',
+      },
+      keyframes: {
+        fadeIn: {
+          '0%': { opacity: 0, transform: 'translateY(10px)' },
+          '100%': { opacity: 1, transform: 'translateY(0)' },
+        },
+      }
     },
   },
   plugins: [],

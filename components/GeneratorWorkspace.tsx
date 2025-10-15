@@ -63,8 +63,8 @@ const GeneratorWorkspace: React.FC<GeneratorWorkspaceProps> = ({
             isError={isError}
             errorText={errorText}
           />
-          <div className="bg-surface-lighter-dark rounded-lg p-md flex flex-col gap-md">
-            <h2 className="text-lg font-bold text-accent-primary">Agent Workflow</h2>
+          <div className="bg-surface-lighter dark:bg-surface-lighter-dark rounded-lg p-md flex flex-col gap-md">
+            <h2 className="text-lg font-bold text-accent-primary dark:text-accent-primary-dark">Agent Workflow</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {agents.map(agent => (
                 <AgentCard
@@ -78,13 +78,13 @@ const GeneratorWorkspace: React.FC<GeneratorWorkspaceProps> = ({
               ))}
             </div>
           </div>
-          <div className="bg-surface-lighter-dark rounded-lg h-[500px]">
+          <div className="bg-surface-lighter dark:bg-surface-lighter-dark rounded-lg h-[500px]">
             <AgentDetailView agent={selectedAgent} recoveryContext={recoveryContext} />
           </div>
         </div>
 
         {/* Right Panel */}
-        <div className="bg-surface-lighter-dark rounded-lg h-full min-h-[80vh]">
+        <div className="bg-surface-lighter dark:bg-surface-lighter-dark rounded-lg h-full min-h-[80vh]">
           <PreviewPanel
             code={finalCode}
             isZenMode={isZenMode}
@@ -118,8 +118,8 @@ const GeneratorWorkspace: React.FC<GeneratorWorkspaceProps> = ({
               isError={isError}
               errorText={errorText}
             />
-            <div className="bg-surface-lighter-dark rounded-lg p-md flex flex-col gap-md">
-              <h2 className="text-lg font-bold text-accent-primary">Agent Workflow</h2>
+            <div className="bg-surface-lighter dark:bg-surface-lighter-dark rounded-lg p-md flex flex-col gap-md">
+              <h2 className="text-lg font-bold text-accent-primary dark:text-accent-primary-dark">Agent Workflow</h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {agents.map(agent => (
                   <AgentCard
@@ -136,12 +136,12 @@ const GeneratorWorkspace: React.FC<GeneratorWorkspaceProps> = ({
           </div>
         )}
         {mobileView === 'audit' && (
-           <div className="bg-surface-lighter-dark rounded-lg h-[calc(100vh-200px)]">
+           <div className="bg-surface-lighter dark:bg-surface-lighter-dark rounded-lg h-[calc(100vh-200px)]">
             <AgentDetailView agent={selectedAgent} recoveryContext={recoveryContext} />
           </div>
         )}
          {mobileView === 'preview' && (
-           <div className="bg-surface-lighter-dark rounded-lg h-[calc(100vh-200px)]">
+           <div className="bg-surface-lighter dark:bg-surface-lighter-dark rounded-lg h-[calc(100vh-200px)]">
              <PreviewPanel
                 code={finalCode}
                 isZenMode={isZenMode}

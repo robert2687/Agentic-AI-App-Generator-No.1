@@ -1,0 +1,24 @@
+{
+  "color": {
+    "--color-primary": "#0055ff",
+    "--color-success": "#28a745",
+    "--color-error": "#dc3545"
+  },
+  "spacing": {
+    "--spacing-4": "4px",
+    "--spacing-8": "8px",
+    "--spacing-16": "16px"
+  },
+  "font": {
+    "family": "Inter, sans-serif",
+    "sizes": {
+      "--font-size-sm": "14px",
+      "--font-size-md": "16px",
+      "--font-size-lg": "20px"
+    },
+    "weights": {
+      "--font-weight-regular": 400,
+      "--font-weight-bold": 700
+    }
+  }
+}

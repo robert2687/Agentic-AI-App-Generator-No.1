@@ -1,4 +1,3 @@
-
 import React, { useEffect, useRef, useState } from 'react';
 import CopyIcon from './icons/CopyIcon';
 
@@ -32,7 +31,7 @@ const CodePreviewPanel: React.FC<CodePreviewPanelProps> = ({ code }) => {
 
   if (!code) {
     return (
-        <div className="h-full bg-slate-950 p-4 flex items-center justify-center text-slate-500">
+        <div className="h-full bg-surface dark:bg-surface-dark p-4 flex items-center justify-center text-text-tertiary dark:text-text-tertiary-dark">
             No code to display.
         </div>
     );
