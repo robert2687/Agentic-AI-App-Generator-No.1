@@ -31,15 +31,23 @@ View your app in AI Studio: https://ai.studio/apps/drive/13z9RgvMFPcqGZ70huEXfVk
    ```
 
 2. Set up your environment:
-   - Create a `.env.local` file in the root directory
-   - Add your Gemini API key: `GEMINI_API_KEY=your_api_key_here`
+   - Copy the template: `cp .env.local.template .env.local`
+   - Edit `.env.local` and add your Gemini API key: `GEMINI_API_KEY=your_api_key_here`
+   - Get your API key from [Google AI Studio](https://makersuite.google.com/app/apikey)
 
-3. Run the development server:
+3. Verify your setup (optional but recommended):
+   ```bash
+   npm run verify-setup
+   ```
+
+4. Run the development server:
    ```bash
    npm run dev
    ```
 
-4. Open [http://localhost:5173](http://localhost:5173) in your browser
+5. Open [http://localhost:5173](http://localhost:5173) in your browser
+
+> **Note:** Vite runs on port 5173 by default, not 3000.
 
 ## Build for Production
 
@@ -53,4 +61,22 @@ npm run preview
 - **Frontend**: React 19, TypeScript
 - **Build Tool**: Vite
 - **AI Integration**: Google Gemini API
+- **Backend**: Supabase
 - **Styling**: Modern CSS with responsive design
+
+## Development
+
+For detailed development instructions, including architecture, best practices, and troubleshooting, see [DEVELOPMENT.md](./DEVELOPMENT.md).
+
+### Quick Commands
+
+```bash
+npm run dev          # Start development server
+npm run build        # Build for production
+npm run preview      # Preview production build
+npm run verify-setup # Check development environment setup
+```
+
+### Contributing
+
+Please read [CONTRIBUTING.md](./CONTRIBUTING.md) for details on our code of conduct and the process for submitting pull requests.
