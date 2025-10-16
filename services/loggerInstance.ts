@@ -1,4 +1,4 @@
-import { AuditLogger } from './auditLogger';
+import { AuditLogger } from './auditLogger.js';
 
 /**
  * A singleton instance of the AuditLogger.

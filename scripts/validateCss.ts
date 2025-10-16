@@ -8,7 +8,7 @@ declare const process: {
 
 import fs from 'fs';
 import path from 'path';
-import { validateCssOutput } from '../services/orchestrator/cssValidator';
+import { validateCssOutput } from '../services/orchestrator/cssValidator.js';
 
 /**
  * This script is intended for CI/CD to validate a standalone CSS file.

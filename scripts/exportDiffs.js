@@ -1,7 +1,8 @@
 import fs from 'fs';
 import path from 'path';
 import { createTwoFilesPatch } from 'diff';
-import { getPrettyHtml } from 'diff2html';
+import diff2html from 'diff2html';
+const { getPrettyHtml } = diff2html;
 import { logger } from '../services/loggerInstance.js';
 
 // This script is intended to be run from the project root in a Node.js environment.
