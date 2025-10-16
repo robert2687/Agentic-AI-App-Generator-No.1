@@ -45,9 +45,7 @@ View your app in AI Studio: https://ai.studio/apps/drive/13z9RgvMFPcqGZ70huEXfVk
    npm run dev
    ```
 
-5. Open [http://localhost:5173](http://localhost:5173) in your browser
-
-> **Note:** Vite runs on port 5173 by default, not 3000.
+5. Open [http://localhost:3000](http://localhost:3000) in your browser
 
 ## Build for Production
 

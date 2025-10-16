@@ -53,9 +53,7 @@ This will install all required dependencies including:
 npm run dev
 ```
 
-The application will start on `http://localhost:5173` (Vite's default port).
-
-**Note:** The README mentions port 3000, but Vite actually runs on port 5173 by default.
+The application will start on `http://localhost:3000` (configured in vite.config.ts).
 
 ## Development Workflow
 
