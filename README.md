@@ -43,10 +43,20 @@ View your app in AI Studio: https://ai.studio/apps/drive/13z9RgvMFPcqGZ70huEXfVk
 
 ## Build for Production
 
+The build process compiles both the Vite application and Node.js scripts:
+
 ```bash
-npm run build
-npm run preview
+npm run build        # Builds both app and scripts
+npm run build:app    # Builds only the Vite application
+npm run build:scripts # Compiles only Node.js scripts
+npm run preview      # Preview production build
 ```
+
+### Build Output
+
+- `dist/` - Production application assets
+- `dist/scripts/` - Compiled Node.js scripts for CI/CD
+- `dist/services/` - Compiled service modules
 
 ## Tech Stack
 
