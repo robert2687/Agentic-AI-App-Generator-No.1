@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "build:node": "tsc -p tsconfig.node.json",
     "preview": "vite preview"
   },
   "dependencies": {

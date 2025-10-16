@@ -115,7 +115,7 @@ export class Orchestrator {
                 this.updateAgentState(agent.id, { output: `Received function call(s): \`${functionCalls.map(c => c.name).join(', ')}\`...` });
 
                 // 2. Execute the function(s)
-                const functionResponseParts: FunctionResponsePart[] = await Promise.all(
+                const functionResponseParts: any[] = await Promise.all(
                     functionCalls.map(async (call) => {
                         if (call.name === 'generateImage') {
                             const imagePrompt = call.args['prompt'] as string;

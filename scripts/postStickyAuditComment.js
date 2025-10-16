@@ -1,5 +1,5 @@
 // scripts/postStickyAuditComment.js
-import { logger } from "../services/loggerInstance.js";
+import { logger } from "../dist/node/services/loggerInstance.js";
 import { createTwoFilesPatch } from "diff";
 import fs from "fs";
 

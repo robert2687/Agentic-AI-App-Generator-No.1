@@ -6,8 +6,8 @@ declare const process: {
   exit: (code?: number) => never;
 };
 
-import fs from 'fs';
-import path from 'path';
+import * as fs from 'fs';
+import * as path from 'path';
 import { validateCssOutput } from '../services/orchestrator/cssValidator';
 
 /**
