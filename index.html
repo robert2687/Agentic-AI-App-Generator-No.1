@@ -5,15 +5,7 @@
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Agentic AI App Generator</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- The Tailwind CDN will automatically find and use the tailwind.config.js file -->
-    <script src="/tailwind.config.js"></script>
-    <!-- Prism.js for syntax highlighting -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-okaidia.min.css" />
-    <!-- diff2html for responsive diffs -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/diff2html/bundles/css/diff2html.min.css" />
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js" data-manual></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-markup.min.js"></script>
+    <!-- Import map must come before any module scripts -->
   <script type="importmap">
 {
   "imports": {
@@ -27,6 +19,15 @@
   }
 }
 </script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- The Tailwind CDN will automatically find and use the tailwind.config.js file -->
+    <script type="module" src="/tailwind.config.js"></script>
+    <!-- Prism.js for syntax highlighting -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-okaidia.min.css" />
+    <!-- diff2html for responsive diffs -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/diff2html/bundles/css/diff2html.min.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js" data-manual></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-markup.min.js"></script>
 </head>
   <body>
     <div id="root"></div>

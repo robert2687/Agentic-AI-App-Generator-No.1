@@ -7,7 +7,7 @@ import { mockProvider } from './providers/mockProvider';
 import type { Provider } from './types';
 import { validateAgentOutput } from './validation';
 import { logger } from '../loggerInstance';
-import { FunctionDeclaration, Type, Content, GenerateContentResponse, FunctionResponsePart } from '@google/genai';
+import { FunctionDeclaration, Type, Content, GenerateContentResponse, Part, createPartFromFunctionResponse } from '@google/genai';
 import { ai, withRetry } from '../geminiClient';
 import { activeImageProvider, activeImageProviderName } from '../imageProvider';
 
@@ -115,7 +115,7 @@ export class Orchestrator {
                 this.updateAgentState(agent.id, { output: `Received function call(s): \`${functionCalls.map(c => c.name).join(', ')}\`...` });
 
                 // 2. Execute the function(s)
-                const functionResponseParts: FunctionResponsePart[] = await Promise.all(
+                const functionResponseParts: Part[] = await Promise.all(
                     functionCalls.map(async (call) => {
                         if (call.name === 'generateImage') {
                             const imagePrompt = call.args['prompt'] as string;
@@ -126,24 +126,22 @@ export class Orchestrator {
                             
                             try {
                                 const imageResult = await activeImageProvider.generateImage(imagePrompt, { aspectRatio });
-                                return {
-                                    functionResponses: {
-                                        id: call.id, name: call.name,
-                                        response: { result: { imageDataUri: `data:${imageResult.mimeType};base64,${imageResult.base64}` } }
-                                    }
-                                };
+                                return createPartFromFunctionResponse(
+                                    call.id,
+                                    call.name,
+                                    { result: { imageDataUri: `data:${imageResult.mimeType};base64,${imageResult.base64}` } }
+                                );
                             } catch (imgError: any) {
                                 logger.error(agent.name, `Image generation failed for prompt "${imagePrompt}": ${imgError.message}`, {});
-                                return {
-                                    functionResponses: {
-                                        id: call.id, name: call.name,
-                                        response: { error: `Image generation failed. Please provide an SVG placeholder instead. Error: ${imgError.message}` }
-                                    }
-                                };
+                                return createPartFromFunctionResponse(
+                                    call.id,
+                                    call.name,
+                                    { error: `Image generation failed. Please provide an SVG placeholder instead. Error: ${imgError.message}` }
+                                );
                             }
                         }
                         // Fallback for unknown function
-                        return { functionResponses: { id: call.id, name: call.name, response: { error: `Unknown function name: ${call.name}` } } };
+                        return createPartFromFunctionResponse(call.id, call.name, { error: `Unknown function name: ${call.name}` });
                     })
                 );
                 
