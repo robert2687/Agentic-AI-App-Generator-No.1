@@ -21,10 +21,9 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      # This step should compile TypeScript to JavaScript.
-      # The CSS validation step will be skipped if compiled scripts aren't found.
+      # Build both the Vite application and compile Node.js scripts
       - name: Build application and scripts
-        run: echo "Build step placeholder. A real project would run 'npm run build' here."
+        run: npm run build
 
       - name: Run CSS validation
         id: css_validation

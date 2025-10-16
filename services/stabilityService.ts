@@ -31,7 +31,7 @@ export class StabilityService implements ImageService {
         throw new Error(`Stability AI API error (${response.status}): ${errorBody}`);
     }
     
-    const data = await response.json();
+    const data = await response.json() as any;
 
     if (!data.artifacts?.[0]?.base64) {
         throw new Error("Invalid response from Stability AI API: no image artifact found.");

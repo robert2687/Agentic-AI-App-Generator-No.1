@@ -1,4 +1,4 @@
-import { AgentName, AuditLogEntry, AuditLogEntryType } from '../types';
+import { AgentName, AuditLogEntry, AuditLogEntryType } from '../types.js';
 
 export class AuditLogger extends EventTarget {
   private logs: AuditLogEntry[] = [];
