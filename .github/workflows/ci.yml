@@ -28,7 +28,7 @@ jobs:
       run: npm ci
 
     - name: Verify setup
-      run: npm run verify-setup || true
+      run: npm run verify-setup
 
     - name: Build
       run: npm run build
