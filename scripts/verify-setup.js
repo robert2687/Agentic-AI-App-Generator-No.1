@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+// To run this script directly, ensure it is executable: chmod +x scripts/verify-setup.js
 
 /**
  * Setup Verification Script
