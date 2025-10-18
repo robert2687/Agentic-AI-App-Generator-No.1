@@ -146,6 +146,7 @@ lsof -ti:3000 | xargs kill -9
 
 # On Windows:
 netstat -ano | findstr :3000
+# Replace <PID> with the actual process ID from the previous command output
 taskkill /PID <PID> /F
 ```
 
