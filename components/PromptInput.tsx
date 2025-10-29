@@ -24,17 +24,17 @@ const PromptInput: React.FC<PromptInputProps> = ({
 
   if (isError) {
     return (
-      <div className="bg-status-error-muted border border-status-error rounded-lg p-4 flex flex-col gap-3 text-center animate-fade-in">
+      <div className="bg-red-50 dark:bg-red-900/20 border border-status-error rounded-lg p-4 flex flex-col gap-3 text-center animate-fade-in">
         <div className="flex items-center justify-center gap-2">
           <ErrorIcon className="w-6 h-6 text-status-error" />
           <h2 className="text-lg font-bold text-status-error">Generation Failed</h2>
         </div>
-        <p className="text-status-error/90 text-sm">
+        <p className="text-red-700 dark:text-red-300 text-sm">
           {errorText || 'An unexpected error occurred during agent execution.'}
         </p>
         <button
           onClick={onReset}
-          className="w-full bg-text-secondary text-white font-bold py-2 px-4 rounded-md hover:bg-text-tertiary transition-colors mt-2"
+          className="w-full bg-gray-700 text-white font-bold py-2 px-4 rounded-md hover:bg-gray-800 transition-colors mt-2"
         >
           Reset and Try Again
         </button>
@@ -57,9 +57,9 @@ const PromptInput: React.FC<PromptInputProps> = ({
     : 'Start Generation';
   
   return (
-    <div className="bg-surface-lighter rounded-lg p-4 flex flex-col gap-4">
+    <div className="bg-surface dark:bg-surface-dark border border-border dark:border-border-dark rounded-lg p-4 flex flex-col gap-4 shadow-sm">
       <div>
-        <label htmlFor="project-goal" className="font-bold text-accent-primary">
+        <label htmlFor="project-goal" className="font-semibold text-text-primary dark:text-text-primary-dark">
           1. Define Your Project Goal
         </label>
         <textarea
@@ -67,14 +67,14 @@ const PromptInput: React.FC<PromptInputProps> = ({
           value={projectGoal}
           onChange={(e) => setProjectGoal(e.target.value)}
           placeholder="e.g., A web app for tracking personal fitness goals with data visualization..."
-          className="w-full h-32 p-2 bg-surface rounded-md border border-border focus:border-accent-primary focus:ring-4 focus:ring-accent-primary/20 focus:outline-none resize-none transition-colors mt-2"
+          className="w-full h-32 p-2 bg-surface-highlight dark:bg-surface-highlight-dark rounded-md border border-border dark:border-border-dark focus:border-primary-500 focus:ring-4 focus:ring-primary-500/20 focus:outline-none resize-none transition-colors mt-2"
           disabled={isGenerating || isComplete}
         />
         <div className="flex flex-col sm:flex-row gap-2 mt-2">
           <button
             onClick={handlePrimaryAction}
             disabled={isGenerating || (!isComplete && !projectGoal.trim())}
-            className="flex-grow bg-accent-primary text-white font-bold py-2 px-4 rounded-md hover:bg-accent-primary-hover disabled:bg-surface-highlight disabled:text-text-tertiary disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
+            className="flex-grow bg-primary-600 text-white font-bold py-2 px-4 rounded-md hover:bg-primary-700 disabled:bg-gray-300 dark:disabled:bg-gray-700 disabled:text-text-tertiary disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
           >
             {isComplete && <EyeIcon className="w-5 h-5" />}
             {primaryButtonText}
@@ -82,7 +82,7 @@ const PromptInput: React.FC<PromptInputProps> = ({
           <button
             onClick={onReset}
             disabled={isGenerating}
-            className="bg-text-secondary text-white font-bold py-2 px-4 rounded-md hover:bg-text-tertiary disabled:bg-surface-highlight disabled:cursor-not-allowed transition-colors"
+            className="bg-gray-600 text-white font-bold py-2 px-4 rounded-md hover:bg-gray-700 disabled:bg-gray-300 dark:disabled:bg-gray-700 disabled:cursor-not-allowed transition-colors"
           >
             Reset
           </button>
@@ -90,22 +90,22 @@ const PromptInput: React.FC<PromptInputProps> = ({
       </div>
 
       {isComplete && (
-        <div className="border-t border-border pt-4 flex flex-col gap-2 animate-fade-in">
-          <label htmlFor="refinement-prompt" className="font-bold text-accent-secondary">
+        <div className="border-t border-border dark:border-border-dark pt-4 flex flex-col gap-2 animate-fade-in">
+          <label htmlFor="refinement-prompt" className="font-semibold text-text-primary dark:text-text-primary-dark">
             2. Debug & Refine
           </label>
           <textarea
             id="refinement-prompt"
             value={refinementPrompt}
             onChange={(e) => setRefinementPrompt(e.target.value)}
-            placeholder="e.g., The 'Delete' button isn't working. OR Change the title color to orange."
-            className="w-full h-20 p-2 bg-surface rounded-md border border-border focus:border-accent-secondary focus:ring-4 focus:ring-accent-secondary/20 focus:outline-none resize-none transition-colors"
+            placeholder="e.g., The 'Delete' button isn\'t working. OR Change the title color to orange."
+            className="w-full h-20 p-2 bg-surface-highlight dark:bg-surface-highlight-dark rounded-md border border-border dark:border-border-dark focus:border-primary-500 focus:ring-4 focus:ring-primary-500/20 focus:outline-none resize-none transition-colors"
             disabled={isGenerating}
           />
           <button
             onClick={onRefine}
             disabled={isGenerating || !refinementPrompt.trim()}
-            className="w-full bg-accent-secondary text-white font-bold py-2 px-4 rounded-md hover:bg-teal-700 disabled:bg-surface-highlight disabled:text-text-tertiary disabled:cursor-not-allowed transition-colors"
+            className="w-full bg-primary-600 text-white font-bold py-2 px-4 rounded-md hover:bg-primary-700 disabled:bg-gray-300 dark:disabled:bg-gray-700 disabled:text-text-tertiary disabled:cursor-not-allowed transition-colors"
           >
             {isGenerating ? 'Refining...' : 'Submit Refinement'}
           </button>

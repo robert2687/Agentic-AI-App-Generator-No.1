@@ -5,7 +5,6 @@ import SpinnerIcon from './icons/SpinnerIcon';
 import ErrorIcon from './icons/ErrorIcon';
 import AgentIcon from './icons/AgentIcon';
 import PatcherIcon from './icons/PatcherIcon';
-import Button from './ui/Button';
 
 interface AgentCardProps {
   agent: Agent;
@@ -23,30 +22,30 @@ const AgentCard: React.FC<AgentCardProps> = ({ agent, isSelected, isCurrent, onC
   const getStatusClasses = () => {
     if (agent.status === AgentStatus.ERROR) {
       return {
-        border: 'border-status-error dark:border-status-error-dark',
-        bg: 'bg-status-error-muted',
-        text: 'text-status-error dark:text-status-error-dark'
+        border: 'border-status-error',
+        bg: 'bg-red-50 dark:bg-red-900/20',
+        text: 'text-status-error'
       };
     }
     if (isRecoveringAgent) {
       return {
-        border: 'border-status-warning dark:border-status-warning',
-        bg: 'bg-status-warning/10',
+        border: 'border-status-warning',
+        bg: 'bg-orange-50 dark:bg-orange-900/20',
         text: 'text-status-warning'
       };
     }
     switch (agent.status) {
       case AgentStatus.RUNNING:
         return {
-          border: 'border-accent-primary dark:border-accent-primary-dark',
-          bg: 'bg-accent-primary/10 dark:bg-accent-primary-dark/10',
-          text: 'text-accent-primary dark:text-accent-primary-dark'
+          border: 'border-primary-500',
+          bg: 'bg-primary-50 dark:bg-primary-900/20',
+          text: 'text-primary-500'
         };
       case AgentStatus.COMPLETED:
         return {
-          border: 'border-status-success dark:border-status-success-dark',
-          bg: 'bg-status-success/10 dark:bg-status-success-dark/10',
-          text: 'text-status-success dark:text-status-success-dark'
+          border: 'border-status-success',
+          bg: 'bg-green-50 dark:bg-green-900/20',
+          text: 'text-status-success'
         };
       case AgentStatus.PENDING:
       default:
@@ -59,7 +58,7 @@ const AgentCard: React.FC<AgentCardProps> = ({ agent, isSelected, isCurrent, onC
   };
 
   const { border, bg, text } = getStatusClasses();
-  const selectedClass = isSelected ? 'ring-2 ring-offset-2 ring-offset-background dark:ring-offset-background-dark ring-accent-indigo dark:ring-accent-indigo-dark' : '';
+  const selectedClass = isSelected ? 'ring-2 ring-offset-2 ring-offset-background dark:ring-offset-background-dark ring-primary-500' : '';
   
   const renderIcon = () => {
     const iconProps = { className: "w-6 h-6" };
@@ -87,14 +86,14 @@ const AgentCard: React.FC<AgentCardProps> = ({ agent, isSelected, isCurrent, onC
       tabIndex={0}
       aria-label={`Select agent ${agent.name}, status: ${agent.status}`}
       aria-live="polite"
-      className={`card p-3 rounded-lg border flex items-center gap-4 cursor-pointer transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-background dark:focus-visible:ring-offset-background-dark focus-visible:ring-accent-indigo ${border} ${bg} ${selectedClass} ${pulseClass}`}
+      className={`card p-4 rounded-lg border flex items-center gap-4 cursor-pointer transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-background dark:focus-visible:ring-offset-background-dark focus-visible:ring-primary-500 ${border} ${bg} ${selectedClass} ${pulseClass}`}
     >
-      <div className={`flex-shrink-0 ${text}`}>
+      <div className={`flex-shrink-0 p-2 rounded-full bg-white dark:bg-surface-dark ${text}`}>
         {renderIcon()}
       </div>
       <div>
-        <h3 className="font-bold text-text-primary dark:text-text-primary-dark">{agent.name}</h3>
-        <p className="text-xs text-text-tertiary dark:text-text-tertiary-dark capitalize">{agent.status}</p>
+        <h3 className="font-semibold text-text-primary dark:text-text-primary-dark">{agent.name}</h3>
+        <p className="text-sm text-text-secondary dark:text-text-secondary-dark capitalize">{agent.status}</p>
       </div>
     </article>
   );
