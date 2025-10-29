@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>My Projects - Agentic AI App Generator</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet"/>
+<script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#3B82F6",
+                        "background-light": "#F9FAFB",
+                        "background-dark": "#101c22",
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                },
+            },
+        }
+    </script>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background-light dark:bg-background-dark font-display">
+<div class="relative min-h-screen w-full flex-col group/design-root overflow-x-hidden antialiased">
+<!-- Header -->
+<header class="sticky top-0 z-10 bg-background-light/80 dark:bg-background-dark/80 backdrop-blur-sm">
+<div class="flex items-center p-4 pb-3 justify-between">
+<h1 class="text-gray-900 dark:text-gray-100 text-2xl font-bold leading-tight tracking-tight">My Projects</h1>
+</div>
+</header>
+<main class="flex-1 pb-24 px-4">
+<!-- Search and Filter Bar -->
+<div class="sticky top-[68px] z-10 bg-background-light dark:bg-background-dark pt-2 pb-4">
+<div class="py-1">
+<label class="flex flex-col min-w-40 h-12 w-full">
+<div class="flex w-full flex-1 items-stretch rounded-xl h-full shadow-sm">
+<div class="text-gray-500 dark:text-gray-400 flex bg-white dark:bg-gray-800 items-center justify-center pl-4 rounded-l-xl">
+<span class="material-symbols-outlined" style="font-size: 24px;">search</span>
+</div>
+<input class="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-r-xl text-gray-900 dark:text-gray-100 focus:outline-0 focus:ring-2 focus:ring-primary/50 border-none bg-white dark:bg-gray-800 h-full placeholder:text-gray-500 dark:placeholder:text-gray-400 px-4 pl-2 text-base font-normal leading-normal" placeholder="Search projects..." value=""/>
+</div>
+</label>
+</div>
+<div class="flex gap-2 pt-3 overflow-x-auto pb-1">
+<button class="flex h-9 shrink-0 items-center justify-center gap-x-1.5 rounded-full bg-gray-200/50 dark:bg-gray-700/50 px-4 py-1.5 transition-colors hover:bg-gray-200 dark:hover:bg-gray-700">
+<p class="text-gray-800 dark:text-gray-200 text-sm font-medium leading-normal">Sort by: Date</p>
+<span class="material-symbols-outlined text-gray-600 dark:text-gray-400" style="font-size: 20px;">arrow_drop_down</span>
+</button>
+<button class="flex h-9 shrink-0 items-center justify-center gap-x-1.5 rounded-full bg-gray-200/50 dark:bg-gray-700/50 px-4 py-1.5 transition-colors hover:bg-gray-200 dark:hover:bg-gray-700">
+<p class="text-gray-800 dark:text-gray-200 text-sm font-medium leading-normal">Filter by: Status</p>
+<span class="material-symbols-outlined text-gray-600 dark:text-gray-400" style="font-size: 20px;">arrow_drop_down</span>
+</button>
+</div>
+</div>
+<!-- Project List -->
+<div class="flex flex-col gap-3">
+<!-- Project Card 1 -->
+<div class="flex items-center gap-4 bg-white dark:bg-gray-800 p-3 min-h-[72px] rounded-xl shadow-sm transition-transform active:scale-[0.98]">
+<div class="bg-center bg-no-repeat aspect-square bg-cover rounded-lg size-12" data-alt="Abstract gradient logo for e-commerce app" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuArMym7IzbRM72EaqhEfMsDdmpfBYY6PHT5MekwF3wzsL-BK-B1cqu8IWy3gOJp0gd6xtC8bxZjcLAPZxoZJnXdCQY7b6w8tjJUaCfUjEyzLWdbX4aoPDI9LkSpYCToL2wAVsuTbg4xuS3DqzRcq8nTbvZpnRgG0wyM7dHOHQzLgaSAuiZpiXNvwvQM_TTLlLVuY-4M3QBjMaKsXPkzonaWbisZpQnCx0OsY9JGsvdjPx5eWpWLhi-Uug6d8eUIcOvG2Q-cYZjxCQ");'></div>
+<div class="flex-1">
+<p class="text-gray-900 dark:text-gray-100 text-base font-medium leading-normal line-clamp-1">E-commerce App for Shoes</p>
+<p class="text-gray-500 dark:text-gray-400 text-sm font-normal leading-normal line-clamp-2">Created: 2024-05-20</p>
+</div>
+<div class="flex items-center gap-2">
+<div class="flex items-center gap-1.5 rounded-full bg-green-100 dark:bg-green-900/50 px-2 py-0.5">
+<div class="size-2 rounded-full bg-green-500 dark:bg-green-400"></div>
+<p class="text-green-800 dark:text-green-300 text-xs font-medium">Deployed</p>
+</div>
+<span class="material-symbols-outlined text-gray-400 dark:text-gray-500">chevron_right</span>
+</div>
+</div>
+<!-- Project Card 2 -->
+<div class="flex items-center gap-4 bg-white dark:bg-gray-800 p-3 min-h-[72px] rounded-xl shadow-sm transition-transform active:scale-[0.98]">
+<div class="bg-center bg-no-repeat aspect-square bg-cover rounded-lg size-12" data-alt="Abstract geometric logo for a social media platform" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuBpjljE4rq0S1hoRAKBGT8VoYwFKVJnr07IAkPwW30ySG40-6TlAA4K6HnUfnIeV2gfj-MA5c5NWtSZG3b2r7Xb9tR1G81sjuHZ5rpQapI-I3Ep-Vo8HqIrzmPlPSvfybcD8JUkuqDXPpy7rtZJ8EIqJN70YAGZozF3bpl2jD2zBA-eGTUd70cx6KqMf6oGuSxTMDwkxhYxu9x8SYxkO5kKiVNt5yMe2gtDvAlPIFq1DzXVzHIX0vh_b5sHsupz0ioOwZzbhUxZ3g");'></div>
+<div class="flex-1">
+<p class="text-gray-900 dark:text-gray-100 text-base font-medium leading-normal line-clamp-1">Social Media Platform</p>
+<p class="text-gray-500 dark:text-gray-400 text-sm font-normal leading-normal line-clamp-2">Created: 2024-05-18</p>
+</div>
+<div class="flex items-center gap-2">
+<div class="flex items-center gap-1.5 rounded-full bg-orange-100 dark:bg-orange-900/50 px-2 py-0.5">
+<div class="size-2 rounded-full bg-orange-500 dark:bg-orange-400 animate-pulse"></div>
+<p class="text-orange-800 dark:text-orange-300 text-xs font-medium">In Progress</p>
+</div>
+<span class="material-symbols-outlined text-gray-400 dark:text-gray-500">chevron_right</span>
+</div>
+</div>
+<!-- Project Card 3 -->
+<div class="flex items-center gap-4 bg-white dark:bg-gray-800 p-3 min-h-[72px] rounded-xl shadow-sm transition-transform active:scale-[0.98]">
+<div class="bg-center bg-no-repeat aspect-square bg-cover rounded-lg size-12" data-alt="Abstract circular logo for a fitness tracker app" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuAmQed7reE9kt3lXW9HfUVjER3Z48ZLWbMcKST4F6WEeXQu1U5RHaarrDbeZ0fLe1WYeHFqrf74lMVQMWj0bErHR8cWzJmQb16GMWe0phiGq_lAHRrU1dnrhetDkA-ISZmoM0hjfV2tD9i6AiH_x0tr9k0JX6f7qnhzHTYOfjyVU-Up-Jn91uoUkhf29mghgBulJQGlIZZPKvL0P6GmUGkL2xEZ27HDxMSKL50B9MDJ3RTKzN2ZhJhp8ayykPtur5GLvgGftFx7Og");'></div>
+<div class="flex-1">
+<p class="text-gray-900 dark:text-gray-100 text-base font-medium leading-normal line-clamp-1">Fitness Tracker App</p>
+<p class="text-gray-500 dark:text-gray-400 text-sm font-normal leading-normal line-clamp-2">Created: 2024-05-15</p>
+</div>
+<div class="flex items-center gap-2">
+<div class="flex items-center gap-1.5 rounded-full bg-red-100 dark:bg-red-900/50 px-2 py-0.5">
+<div class="size-2 rounded-full bg-red-500 dark:bg-red-400"></div>
+<p class="text-red-800 dark:text-red-300 text-xs font-medium">Error</p>
+</div>
+<span class="material-symbols-outlined text-gray-400 dark:text-gray-500">chevron_right</span>
+</div>
+</div>
+<!-- Project Card 4 -->
+<div class="flex items-center gap-4 bg-white dark:bg-gray-800 p-3 min-h-[72px] rounded-xl shadow-sm transition-transform active:scale-[0.98]">
+<div class="bg-center bg-no-repeat aspect-square bg-cover rounded-lg size-12" data-alt="Abstract plant logo for a recipe app" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuCTHiGY4QU76rsf1BYZzWf9FoA5AvnG0KuBQ9rSkW27TDHv9NJETw2Qdb_Q8zpMBGRARYT5gjuG6Tq6c8pRyVyCLeF98BdazNLb7NZyQt65biXs7daESrskky3qDeFFruNxOOKr09gcA62jzKurlay1uy-1-wQ5rpYLfx6KitjAN7qAq7VosLOd1Tb7u2kP6Ic0xUmNibuaewTulrl7Q9Lu8a0Oecexp066V1Jh_Z9gmzVAtFRoIxqw2YvmFe6pqhgvfP6bNKhrmg");'></div>
+<div class="flex-1">
+<p class="text-gray-900 dark:text-gray-100 text-base font-medium leading-normal line-clamp-1">Vegan Recipe Generator</p>
+<p class="text-gray-500 dark:text-gray-400 text-sm font-normal leading-normal line-clamp-2">Created: 2024-05-12</p>
+</div>
+<div class="flex items-center gap-2">
+<div class="flex items-center gap-1.5 rounded-full bg-green-100 dark:bg-green-900/50 px-2 py-0.5">
+<div class="size-2 rounded-full bg-green-500 dark:bg-green-400"></div>
+<p class="text-green-800 dark:text-green-300 text-xs font-medium">Deployed</p>
+</div>
+<span class="material-symbols-outlined text-gray-400 dark:text-gray-500">chevron_right</span>
+</div>
+</div>
+</div>
+<!-- Empty State (Uncomment to view) -->
+<!-- 
+             <div class="flex flex-col items-center justify-center text-center mt-20 px-4">
+                 <div class="flex items-center justify-center size-24 bg-gray-200 dark:bg-gray-700 rounded-full mb-6">
+                     <span class="material-symbols-outlined text-gray-500 dark:text-gray-400" style="font-size: 48px;">widgets</span>
+                 </div>
+                 <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100">No projects yet</h3>
+                 <p class="text-gray-600 dark:text-gray-400 mt-1 max-w-xs">Tap the '.' button to generate your first AI-powered app.</p>
+             </div>
+             -->
+</main>
+<!-- Floating Action Button -->
+<div class="fixed bottom-24 right-6 z-20">
+<button class="flex items-center justify-center size-14 bg-primary rounded-full shadow-lg text-white transition-transform active:scale-95 hover:bg-primary/90 focus:outline-none focus:ring-4 focus:ring-primary/30">
+<span class="material-symbols-outlined" style="font-size: 28px;">add</span>
+</button>
+</div>
+<!-- Bottom Navigation Bar -->
+<div class="fixed bottom-0 left-0 right-0 h-20 bg-white/80 dark:bg-background-dark/80 backdrop-blur-lg border-t border-gray-200 dark:border-gray-800">
+<div class="flex justify-around items-center h-full max-w-md mx-auto">
+<a href="dashboard.html" class="flex flex-col items-center justify-center gap-1 text-gray-500 dark:text-gray-400">
+<span class="material-symbols-outlined">dashboard</span>
+<span class="text-xs font-medium">Dashboard</span>
+</a>
+<a href="projects.html" class="flex flex-col items-center justify-center gap-1 text-primary">
+<span class="material-symbols-outlined">ballot</span>
+<span class="text-xs font-bold">Projects</span>
+</a>
+<a href="agents.html" class="flex flex-col items-center justify-center gap-1 text-gray-500 dark:text-gray-400">
+<span class="material-symbols-outlined">groups</span>
+<span class="text-xs font-medium">Agents</span>
+</a>
+<a href="settings.html" class="flex flex-col items-center justify-center gap-1 text-gray-500 dark:text-gray-400">
+<span class="material-symbols-outlined">settings</span>
+<span class="text-xs font-medium">Settings</span>
+</a>
+</div>
+</div>
+</div>
+</body></html>
