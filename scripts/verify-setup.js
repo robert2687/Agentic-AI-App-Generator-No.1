@@ -58,6 +58,19 @@ function header(message) {
   console.log(`\n${colors.bold}${message}${colors.reset}`);
 }
 
+/**
+ * Check if the API key value is valid (not empty and not the placeholder)
+ * @param {string} apiKeyValue - The API key value to check
+ * @returns {boolean} True if the API key is valid
+ */
+function isValidApiKey(apiKeyValue) {
+  if (!apiKeyValue) {
+    return false;
+  }
+  const trimmedValue = apiKeyValue.trim();
+  return trimmedValue !== '' && trimmedValue !== GEMINI_API_KEY_PLACEHOLDER;
+}
+
 console.log(`${colors.bold}${colors.blue}Agentic AI App Generator - Setup Verification${colors.reset}\n`);
 
 // Check Node.js version
@@ -119,7 +132,9 @@ if (existsSync(envPath)) {
     const envContent = readFileSync(envPath, 'utf8');
     if (envContent.includes('GEMINI_API_KEY')) {
       const match = envContent.match(/GEMINI_API_KEY=(.+)/);
-      if (match && match[1] && match[1].trim() !== GEMINI_API_KEY_PLACEHOLDER && match[1].trim() !== '') {
+      const apiKeyValue = match ? match[1] : null;
+      
+      if (isValidApiKey(apiKeyValue)) {
         success('GEMINI_API_KEY is configured');
       } else {
         warning('GEMINI_API_KEY is not set or using placeholder value');
