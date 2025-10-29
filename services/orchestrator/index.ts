@@ -13,16 +13,16 @@ import { activeImageProvider, activeImageProviderName } from '../imageProvider';
 
 
 const extractCode = (markdown: string, lang: string = 'html'): string | null => {
-  const regex = new RegExp("```" + lang + "\\n([\\s\\S]*?)```");
+  const regex = new RegExp("```(" + lang + ")?\n([\s\S]*?)```");
   const match = markdown.match(regex);
-  if (match) return match[1].trim();
+  if (match && match[2]) return match[2].trim();
   // Fallback for cases where the language is not specified
   if (!lang) {
-    const anyLangRegex = new RegExp("```(?:\\w*)\\n([\\s\\S]*?)```");
+    const anyLangRegex = new RegExp("```(?:\w*)\n([\s\S]*?)```");
     const anyLangMatch = markdown.match(anyLangRegex);
     if (anyLangMatch) return anyLangMatch[1].trim();
   }
-  return null;
+  return markdown;
 };
 
 const generateImageTool: FunctionDeclaration = {

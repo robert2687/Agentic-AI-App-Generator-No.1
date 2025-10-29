@@ -17,21 +17,21 @@ interface AgentCardProps {
 const AgentCard: React.FC<AgentCardProps> = ({ agent, isSelected, isCurrent, onClick, isInRecoveryMode }) => {
   
   const isRecoveringAgent = isInRecoveryMode && (agent.name === 'Reviewer' || agent.name === 'Patcher');
-  const pulseClass = isCurrent ? 'animate-pulse' : '';
+  const pulseClass = isCurrent ? 'animate-pulse-fast' : '';
 
   const getStatusClasses = () => {
     if (agent.status === AgentStatus.ERROR) {
       return {
-        border: 'border-status-error',
+        border: 'border-red-500',
         bg: 'bg-red-50 dark:bg-red-900/20',
-        text: 'text-status-error'
+        text: 'text-red-500'
       };
     }
     if (isRecoveringAgent) {
       return {
-        border: 'border-status-warning',
+        border: 'border-orange-500',
         bg: 'bg-orange-50 dark:bg-orange-900/20',
-        text: 'text-status-warning'
+        text: 'text-orange-500'
       };
     }
     switch (agent.status) {
@@ -43,9 +43,9 @@ const AgentCard: React.FC<AgentCardProps> = ({ agent, isSelected, isCurrent, onC
         };
       case AgentStatus.COMPLETED:
         return {
-          border: 'border-status-success',
+          border: 'border-green-500',
           bg: 'bg-green-50 dark:bg-green-900/20',
-          text: 'text-status-success'
+          text: 'text-green-500'
         };
       case AgentStatus.PENDING:
       default:
@@ -86,14 +86,14 @@ const AgentCard: React.FC<AgentCardProps> = ({ agent, isSelected, isCurrent, onC
       tabIndex={0}
       aria-label={`Select agent ${agent.name}, status: ${agent.status}`}
       aria-live="polite"
-      className={`card p-4 rounded-lg border flex items-center gap-4 cursor-pointer transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-background dark:focus-visible:ring-offset-background-dark focus-visible:ring-primary-500 ${border} ${bg} ${selectedClass} ${pulseClass}`}
+      className={`card p-4 rounded-lg border flex items-center gap-4 cursor-pointer transition-all duration-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-background dark:focus-visible:ring-offset-background-dark focus-visible:ring-primary-500 ${border} ${bg} ${selectedClass} ${pulseClass} hover:scale-105 hover:shadow-lg`}
     >
       <div className={`flex-shrink-0 p-2 rounded-full bg-white dark:bg-surface-dark ${text}`}>
         {renderIcon()}
       </div>
       <div>
         <h3 className="font-semibold text-text-primary dark:text-text-primary-dark">{agent.name}</h3>
-        <p className="text-sm text-text-secondary dark:text-text-secondary-dark capitalize">{agent.status}</p>
+        <p className="text-sm text-text-secondary dark:text-text-secondary-dark capitalize">{agent.status.toLowerCase()}</p>
       </div>
     </article>
   );

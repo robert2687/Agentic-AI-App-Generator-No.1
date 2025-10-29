@@ -24,6 +24,10 @@ const colors = {
     900: designTokens.color['--color-primary-900'],
     950: designTokens.color['--color-primary-950'],
   },
+  
+  green: designTokens.color.green,
+  red: designTokens.color.red,
+  orange: designTokens.color.orange,
 
   'status-success': designTokens.color['--color-success'],
   'status-error': designTokens.color['--color-error'],
@@ -108,6 +112,7 @@ module.exports = {
       animation: {
         'fade-in': 'fadeIn 0.5s ease-out forwards',
         'slide-in-up': 'slideInUp 0.5s ease-out forwards',
+        'pulse-fast': 'pulse 1s cubic-bezier(0.4, 0, 0.6, 1) infinite',
       },
       keyframes: {
         fadeIn: {
@@ -117,7 +122,7 @@ module.exports = {
         slideInUp: {
           '0%': { opacity: 0, transform: 'translateY(20px)' },
           '100%': { opacity: 1, transform: 'translateY(0)' },
-        }
+        },
       }
     },
   },
