@@ -1,23 +1,45 @@
 {
   "color": {
-    "--color-primary": "#0055ff",
-    "--color-success": "#28a745",
-    "--color-error": "#dc3545"
+    "--color-primary-50": "#eff6ff",
+    "--color-primary-100": "#dbeafe",
+    "--color-primary-200": "#bfdbfe",
+    "--color-primary-300": "#93c5fd",
+    "--color-primary-400": "#60a5fa",
+    "--color-primary-500": "#3b82f6",
+    "--color-primary-600": "#2563eb",
+    "--color-primary-700": "#1d4ed8",
+    "--color-primary-800": "#1e40af",
+    "--color-primary-900": "#1e3a8a",
+    "--color-primary-950": "#172554",
+    "--color-success": "#22c55e",
+    "--color-error": "#ef4444",
+    "--color-warning": "#f97316"
   },
   "spacing": {
-    "--spacing-4": "4px",
-    "--spacing-8": "8px",
-    "--spacing-16": "16px"
+    "--spacing-1": "0.25rem",
+    "--spacing-2": "0.5rem",
+    "--spacing-3": "0.75rem",
+    "--spacing-4": "1rem",
+    "--spacing-5": "1.25rem",
+    "--spacing-6": "1.5rem"
   },
   "font": {
-    "family": "Inter, sans-serif",
+    "family": {
+      "sans": "Inter, sans-serif",
+      "mono": "JetBrains Mono, monospace"
+    },
     "sizes": {
-      "--font-size-sm": "14px",
-      "--font-size-md": "16px",
-      "--font-size-lg": "20px"
+      "--font-size-xs": "0.75rem",
+      "--font-size-sm": "0.875rem",
+      "--font-size-base": "1rem",
+      "--font-size-lg": "1.125rem",
+      "--font-size-xl": "1.25rem",
+      "--font-size-2xl": "1.5rem"
     },
     "weights": {
       "--font-weight-regular": 400,
+      "--font-weight-medium": 500,
+      "--font-weight-semibold": 600,
       "--font-weight-bold": 700
     }
   }
