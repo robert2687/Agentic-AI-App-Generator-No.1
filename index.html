@@ -1,36 +1,119 @@
+
 <!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Agentic AI App Generator</title>
-    <!-- Import map must come before any module scripts -->
-  <script type="importmap">
-{
-  "imports": {
-    "react": "https://aistudiocdn.com/react@^19.1.1",
-    "react-dom/": "https://aistudiocdn.com/react-dom@^19.1.1/",
-    "react/": "https://aistudiocdn.com/react@^19.1.1/",
-    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.21.0",
-    "@supabase/supabase-js": "https://aistudiocdn.com/@supabase/supabase-js@^2.44.4",
-    "diff": "https://aistudiocdn.com/diff@^5.2.0",
-    "diff2html": "https://aistudiocdn.com/diff2html@^3.4.52"
-  }
-}
-</script>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- The Tailwind CDN will automatically find and use the tailwind.config.js file -->
-    <script type="module" src="/tailwind.config.js"></script>
-    <!-- Prism.js for syntax highlighting -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-okaidia.min.css" />
-    <!-- diff2html for responsive diffs -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/diff2html/bundles/css/diff2html.min.css" />
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js" data-manual></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-markup.min.js"></script>
+<html class="dark" lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+  <title>Sign In - Agentic AI App Generator</title>
+  <script src="https://cdn.tailwindcss.com?plugins=forms,typography"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet" />
+  <script>
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "primary": "#13a4ec",
+            "background-light": "#f6f7f8",
+            "background-dark": "#101c22",
+            "text-light": "#1F2937",
+            "text-dark": "#F9FAFB",
+            "subtle-light": "#6B7280",
+            "subtle-dark": "#9CA3AF",
+            "border-light": "#D1D5DB",
+            "border-dark": "#374151",
+            "input-light": "#FFFFFF",
+            "input-dark": "#1F2937",
+          },
+          fontFamily: {
+            display: ["Inter", "sans-serif"],
+          },
+          borderRadius: {
+            DEFAULT: "0.5rem",
+          },
+        },
+      },
+    };
+  </script>
+  <style>
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+    }
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
 </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/index.tsx"></script>
-  </body>
+<body class="bg-background-light dark:bg-background-dark font-display text-text-light dark:text-text-dark antialiased">
+  <div class="flex flex-col items-center justify-center min-h-screen px-4 py-8 sm:px-6 lg:px-8">
+    <div class="w-full max-w-md">
+      <div class="text-center mb-10">
+        <div class="inline-flex items-center justify-center bg-primary/10 dark:bg-primary/20 rounded-full w-16 h-16 mb-6">
+          <span class="material-symbols-outlined text-primary text-4xl">auto_awesome</span>
+        </div>
+        <h1 class="text-3xl font-bold tracking-tight text-text-light dark:text-text-dark">
+          Agentic AI Generator
+        </h1>
+        <p class="mt-2 text-sm text-subtle-light dark:text-subtle-dark">
+          Sign in to start building your AI applications.
+        </p>
+      </div>
+      <div class="space-y-6">
+        <form class="space-y-6" action="dashboard.html">
+          <div>
+            <label class="block text-sm font-medium text-subtle-light dark:text-subtle-dark" for="email">Email address</label>
+            <div class="mt-1">
+              <input autocomplete="email" class="block w-full px-3 py-2 bg-input-light dark:bg-input-dark border border-border-light dark:border-border-dark rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm" id="email" name="email" required="" type="email" />
+            </div>
+          </div>
+          <div>
+            <div class="flex items-center justify-between">
+              <label class="block text-sm font-medium text-subtle-light dark:text-subtle-dark" for="password">Password</label>
+              <div class="text-sm">
+                <a class="font-medium text-primary hover:text-primary/80" href="forgot-password.html">
+                  Forgot Password?
+                </a>
+              </div>
+            </div>
+            <div class="mt-1">
+              <input autocomplete="current-password" class="block w-full px-3 py-2 bg-input-light dark:bg-input-dark border border-border-light dark:border-border-dark rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm" id="password" name="password" required="" type="password" />
+            </div>
+          </div>
+          <div>
+            <button class="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-colors" type="submit">
+              Sign In
+            </button>
+          </div>
+        </form>
+        <div class="relative">
+          <div class="absolute inset-0 flex items-center">
+            <div class="w-full border-t border-border-light dark:border-border-dark"></div>
+          </div>
+          <div class="relative flex justify-center text-sm">
+            <span class="px-2 bg-background-light dark:bg-background-dark text-subtle-light dark:text-subtle-dark">Or continue with</span>
+          </div>
+        </div>
+        <div>
+          <a class="w-full inline-flex justify-center items-center py-3 px-4 border border-border-light dark:border-border-dark rounded-md shadow-sm bg-input-light dark:bg-input-dark text-sm font-medium text-text-light dark:text-text-dark hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors" href="#">
+            <svg class="w-5 h-5 mr-2 -ml-1" role="img" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+              <path d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12s5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24s8.955,20,20,20s20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z" fill="#FFC107"></path>
+              <path d="M6.306,14.691l6.571,4.819C14.655,15.108,18.961,12,24,12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C16.318,4,9.656,8.337,6.306,14.691z" fill="#FF3D00"></path>
+              <path d="M24,44c5.166,0,9.86-1.977,13.409-5.192l-6.19-5.238C29.211,35.091,26.715,36,24,36c-5.222,0-9.619-3.317-11.283-7.946l-6.522,5.025C9.505,39.556,16.227,44,24,44z" fill="#4CAF50"></path>
+              <path d="M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.087,5.571l6.19,5.238C43.021,36.258,44,34,44,30C44,22.659,43.862,21.35,43.611,20.083z" fill="#1976D2"></path>
+              <title>Google icon</title>
+            </svg>
+            Sign in with Google
+          </a>
+        </div>
+      </div>
+      <p class="mt-10 text-center text-sm text-subtle-light dark:text-subtle-dark">
+        Don't have an account?
+        <a class="font-medium text-primary hover:text-primary/80" href="create-account.html">
+          Create Account
+        </a>
+      </p>
+    </div>
+  </div>
+</body>
 </html>
