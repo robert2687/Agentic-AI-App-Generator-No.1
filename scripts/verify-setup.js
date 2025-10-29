@@ -10,10 +10,14 @@ import { readFileSync, existsSync } from 'fs';
 import { resolve } from 'path';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
+import { execSync } from 'child_process';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 const rootDir = resolve(__dirname, '..');
+
+// Constants
+const GEMINI_API_KEY_PLACEHOLDER = 'your_gemini_api_key_here';
 
 // ANSI color codes for terminal output
 const colors = {
@@ -69,7 +73,6 @@ if (majorVersion >= 18) {
 // Check npm version
 header('Checking npm version...');
 try {
-  const { execSync } = await import('child_process');
   const npmVersion = execSync('npm --version', { encoding: 'utf8' }).trim();
   const npmMajor = parseInt(npmVersion.split('.')[0]);
   if (npmMajor >= 8) {
@@ -116,7 +119,7 @@ if (existsSync(envPath)) {
     const envContent = readFileSync(envPath, 'utf8');
     if (envContent.includes('GEMINI_API_KEY')) {
       const match = envContent.match(/GEMINI_API_KEY=(.+)/);
-      if (match && match[1] && match[1].trim() !== 'your_gemini_api_key_here' && match[1].trim() !== '') {
+      if (match && match[1] && match[1].trim() !== GEMINI_API_KEY_PLACEHOLDER && match[1].trim() !== '') {
         success('GEMINI_API_KEY is configured');
       } else {
         warning('GEMINI_API_KEY is not set or using placeholder value');
