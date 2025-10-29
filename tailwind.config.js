@@ -1,29 +1,8 @@
 /** @type {import('tailwindcss').Config} */
+const designTokens = require('./design-tokens.json');
 
-const designTokens = {
-  color: {
-    primary: "#0055ff",
-    success: "#28a745",
-    error: "#dc3545"
-  },
-  spacing: {
-    "4": "4px",
-    "8": "8px",
-    "16": "16px"
-  },
-  font: {
-    family: "Inter, sans-serif",
-    sizes: {
-      sm: "14px",
-      md: "16px",
-      lg: "20px"
-    },
-    weights: {
-      regular: 400,
-      bold: 700
-    }
-  }
-};
+// Helper function to extract the raw value from the token
+const tokenValue = (token) => token.replace(/var\((--[^)]+)\)/, '$1');
 
 const colors = {
   // Light Theme (Default)
@@ -37,20 +16,20 @@ const colors = {
   'text-secondary': '#475569', // slate-600
   'text-tertiary': '#94a3b8', // slate-400
 
-  'accent-primary': designTokens.color.primary,
-  'accent-primary-hover': '#0044cc', 
+  'accent-primary': designTokens.color['--color-primary'],
+  'accent-primary-hover': '#0044cc',
   'accent-secondary': '#0d9488', // teal-600
   'accent-indigo': '#6366f1', // indigo-500
   'accent-indigo-hover': '#4f46e5', // indigo-600
 
-  'status-success': designTokens.color.success,
-  'status-error': designTokens.color.error,
+  'status-success': designTokens.color['--color-success'],
+  'status-error': designTokens.color['--color-error'],
   'status-warning': '#facc15', // amber-400
 
   // Muted colors for backgrounds, can be shared between themes
   'status-error-muted': 'rgba(220, 53, 69, 0.1)',
   'status-success-muted': 'rgba(40, 167, 69, 0.1)',
-  
+
   // Specific dark theme colors for use with dark: prefix
   'background-dark': '#0f172a',
   'surface-dark': '#1e293b',
@@ -61,9 +40,9 @@ const colors = {
   'text-primary-dark': '#e2e8f0',
   'text-secondary-dark': '#94a3b8',
   'text-tertiary-dark': '#64748b',
-  
+
   'accent-primary-dark': '#3388ff',
-  'accent-primary-hover-dark': designTokens.color.primary,
+  'accent-primary-hover-dark': designTokens.color['--color-primary'],
   'accent-secondary-dark': '#2dd4bf', // teal-400
   'accent-indigo-dark': '#818cf8', // indigo-400
   'accent-indigo-hover-dark': '#6366f1', // indigo-500
@@ -78,12 +57,14 @@ const colors = {
 };
 
 const spacing = {
-  '2xs': designTokens.spacing["4"],
-  'xs': designTokens.spacing["8"],
+  '2xs': designTokens.spacing['--spacing-4'],
+  'xs': designTokens.spacing['--spacing-8'],
   'sm': '12px',
-  'md': designTokens.spacing["16"],
+  'md': designTokens.spacing['--spacing-16'],
   'lg': '24px',
   'xl': '32px',
+  '2xl': '40px',
+  '3xl': '48px',
 };
 
 const typography = {
@@ -93,32 +74,38 @@ const typography = {
 
 const fontSize = {
   'xs': '0.75rem',
-  'sm': '0.875rem',
-  'base': '1rem',
+  'sm': designTokens.font.sizes['--font-size-sm'],
+  'base': designTokens.font.sizes['--font-size-md'],
   'lg': '1.125rem',
-  'xl': '1.25rem',
+  'xl': designTokens.font.sizes['--font-size-lg'],
   '2xl': '1.5rem',
   '3xl': '1.875rem',
+  '4xl': '2.25rem',
+  '5xl': '3rem',
 };
 
 const fontWeight = {
-  'regular': designTokens.font.weights.regular,
-  'medium': 500,
-  'semibold': 600,
-  'bold': designTokens.font.weights.bold,
+  regular: designTokens.font.weights['--font-weight-regular'],
+  medium: 500,
+  semibold: 600,
+  bold: designTokens.font.weights['--font-weight-bold'],
 };
 
 const borderRadius = {
   'sm': '4px',
   'md': '6px',
   'lg': '8px',
+  'xl': '12px',
   'full': '9999px',
 };
 
 const boxShadow = {
+  'sm': '0 1px 2px 0 rgb(0 0 0 / 0.05)',
+  'md': '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)',
   'lg': '0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)',
+  'xl': '0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1)',
+  'inner': 'inset 0 2px 4px 0 rgb(0 0 0 / 0.05)',
 };
-
 
 module.exports = {
   darkMode: 'class',
@@ -137,12 +124,17 @@ module.exports = {
       boxShadow: boxShadow,
       animation: {
         'fade-in': 'fadeIn 0.5s ease-out forwards',
+        'slide-in-up': 'slideInUp 0.5s ease-out forwards',
       },
       keyframes: {
         fadeIn: {
           '0%': { opacity: 0, transform: 'translateY(10px)' },
           '100%': { opacity: 1, transform: 'translateY(0)' },
         },
+        slideInUp: {
+          '0%': { opacity: 0, transform: 'translateY(20px)' },
+          '100%': { opacity: 1, transform: 'translateY(0)' },
+        }
       }
     },
   },
