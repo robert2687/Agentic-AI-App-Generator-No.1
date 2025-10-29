@@ -43,20 +43,38 @@ View your app in AI Studio: https://ai.studio/apps/drive/13z9RgvMFPcqGZ70huEXfVk
 
 ## Build for Production
 
-The build process compiles both the Vite application and Node.js scripts:
+The build process compiles both the Vite application and any Node.js scripts.
+
+Available npm scripts:
+
+- `npm run build` — builds both the app and scripts (runs `build:app` and `build:scripts`)
+- `npm run build:app` — builds only the Vite application
+- `npm run build:scripts` — compiles only Node.js scripts
+- `npm run preview` — preview production build
+
+Example:
 
 ```bash
-npm run build        # Builds both app and scripts
-npm run build:app    # Builds only the Vite application
-npm run build:scripts # Compiles only Node.js scripts
-npm run preview      # Preview production build
+npm run build
+npm run preview
 ```
 
 ### Build Output
 
-- `dist/` - Production application assets
-- `dist/scripts/` - Compiled Node.js scripts for CI/CD
-- `dist/services/` - Compiled service modules
+- `dist/` — production application assets
+- `dist/scripts/` — compiled Node.js scripts for CI/CD
+- `dist/services/` — compiled service modules
+
+Ensure your package.json defines the scripts, for example:
+
+```json
+"scripts": {
+  "build": "npm run build:app && npm run build:scripts",
+  "build:app": "vite build",
+  "build:scripts": "tsc -p scripts || node scripts/build.js",
+  "preview": "vite preview"
+}
+```
 
 ## Tech Stack
 
