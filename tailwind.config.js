@@ -1,6 +1,29 @@
-// This is a pseudo-config file for the Tailwind CDN.
-// In a real build setup, you'd import tokens and export this module.
-// For the CDN, this file's content will be used to construct the config object.
+/** @type {import('tailwindcss').Config} */
+
+const designTokens = {
+  color: {
+    primary: "#0055ff",
+    success: "#28a745",
+    error: "#dc3545"
+  },
+  spacing: {
+    "4": "4px",
+    "8": "8px",
+    "16": "16px"
+  },
+  font: {
+    family: "Inter, sans-serif",
+    sizes: {
+      sm: "14px",
+      md: "16px",
+      lg: "20px"
+    },
+    weights: {
+      regular: 400,
+      bold: 700
+    }
+  }
+};
 
 const colors = {
   // Light Theme (Default)
@@ -14,19 +37,19 @@ const colors = {
   'text-secondary': '#475569', // slate-600
   'text-tertiary': '#94a3b8', // slate-400
 
-  'accent-primary': '#0ea5e9', // sky-500
-  'accent-primary-hover': '#0284c7', // sky-600
+  'accent-primary': designTokens.color.primary,
+  'accent-primary-hover': '#0044cc', 
   'accent-secondary': '#0d9488', // teal-600
   'accent-indigo': '#6366f1', // indigo-500
   'accent-indigo-hover': '#4f46e5', // indigo-600
 
-  'status-success': '#16a34a', // green-600
-  'status-error': '#dc2626', // red-600
-  'status-warning': '#facc15', // amber-400 (kept yellow for visibility in both themes)
-  
+  'status-success': designTokens.color.success,
+  'status-error': designTokens.color.error,
+  'status-warning': '#facc15', // amber-400
+
   // Muted colors for backgrounds, can be shared between themes
-  'status-error-muted': 'rgba(244, 63, 94, 0.1)',
-  'status-success-muted': 'rgba(16, 185, 129, 0.1)',
+  'status-error-muted': 'rgba(220, 53, 69, 0.1)',
+  'status-success-muted': 'rgba(40, 167, 69, 0.1)',
   
   // Specific dark theme colors for use with dark: prefix
   'background-dark': '#0f172a',
@@ -39,14 +62,14 @@ const colors = {
   'text-secondary-dark': '#94a3b8',
   'text-tertiary-dark': '#64748b',
   
-  'accent-primary-dark': '#38bdf8', // sky-400 (lighter for dark bg)
-  'accent-primary-hover-dark': '#0ea5e9', // sky-500
+  'accent-primary-dark': '#3388ff',
+  'accent-primary-hover-dark': designTokens.color.primary,
   'accent-secondary-dark': '#2dd4bf', // teal-400
   'accent-indigo-dark': '#818cf8', // indigo-400
   'accent-indigo-hover-dark': '#6366f1', // indigo-500
 
-  'status-success-dark': '#4ade80', // green-400
-  'status-error-dark': '#f87171', // red-400
+  'status-success-dark': '#34c759',
+  'status-error-dark': '#ff453a',
 
   // Standard colors
   white: '#ffffff',
@@ -55,16 +78,16 @@ const colors = {
 };
 
 const spacing = {
-  '2xs': '4px',
-  'xs': '8px',
+  '2xs': designTokens.spacing["4"],
+  'xs': designTokens.spacing["8"],
   'sm': '12px',
-  'md': '16px',
+  'md': designTokens.spacing["16"],
   'lg': '24px',
   'xl': '32px',
 };
 
 const typography = {
-  sans: ["'Inter'", 'system-ui', 'sans-serif'],
+  sans: [designTokens.font.family, 'system-ui', 'sans-serif'],
   mono: ["'JetBrains Mono'", 'ui-monospace', 'monospace'],
 };
 
@@ -79,10 +102,10 @@ const fontSize = {
 };
 
 const fontWeight = {
-  'regular': 400,
+  'regular': designTokens.font.weights.regular,
   'medium': 500,
   'semibold': 600,
-  'bold': 700,
+  'bold': designTokens.font.weights.bold,
 };
 
 const borderRadius = {
@@ -97,7 +120,6 @@ const boxShadow = {
 };
 
 
-/** @type {import('tailwindcss').Config} */
 module.exports = {
   darkMode: 'class',
   content: [

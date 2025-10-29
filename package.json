@@ -5,9 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "npm run build:app && npm run build:scripts",
-    "build:app": "vite build",
-    "build:scripts": "tsc --project tsconfig.scripts.json",
+    "build": "vite build",
     "preview": "vite preview",
     "verify-setup": "node scripts/verify-setup.js"
   },
@@ -23,6 +21,9 @@
     "@types/node": "^22.14.0",
     "@vitejs/plugin-react": "^5.0.0",
     "typescript": "~5.8.2",
-    "vite": "^6.4.1"
+    "vite": "^6.4.1",
+    "tailwindcss": "^3.4.7",
+    "autoprefixer": "^10.4.19",
+    "postcss": "^8.4.39"
   }
 }
