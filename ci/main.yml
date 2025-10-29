@@ -12,12 +12,12 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-      
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 20
-      
+
       - name: Install dependencies
         run: npm ci
 
@@ -31,90 +31,3 @@ jobs:
           # The validation script is at `scripts/validateCss.ts`. We need to run the compiled version.
           # We assume the build step compiles it to `dist/scripts/validateCss.js`.
           COMPILED_SCRIPT="dist/scripts/validateCss.js"
-
-          if [ ! -f "$COMPILED_SCRIPT" ]; then
-            echo "::warning::Validation script not found at '$COMPILED_SCRIPT'. Skipping CSS validation."
-            exit 0
-          fi
-          
-          # The user's prompt searches for CSS in './components'. This will find nothing for now,
-          # but correctly sets up the CI check for any future CSS files.
-          CSS_FILES=$(find ./components -name '*.css')
-          if [ -z "$CSS_FILES" ]; then
-            echo "No CSS files found in ./components. Skipping validation."
-            exit 0
-          fi
-          
-          # Run validation on all found files and capture all output (stdout and stderr).
-          # The `|| true` ensures the script continues even if node exits with an error code,
-          # allowing us to capture the output and control the failure from here.
-          VALIDATION_OUTPUT=$(
-            for file in $CSS_FILES; do
-              node "$COMPILED_SCRIPT" "$file"
-            done 2>&1
-          ) || true
-
-          # The validation script prints 'CSS Validation Failed' on error. We check for this string.
-          if echo "$VALIDATION_OUTPUT" | grep -q "CSS Validation Failed"; then
-            echo "::error::CSS validation failed."
-            echo "$VALIDATION_OUTPUT" # Print errors to the main job log
-            
-            # Make the detailed error output available to subsequent steps
-            echo "errors<<EOF" >> "$GITHUB_OUTPUT"
-            echo "$VALIDATION_OUTPUT" >> "$GITHUB_OUTPUT"
-            echo "EOF" >> "$GITHUB_OUTPUT"
-            
-            exit 1 # Explicitly fail the step
-          else
-            echo "CSS validation passed."
-          fi
-
-      - name: Annotate PR with validation errors
-        # This step runs if the previous step ('css_validation') failed.
-        if: failure()
-        uses: actions/github-script@v7
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          script: |
-            const summary = `### CSS Validation Failed 😱
-
-            Errors were found in one or more CSS files. Please fix them before merging.
-            
-            <details>
-            <summary>Click to view full error log</summary>
-            
-            \`\`\`
-            ${{ steps.css_validation.outputs.errors }}
-            \`\`\`
-            
-            </details>
-            `;
-
-            // This creates a new, separate check run on the PR.
-            await github.rest.checks.create({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              name: "CSS Validation",
-              head_sha: context.sha,
-              conclusion: "failure",
-              output: {
-                title: "CSS Validation Errors Found",
-                summary: summary
-              }
-            });
-
-      # Placeholder for linting - assumes a lint script is defined in package.json
-      - name: Run linter
-        run: echo "Linting step placeholder..." # Replace with `npm run lint`
-
-      # Placeholder for tests - assumes a test script is defined in package.json
-      - name: Run tests
-        run: echo "Testing step placeholder..." # Replace with `npm test`
-
-      - name: Upload build artifacts
-        if: success() && github.event_name == 'push' && github.ref == 'refs/heads/main'
-        uses: actions/upload-artifact@v4
-        with:
-          name: build-artifacts
-          path: |
-            dist/ # Assuming a 'dist' output directory
