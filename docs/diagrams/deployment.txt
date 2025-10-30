@@ -1,0 +1,18 @@
+```text
+Deployment topology
+
+[Internet] -> [Cloudflare WAF+RateLimit] -> [Cloud Run: Orchestrator API]
+                                               |
+                                               v
+                                          [Pub/Sub]
+                                               |
+                     +-------------------------+-------------------------+
+                     v                                                   v
+           [Cloud Run: Agents]                                   [Cloud Run: Deployer]
+                     |                                                   |
+                     v                                                   v
+       [Cloud Storage: Artifacts/Logs]                          [GitHub Actions + Cloud Run]
+                     |
+                     v
+                [Firestore: Metadata/RBAC/Audit]
+```

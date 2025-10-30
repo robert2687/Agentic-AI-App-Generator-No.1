@@ -7,7 +7,8 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "verify-setup": "node scripts/verify-setup.js"
+    "verify-setup": "node scripts/verify-setup.js",
+    "generate-logo": "node scripts/generate-logo.js"
   },
   "dependencies": {
     "react": "^19.1.1",

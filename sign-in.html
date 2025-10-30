@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Agentic AI App Generator - Sign In</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,typography"></script>
+<script>
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            primary: "#2563eb",
+            background: '#f8fafc',
+            surface: '#ffffff',
+            'surface-highlight': '#f1f5f9',
+            border: '#e5e7eb',
+            'text-primary': '#111827',
+            'text-secondary': '#6b7280',
+            'text-tertiary': '#9ca3af',
+            'background-dark': '#030712', 
+            'surface-dark': '#1f2937',
+            'surface-highlight-dark': '#374151',
+            'border-dark': '#374151',
+            'text-primary-dark': '#f9fafb',
+            'text-secondary-dark': '#9ca3af',
+            'text-tertiary-dark': '#6b7280',
+          },
+          fontFamily: {
+            display: ["Inter", "sans-serif"],
+          },
+          borderRadius: {
+            DEFAULT: "0.5rem", 
+          },
+        },
+      },
+    };
+  </script>
+<style>
+    .material-symbols-outlined {
+      font-variation-settings:
+      'FILL' 0,
+      'wght' 400,
+      'GRAD' 0,
+      'opsz' 24
+    }
+  </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="font-display bg-background dark:bg-background-dark text-text-primary dark:text-text-primary-dark antialiased">
+<div class="flex flex-col h-screen">
+<header class="p-6 border-b border-border dark:border-border-dark">
+<div class="flex justify-between items-center">
+<div>
+<h1 class="text-xl font-bold text-text-primary dark:text-text-primary-dark">Agentic AI App Generator</h1>
+<p class="text-sm text-text-secondary dark:text-text-secondary-dark mt-1">A collaborative AI team for building applications, from concept to deployment.</p>
+</div>
+<button aria-label="Toggle theme">
+<span class="material-symbols-outlined text-text-primary dark:text-text-primary-dark">
+            light_mode
+          </span>
+</button>
+</div>
+</header>
+<main class="flex-grow flex flex-col items-center justify-center text-center p-6">
+<div class="flex flex-col items-center space-y-4">
+<span class="material-symbols-outlined text-4xl text-text-secondary dark:text-text-secondary-dark">
+          account_circle
+        </span>
+<h2 class="text-2xl font-bold text-text-primary dark:text-text-primary-dark">Sign In to Begin</h2>
+<p class="text-text-secondary dark:text-text-secondary-dark max-w-xs">
+          Please sign in to start generating applications. Your projects will be saved to your account.
+        </p>
+</div>
+</main>
+<footer class="p-6">
+<button class="w-full bg-primary text-white font-medium py-3 px-6 rounded-lg shadow-sm hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary focus:ring-offset-background dark:focus:ring-offset-background-dark transition-opacity">
+        Sign In
+      </button>
+</footer>
+</div>
+
+</body></html>

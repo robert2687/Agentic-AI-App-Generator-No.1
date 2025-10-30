@@ -1,0 +1,16 @@
+```text
+Sequence: Workflow run (happy path)
+
+User -> UI -> Orchestrator: Create workflow (projectId, stages)
+Orchestrator -> Firestore: Persist workflow + traceId
+Orchestrator -> Pub/Sub: Enqueue Planner(job)
+Agent(Planner) -> Storage: Write plan-v001.yaml + logs + hash
+Agent(Planner) -> Firestore: Record artifact + stage status
+Orchestrator -> Pub/Sub: Enqueue Architect(job)
+Agent(Architect) -> Storage: Write blueprint, schemas, contracts
+Agent(Architect) -> Firestore: Record artifacts
+... (Visual Designer -> Coder -> Reviewer)
+User(Approver) -> Orchestrator: Approve Reviewer gate
+Orchestrator -> Pub/Sub: Enqueue Patcher(job) -> Deployer(job)
+Deployer -> Cloud Run/GitHub: Release + deploy-report.md
+```
