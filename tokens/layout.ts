@@ -1,12 +1,12 @@
 // tokens/layout.ts
 export const layout = {
   radius: {
-    sm: '4px',
-    md: '6px',     // Corresponds to Tailwind's rounded-md
-    lg: '8px',     // Corresponds to Tailwind's rounded-lg
-    full: '9999px',
+    sm: '5px',
+    md: '10px',
+    lg: '15px',
+    full: '50%',
   },
   shadow: {
-    lg: '0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)',
+    lg: '0 12px 20px -5px rgb(0 0 0 / 0.2), 0 5px 8px -4px rgb(0 0 0 / 0.2)',
   },
 };

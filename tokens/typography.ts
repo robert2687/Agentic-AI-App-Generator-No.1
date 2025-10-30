@@ -1,13 +1,13 @@
 // tokens/typography.ts
 export const typography = {
-  fontFamily: "'Inter', system-ui, sans-serif",
+  fontFamily: "'Roboto', sans-serif",
   sizes: {
-    xs: '0.75rem',    // 12px
-    sm: '0.875rem',   // 14px
-    base: '1rem',      // 16px
-    lg: '1.125rem',   // 18px
-    xl: '1.25rem',    // 20px
-    '2xl': '1.5rem',   // 24px
+    xs: '0.8rem',    // 12.8px
+    sm: '0.9rem',   // 14.4px
+    base: '1.0rem',      // 16px
+    lg: '1.15rem',   // 18.4px
+    xl: '1.3rem',    // 20.8px
+    '2xl': '1.6rem',   // 25.6px
   },
   weights: {
     regular: 400,
