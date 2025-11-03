@@ -77,12 +77,12 @@ const MobileLayout: React.FC<MobileLayoutProps> = ({
         </div>
       )}
       {mobileView === 'audit' && (
-         <div className="bg-surface dark:bg-surface-dark border border-border dark:border-border-dark rounded-lg h-[calc(100vh-200px)] shadow-sm">
+         <div className="bg-surface dark:bg-surface-dark border border-border dark:border-border-dark rounded-lg min-h-[calc(100vh-200px)] shadow-sm">
           <AgentDetailView agent={selectedAgent} recoveryContext={recoveryContext} />
         </div>
       )}
        {mobileView === 'preview' && (
-         <div className="bg-surface dark:bg-surface-dark border border-border dark:border-border-dark rounded-lg h-[calc(100vh-200px)] shadow-sm">
+         <div className="bg-surface dark:bg-surface-dark border border-border dark:border-border-dark rounded-lg min-h-[calc(100vh-200px)] shadow-sm">
            <PreviewPanel
               code={finalCode}
               isZenMode={isZenMode}

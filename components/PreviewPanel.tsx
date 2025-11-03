@@ -1,1 +1,300 @@
-import React, { useState, useRef, useEffect } from \'react\';\nimport ZenOnIcon from \'./icons/ZenOnIcon\';\nimport ZenOffIcon from \'./icons/ZenOffIcon\';\nimport CodePreviewPanel from \'./CodePreviewPanel\';\nimport type { Agent, AuditLogEntry } from \'../types\';\nimport { AgentStatus } from \'../types\';\nimport AgentIcon from \'./icons/AgentIcon\';\nimport SpinnerIcon from \'./icons/SpinnerIcon\';\nimport RocketIcon from \'./icons/RocketIcon\';\nimport FullScreenOnIcon from \'./icons/FullScreenOnIcon\';\nimport FullScreenOffIcon from \'./icons/FullScreenOffIcon\';\nimport EyeIcon from \'./icons/EyeIcon\';\nimport CodeIcon from \'./icons/CodeIcon\';\nimport LogIcon from \'./icons/LogIcon\';\nimport AuditInspector from \'./AuditInspector\';\nimport DownloadIcon from \'./icons/DownloadIcon\';\nimport { logger } from \'../services/loggerInstance\';\nimport MoreVerticalIcon from \'./icons/MoreVerticalIcon\';\nimport DesktopIcon from \'./icons/DesktopIcon\';\nimport TabletIcon from \'./icons/TabletIcon\';\nimport MobileIcon from \'./icons/MobileIcon\';\n\ninterface PreviewPanelProps {\n  code: string | null;\n  isZenMode: boolean;\n  onToggleZenMode: () => void;\n  isGenerating: boolean;\n  currentAgent: Agent | null;\n  totalAgents: number;\n  isWorkflowComplete: boolean;\n  onDeploy: () => void;\n  deployerAgent?: Agent;\n  auditLog: AuditLogEntry[];\n}\n\nconst PreviewPanel: React.FC<PreviewPanelProps> = ({ \n  code, isZenMode, onToggleZenMode, isGenerating, currentAgent, totalAgents,\n  isWorkflowComplete, onDeploy, deployerAgent, auditLog\n}) => {\n  const [activeTab, setActiveTab] = useState<\'preview\' | \'code\' | \'logs\'>(\'preview\');\n  const [device, setDevice] = useState<\'desktop\' | \'tablet\' | \'mobile\'>(\'desktop\');\n  const [isFullscreen, setIsFullscreen] = useState(false);\n  const [isMenuOpen, setIsMenuOpen] = useState(false);\n  const fullscreenTargetRef = useRef<HTMLDivElement>(null);\n  const menuRef = useRef<HTMLDivElement>(null);\n  \n  const showZenGenerationOverlay = isZenMode && isGenerating && currentAgent;\n\n  const isDeployerRunning = deployerAgent?.status === AgentStatus.RUNNING;\n\n  const deviceWidths = {\n    desktop: \'100%\',\n    tablet: \'768px\',\n    mobile: \'375px\'\n  };\n\n  useEffect(() => {\n    const handleClickOutside = (event: MouseEvent) => {\n      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {\n        setIsMenuOpen(false);\n      }\n    };\n    document.addEventListener(\'mousedown\', handleClickOutside);\n    return () => {\n      document.removeEventListener(\'mousedown\', handleClickOutside);\n    };\n  }, []);\n\n  const handleToggleFullscreen = () => {\n    if (!fullscreenTargetRef.current) return;\n\n    if (!document.fullscreenElement) {\n      fullscreenTargetRef.current.requestFullscreen().catch((err) => {\n        console.error(`Error attempting to enable full-screen mode: ${err.message} (${err.name})`);\n      });\n    } else {\n      if (document.exitFullscreen) {\n        document.exitFullscreen();\n      }\n    }\n  };\n  \n  const handleExportLogs = () => {\n      const jsonString = logger.exportJSON();\n      if (!jsonString || jsonString === \'[]\') return;\n\n      const blob = new Blob([jsonString], { type: \'application/json\' });\n      const url = URL.createObjectURL(blob);\n      const a = document.createElement(\'a\');\n      a.href = url;\n      a.download = `agent-audit-log-${new Date().toISOString()}.json`;\n      document.body.appendChild(a);\n      a.click();\n      document.body.removeChild(a);\n      URL.revokeObjectURL(url);\n    };\n\n  useEffect(() => {\n    const onFullscreenChange = () => {\n      setIsFullscreen(!!document.fullscreenElement);\n    };\n    document.addEventListener(\'fullscreenchange\', onFullscreenChange);\n    return () => document.removeEventListener(\'fullscreenchange\', onFullscreenChange);\n  }, []);\n\n  const actionButtons = (\n    <>\n      <button\n        onClick={onDeploy}\n        disabled={!isWorkflowComplete || isDeployerRunning || isGenerating}\n        className=\"flex items-center gap-2 bg-primary-600 text-white font-bold py-1.5 px-3 rounded-md text-sm hover:bg-primary-700 disabled:bg-gray-300 dark:disabled:bg-gray-700 disabled:text-text-tertiary disabled:cursor-not-allowed transition-colors w-full lg:w-auto\"\n        aria-label={isWorkflowComplete ? \"Deploy application\" : \"Complete generation to enable deployment\"}\n      >\n        {isDeployerRunning ? (\n          <SpinnerIcon className=\"w-4 h-4\" />\n        ) : (\n          <RocketIcon className=\"w-4 h-4\" />\n        )}\n        <span>{isDeployerRunning ? \'Deploying...\' : \'Deploy\'}</span>\n      </button>\n      <button\n        onClick={handleExportLogs}\n        disabled={auditLog.length === 0}\n        className=\"flex items-center gap-2 text-text-secondary dark:text-text-secondary-dark hover:bg-surface-highlight dark:hover:bg-surface-highlight-dark p-2 rounded-md transition-colors disabled:text-text-tertiary dark:disabled:text-text-tertiary-dark disabled:cursor-not-allowed w-full lg:w-auto lg:p-1.5 lg:rounded-full lg:bg-transparent\"\n        aria-label=\"Export audit logs as JSON\"\n      >\n        <DownloadIcon className=\"w-5 h-5\" />\n        <span className=\"lg:hidden\">Export Logs</span>\n      </button>\n\n      <button\n        onClick={handleToggleFullscreen}\n        className=\"flex items-center gap-2 text-text-secondary dark:text-text-secondary-dark hover:bg-surface-highlight dark:hover:bg-surface-highlight-dark p-2 rounded-md transition-colors w-full lg:w-auto lg:p-1.5 lg:rounded-full lg:bg-transparent\"\n        aria-label={isFullscreen ? \"Exit Full Screen\" : \"Enter Full Screen\"}\n      >\n        {isFullscreen ? <FullScreenOffIcon className=\"w-5 h-5\" /> : <FullScreenOnIcon className=\"w-5 h-5\" />}\n        <span className=\"lg:hidden\">{isFullscreen ? \"Exit Full Screen\" : \"Full Screen\"}</span>\n      </button>\n      \n      <button\n        onClick={onToggleZenMode}\n        className=\"flex items-center gap-2 text-text-secondary dark:text-text-secondary-dark hover:bg-surface-highlight dark:hover:bg-surface-highlight-dark p-2 rounded-md transition-colors w-full lg:w-auto lg:p-1.5 lg:rounded-full lg:bg-transparent\"\n        aria-label={isZenMode ? \"Exit Zen Mode\" : \"Enter Zen Mode\"}\n      >\n        {isZenMode ? <ZenOffIcon className=\"w-5 h-5\" /> : <ZenOnIcon className=\"w-5 h-5\" />}\n        <span className=\"lg:hidden\">{isZenMode ? \"Exit Zen Mode\" : \"Zen Mode\"}</span>\n      </button>\n    </>\n  );\n\n  const getTabClassName = (tabName: \'preview\' | \'code\' | \'logs\'): string => {\n    const baseClasses = \'py-2 px-3 rounded-md transition-colors flex items-center gap-1.5 text-sm font-medium\';\n    if (activeTab === tabName) {\n      return `${baseClasses} bg-primary-100 dark:bg-primary-900/40 text-primary-600 dark:text-primary-300\`;\n    }\n    return `${baseClasses} text-text-secondary dark:text-text-secondary-dark hover:bg-surface-highlight dark:hover:bg-surface-highlight-dark\`;\n  };\n\n  const getDeviceButtonClassName = (deviceName: typeof device) => {\n    const base = \'p-1.5 rounded-md transition-colors\';\n    if(device === deviceName) {\n      return `${base} bg-primary-100 dark:bg-primary-900/40 text-primary-600 dark:text-primary-300\`;\n    }\n    return `${base} text-text-secondary dark:text-text-secondary-dark hover:bg-surface-highlight dark:hover:bg-surface-highlight-dark\`;\n  }\n\n  return (\n    <div className=\"flex flex-col h-full bg-surface dark:bg-surface-dark rounded-lg\">\n      <header className=\"flex flex-wrap items-center justify-between gap-y-2 p-2 border-b border-border dark:border-border-dark flex-shrink-0\">\n        <div className=\"flex items-center gap-2 sm:gap-4\">\n          <h2 className=\"font-bold text-base text-text-primary dark:text-text-primary-dark hidden sm:block\">Live Application</h2>\n          <div className=\"flex items-center rounded-md p-1 text-sm bg-surface-highlight dark:bg-surface-highlight-dark\">\n            <button\n              className={getTabClassName(\'preview\')}\n              onClick={() => setActiveTab(\'preview\')}\n              aria-pressed={activeTab === \'preview\'}\n            >\n              <EyeIcon className=\"w-4 h-4\" />\n              <span className=\"hidden sm:inline\">Preview</span>\n            </button>\n            <button\n              className={getTabClassName(\'code\')}\n              onClick={() => setActiveTab(\'code\')}\n              aria-pressed={activeTab === \'code\'}\n            >\n              <CodeIcon className=\"w-4 h-4\" />\n              <span className=\"hidden sm:inline\">Code</span>\n            </button>\n             <button\n              className={getTabClassName(\'logs\')}\n              onClick={() => setActiveTab(\'logs\')}\n              aria-pressed={activeTab === \'logs\'}\n            >\n              <LogIcon className=\"w-4 h-4\" />\n              <span className=\"hidden sm:inline\">Logs</span>\n            </button>\n          </div>\n        </div>\n        \n        {/* Desktop Buttons */}\n        <div className=\"hidden lg:flex items-center gap-2\">\n          {actionButtons}\n        </div>\n        \n        {/* Mobile Kebab Menu */}\n        <div ref={menuRef} className=\"relative lg:hidden\">\n          <button\n            onClick={() => setIsMenuOpen(prev => !prev)}\n            className=\"text-text-secondary dark:text-text-secondary-dark hover:text-white transition-colors rounded-full p-1.5 focus:outline-none focus:ring-2 focus:ring-primary-500\"\n            aria-label=\"More options\"\n            aria-haspopup=\"true\"\n            aria-expanded={isMenuOpen}\n          >\n            <MoreVerticalIcon className=\"w-5 h-5\" />\n          </button>\n          {isMenuOpen && (\n            <div className=\"absolute right-0 mt-2 w-48 bg-surface dark:bg-surface-dark border border-border dark:border-border-dark rounded-md shadow-lg z-20 p-2 flex flex-col gap-1\">\n              {React.Children.map(actionButtons, (button) => {\n                const buttonElement = button as React.ReactElement<any>;\n                // Don\'t show deploy button inside mobile menu, it has a FAB\n                if (buttonElement.props.onClick === onDeploy) {\n                  return null;\n                }\n                return React.cloneElement(buttonElement, {\n                  onClick: () => {\n                    if (buttonElement.props.onClick) {\n                      buttonElement.props.onClick();\n                    }\n                    setIsMenuOpen(false);\n                  },\n                })\n              })}\n            </div>\n          )}\n        </div>\n\n      </header>\n      <div ref={fullscreenTargetRef} className=\"flex-grow rounded-b-lg overflow-hidden relative bg-background dark:bg-background-dark flex flex-col\">\n         {showZenGenerationOverlay && (\n            <div className=\"absolute inset-0 bg-background/90 dark:bg-background-dark/90 backdrop-blur-sm flex flex-col items-center justify-center z-10 animate-fade-in transition-opacity duration-300\">\n                <div className=\"text-center p-8 rounded-lg\">\n                    <div className=\"flex items-center justify-center gap-4 mb-4\">\n                        <AgentIcon name={currentAgent.name} className=\"w-10 h-10 text-primary-500\" />\n                        <h3 className=\"text-3xl font-bold text-text-primary dark:text-text-primary-dark\">{currentAgent.name}</h3>\n                    </div>\n                    <p className=\"text-text-secondary dark:text-text-secondary-dark text-lg mb-6\">\n                        Step {currentAgent.id} of {totalAgents -1}: Generating...\n                    </p>\n                    <SpinnerIcon className=\"w-12 h-12 text-primary-600 mx-auto\" />\n                </div>\n            </div>\n        )}\n        \n        <div className=\"flex-grow h-0\">\n          {activeTab === \'preview\' && (\n            <div className=\"w-full h-full bg-surface-highlight dark:bg-black/20 p-4 transition-all duration-300\">\n                <div\n                    style={{ width: deviceWidths[device] }}\n                    className=\"h-full mx-auto bg-white rounded-md shadow-lg transition-all duration-300 ease-in-out flex flex-col\"\n                >\n                    <iframe\n                        srcDoc={code || \'<!DOCTYPE html><html><head></head><body style=\"display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; background-color: #fff; font-family: sans-serif; color: #666;\">Waiting for Coder agent...</body></html>\'}\n                        title=\"Application Preview\"\n                        className={`w-full h-full border-0 rounded-md`}\n                        sandbox=\"allow-scripts allow-forms allow-modals\"\n                    />\n                </div>\n            </div>\n          )}\n          {activeTab === \'code\' && <CodePreviewPanel code={code} />}\n          {activeTab === \'logs\' && <AuditInspector logs={auditLog} />}\n        </div>\n\n        {activeTab === \'preview\' && (\n             <div className=\"flex-shrink-0 p-2 border-t border-border dark:border-border-dark flex justify-center\">\n                 <div className=\"flex items-center gap-1 p-1 rounded-md bg-surface-highlight dark:bg-surface-highlight-dark\">\n                     <button title=\"Desktop Preview\" className={getDeviceButtonClassName(\'desktop\')} onClick={() => setDevice(\'desktop\')}><DesktopIcon className=\"w-5 h-5\"/></button>\n                     <button title=\"Tablet Preview\" className={getDeviceButtonClassName(\'tablet\')} onClick={() => setDevice(\'tablet\')}><TabletIcon className=\"w-5 h-5\"/></button>\n                     <button title=\"Mobile Preview\" className={getDeviceButtonClassName(\'mobile\')} onClick={() => setDevice(\'mobile\')}><MobileIcon className=\"w-5 h-5\"/></button>\n                 </div>\n             </div>\n         )}\n      </div>\n      \n      {/* Mobile Floating Action Button for Deploy */}\n      {isWorkflowComplete && activeTab === \'preview\' && (\n        <button\n          onClick={onDeploy}\n          disabled={isDeployerRunning || isGenerating}\n          className=\"lg:hidden fixed bottom-24 right-6 bg-primary-600 text-white rounded-full p-4 shadow-lg hover:bg-primary-700 disabled:bg-gray-300 dark:disabled:bg-gray-700 disabled:text-text-tertiary disabled:cursor-not-allowed transition-all transform hover:scale-110 active:scale-100 z-30\"\n          aria-label=\"Deploy application\"\n        >\n          <RocketIcon className=\"w-6 h-6\" />\n        </button>\n      )}\n    </div>\n  );\n};\n\nexport default React.memo(PreviewPanel);\n
+import React, { useState, useRef, useEffect } from 'react';
+import ZenOnIcon from './icons/ZenOnIcon';
+import ZenOffIcon from './icons/ZenOffIcon';
+import CodePreviewPanel from './CodePreviewPanel';
+import type { Agent, AuditLogEntry } from '../types';
+import { AgentStatus } from '../types';
+import AgentIcon from './icons/AgentIcon';
+import SpinnerIcon from './icons/SpinnerIcon';
+import RocketIcon from './icons/RocketIcon';
+import FullScreenOnIcon from './icons/FullScreenOnIcon';
+import FullScreenOffIcon from './icons/FullScreenOffIcon';
+import EyeIcon from './icons/EyeIcon';
+import CodeIcon from './icons/CodeIcon';
+import LogIcon from './icons/LogIcon';
+import AuditInspector from './AuditInspector';
+import DownloadIcon from './icons/DownloadIcon';
+import { logger } from '../services/loggerInstance';
+import MoreVerticalIcon from './icons/MoreVerticalIcon';
+import DesktopIcon from './icons/DesktopIcon';
+import TabletIcon from './icons/TabletIcon';
+import MobileIcon from './icons/MobileIcon';
+
+interface PreviewPanelProps {
+  code: string | null;
+  isZenMode: boolean;
+  onToggleZenMode: () => void;
+  isGenerating: boolean;
+  currentAgent: Agent | null;
+  totalAgents: number;
+  isWorkflowComplete: boolean;
+  onDeploy: () => void;
+  deployerAgent?: Agent;
+  auditLog: AuditLogEntry[];
+}
+
+const PreviewPanel: React.FC<PreviewPanelProps> = ({
+  code, isZenMode, onToggleZenMode, isGenerating, currentAgent, totalAgents,
+  isWorkflowComplete, onDeploy, deployerAgent, auditLog
+}) => {
+  const [activeTab, setActiveTab] = useState<'preview' | 'code' | 'logs'>('preview');
+  const [device, setDevice] = useState<'desktop' | 'tablet' | 'mobile'>('desktop');
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const fullscreenTargetRef = useRef<HTMLDivElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  const showZenGenerationOverlay = isZenMode && isGenerating && currentAgent;
+
+  const isDeployerRunning = deployerAgent?.status === AgentStatus.RUNNING;
+
+  const deviceWidths = {
+    desktop: '100%',
+    tablet: '768px',
+    mobile: '375px'
+  };
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setIsMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
+  const handleToggleFullscreen = () => {
+    if (!fullscreenTargetRef.current) return;
+
+    if (!document.fullscreenElement) {
+      fullscreenTargetRef.current.requestFullscreen().catch((err) => {
+        console.error(`Error attempting to enable full-screen mode: ${err.message} (${err.name})`);
+      });
+    } else {
+      if (document.exitFullscreen) {
+        document.exitFullscreen();
+      }
+    }
+  };
+
+  const handleExportLogs = () => {
+      const jsonString = logger.exportJSON();
+      if (!jsonString || jsonString === '[]') return;
+
+      const blob = new Blob([jsonString], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `agent-audit-log-${new Date().toISOString()}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    };
+
+  useEffect(() => {
+    const onFullscreenChange = () => {
+      setIsFullscreen(!!document.fullscreenElement);
+    };
+    document.addEventListener('fullscreenchange', onFullscreenChange);
+    return () => document.removeEventListener('fullscreenchange', onFullscreenChange);
+  }, []);
+
+  const actionButtons = (
+    <>
+      <button
+        onClick={onDeploy}
+        disabled={!isWorkflowComplete || isDeployerRunning || isGenerating}
+        className="flex items-center gap-2 bg-primary-600 text-white font-bold py-1.5 px-3 rounded-md text-sm hover:bg-primary-700 disabled:bg-gray-300 dark:disabled:bg-gray-700 disabled:text-text-tertiary disabled:cursor-not-allowed transition-colors w-full lg:w-auto"
+        aria-label={isWorkflowComplete ? "Deploy application" : "Complete generation to enable deployment"}
+      >
+        {isDeployerRunning ? (
+          <SpinnerIcon className="w-4 h-4" />
+        ) : (
+          <RocketIcon className="w-4 h-4" />
+        )}
+        <span>{isDeployerRunning ? 'Deploying...' : 'Deploy'}</span>
+      </button>
+      <button
+        onClick={handleExportLogs}
+        disabled={auditLog.length === 0}
+        className="flex items-center gap-2 text-text-secondary dark:text-text-secondary-dark hover:bg-surface-highlight dark:hover:bg-surface-highlight-dark p-2 rounded-md transition-colors disabled:text-text-tertiary dark:disabled:text-text-tertiary-dark disabled:cursor-not-allowed w-full lg:w-auto lg:p-1.5 lg:rounded-full lg:bg-transparent"
+        aria-label="Export audit logs as JSON"
+      >
+        <DownloadIcon className="w-5 h-5" />
+        <span className="lg:hidden">Export Logs</span>
+      </button>
+
+      <button
+        onClick={handleToggleFullscreen}
+        className="flex items-center gap-2 text-text-secondary dark:text-text-secondary-dark hover:bg-surface-highlight dark:hover:bg-surface-highlight-dark p-2 rounded-md transition-colors w-full lg:w-auto lg:p-1.5 lg:rounded-full lg:bg-transparent"
+        aria-label={isFullscreen ? "Exit Full Screen" : "Enter Full Screen"}
+      >
+        {isFullscreen ? <FullScreenOffIcon className="w-5 h-5" /> : <FullScreenOnIcon className="w-5 h-5" />}
+        <span className="lg:hidden">{isFullscreen ? "Exit Full Screen" : "Full Screen"}</span>
+      </button>
+
+      <button
+        onClick={onToggleZenMode}
+        className="flex items-center gap-2 text-text-secondary dark:text-text-secondary-dark hover:bg-surface-highlight dark:hover:bg-surface-highlight-dark p-2 rounded-md transition-colors w-full lg:w-auto lg:p-1.5 lg:rounded-full lg:bg-transparent"
+        aria-label={isZenMode ? "Exit Zen Mode" : "Enter Zen Mode"}
+      >
+        {isZenMode ? <ZenOffIcon className="w-5 h-5" /> : <ZenOnIcon className="w-5 h-5" />}
+        <span className="lg:hidden">{isZenMode ? "Exit Zen Mode" : "Zen Mode"}</span>
+      </button>
+    </>
+  );
+
+  const getTabClassName = (tabName: 'preview' | 'code' | 'logs'): string => {
+    const baseClasses = 'py-2 px-3 rounded-md transition-colors flex items-center gap-1.5 text-sm font-medium';
+    if (activeTab === tabName) {
+      return `${baseClasses} bg-primary-100 dark:bg-primary-900/40 text-primary-600 dark:text-primary-300`;
+    }
+    return `${baseClasses} text-text-secondary dark:text-text-secondary-dark hover:bg-surface-highlight dark:hover:bg-surface-highlight-dark`;
+  };
+
+  const getDeviceButtonClassName = (deviceName: typeof device) => {
+    const base = 'p-1.5 rounded-md transition-colors';
+    if(device === deviceName) {
+      return `${base} bg-primary-100 dark:bg-primary-900/40 text-primary-600 dark:text-primary-300`;
+    }
+    return `${base} text-text-secondary dark:text-text-secondary-dark hover:bg-surface-highlight dark:hover:bg-surface-highlight-dark`;
+  }
+
+  return (
+    <div className="flex flex-col h-full bg-surface dark:bg-surface-dark rounded-lg">
+      <header className="flex flex-wrap items-center justify-between gap-y-2 p-2 border-b border-border dark:border-border-dark flex-shrink-0">
+        <div className="flex items-center gap-2 sm:gap-4">
+          <h2 className="font-bold text-base text-text-primary dark:text-text-primary-dark hidden sm:block">Live Application</h2>
+          <div className="flex items-center rounded-md p-1 text-sm bg-surface-highlight dark:bg-surface-highlight-dark">
+            <button
+              className={getTabClassName('preview')}
+              onClick={() => setActiveTab('preview')}
+              aria-pressed={activeTab === 'preview'}
+            >
+              <EyeIcon className="w-4 h-4" />
+              <span className="hidden sm:inline">Preview</span>
+            </button>
+            <button
+              className={getTabClassName('code')}
+              onClick={() => setActiveTab('code')}
+              aria-pressed={activeTab === 'code'}
+            >
+              <CodeIcon className="w-4 h-4" />
+              <span className="hidden sm:inline">Code</span>
+            </button>
+             <button
+              className={getTabClassName('logs')}
+              onClick={() => setActiveTab('logs')}
+              aria-pressed={activeTab === 'logs'}
+            >
+              <LogIcon className="w-4 h-4" />
+              <span className="hidden sm:inline">Logs</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Desktop Buttons */}
+        <div className="hidden lg:flex items-center gap-2">
+          {actionButtons}
+        </div>
+
+        {/* Mobile Kebab Menu */}
+        <div ref={menuRef} className="relative lg:hidden">
+          <button
+            onClick={() => setIsMenuOpen(prev => !prev)}
+            className="text-text-secondary dark:text-text-secondary-dark hover:text-white transition-colors rounded-full p-1.5 focus:outline-none focus:ring-2 focus:ring-primary-500"
+            aria-label="More options"
+            aria-haspopup="true"
+            aria-expanded={isMenuOpen}
+          >
+            <MoreVerticalIcon className="w-5 h-5" />
+          </button>
+          {isMenuOpen && (
+            <div className="absolute right-0 mt-2 w-48 bg-surface dark:bg-surface-dark border border-border dark:border-border-dark rounded-md shadow-lg z-20 p-2 flex flex-col gap-1">
+              {React.Children.map(actionButtons, (button) => {
+                const buttonElement = button as React.ReactElement<any>;
+                // Don't show deploy button inside mobile menu, it has a FAB
+                if (buttonElement.props.onClick === onDeploy) {
+                  return null;
+                }
+                return React.cloneElement(buttonElement, {
+                  onClick: () => {
+                    if (buttonElement.props.onClick) {
+                      buttonElement.props.onClick();
+                    }
+                    setIsMenuOpen(false);
+                  },
+                })
+              })}
+            </div>
+          )}
+        </div>
+
+      </header>
+      <div ref={fullscreenTargetRef} className="flex-grow rounded-b-lg overflow-hidden relative bg-background dark:bg-background-dark flex flex-col">
+         {showZenGenerationOverlay && (
+            <div className="absolute inset-0 bg-background/90 dark:bg-background-dark/90 backdrop-blur-sm flex flex-col items-center justify-center z-10 animate-fade-in transition-opacity duration-300">
+                <div className="text-center p-8 rounded-lg">
+                    <div className="flex items-center justify-center gap-4 mb-4">
+                        <AgentIcon name={currentAgent.name} className="w-10 h-10 text-primary-500" />
+                        <h3 className="text-3xl font-bold text-text-primary dark:text-text-primary-dark">{currentAgent.name}</h3>
+                    </div>
+                    <p className="text-text-secondary dark:text-text-secondary-dark text-lg mb-6">
+                        Step {currentAgent.id} of {totalAgents -1}: Generating...
+                    </p>
+                    <SpinnerIcon className="w-12 h-12 text-primary-600 mx-auto" />
+                </div>
+            </div>
+        )}
+
+        <div className="flex-grow h-0">
+          {activeTab === 'preview' && (
+            <div className="w-full h-full bg-surface-highlight dark:bg-black/20 p-4 transition-all duration-300">
+                <div
+                    style={{ width: deviceWidths[device] }}
+                    className="h-full mx-auto bg-white rounded-md shadow-lg transition-all duration-300 ease-in-out flex flex-col"
+                >
+                    <iframe
+                        srcDoc={code || "<!DOCTYPE html><html><head></head><body style=\"display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; background-color: #fff; font-family: sans-serif; color: #666;\">Waiting for Coder agent...</body></html>"}
+                        title="Application Preview"
+                        className={`w-full h-full border-0 rounded-md`}
+                        sandbox="allow-scripts allow-forms allow-modals"
+                    />
+                </div>
+            </div>
+          )}
+          {activeTab === 'code' && <CodePreviewPanel code={code} />}
+          {activeTab === 'logs' && <AuditInspector logs={auditLog} />}
+        </div>
+
+        {activeTab === 'preview' && (
+             <div className="flex-shrink-0 p-2 border-t border-border dark:border-border-dark flex justify-center">
+                 <div className="flex items-center gap-1 p-1 rounded-md bg-surface-highlight dark:bg-surface-highlight-dark">
+                     <button title="Desktop Preview" className={getDeviceButtonClassName('desktop')} onClick={() => setDevice('desktop')}><DesktopIcon className="w-5 h-5"/></button>
+                     <button title="Tablet Preview" className={getDeviceButtonClassName('tablet')} onClick={() => setDevice('tablet')}><TabletIcon className="w-5 h-5"/></button>
+                     <button title="Mobile Preview" className={getDeviceButtonClassName('mobile')} onClick={() => setDevice('mobile')}><MobileIcon className="w-5 h-5"/></button>
+                 </div>
+             </div>
+         )}
+      </div>
+
+      {/* Mobile Floating Action Button for Deploy */}
+      {isWorkflowComplete && activeTab === 'preview' && (
+        <button
+          onClick={onDeploy}
+          disabled={isDeployerRunning || isGenerating}
+          className="lg:hidden fixed bottom-24 right-6 bg-primary-600 text-white rounded-full p-4 shadow-lg hover:bg-primary-700 disabled:bg-gray-300 dark:disabled:bg-gray-700 disabled:text-text-tertiary disabled:cursor-not-allowed transition-all transform hover:scale-110 active:scale-100 z-30"
+          aria-label="Deploy application"
+        >
+          <RocketIcon className="w-6 h-6" />
+        </button>
+      )}
+    </div>
+  );
+};
+
+export default React.memo(PreviewPanel);

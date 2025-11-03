@@ -74,7 +74,7 @@ const DesktopLayout: React.FC<DesktopLayoutProps> = ({
             ))}
           </div>
         </div>
-        <div className="bg-surface dark:bg-surface-dark border border-border dark:border-border-dark rounded-lg h-[500px] shadow-sm">
+        <div className="bg-surface dark:bg-surface-dark border border-border dark:border-border-dark rounded-lg min-h-[500px] shadow-sm">
           <AgentDetailView agent={selectedAgent} recoveryContext={recoveryContext} />
         </div>
       </div>
