@@ -76,16 +76,16 @@ const CodeBlock: React.FC<{ code: string; language: string | null }> = ({ code, 
 
   // Note: Prism theme sets the background colors, so we don't need dark: variants here.
   return (
-    <div className="bg-slate-950 rounded-md my-4 ring-1 ring-slate-700 relative group">
-      <div className="flex justify-between items-center px-4 py-1 bg-slate-800/50 rounded-t-md text-xs font-sans">
-        <span className="text-slate-400 capitalize">{language || 'Code'}</span>
+    <div className="bg-background-dark rounded-md my-4 ring-1 ring-border-dark relative group">
+      <div className="flex justify-between items-center px-4 py-1 bg-surface-lighter-dark/50 rounded-t-md text-xs font-sans">
+        <span className="text-text-tertiary-dark capitalize">{language || 'Code'}</span>
         <button
           onClick={handleCopy}
-          className="text-slate-400 hover:text-white transition-colors flex items-center gap-1.5 p-1 -mr-1"
+          className="text-text-tertiary-dark hover:text-text-primary-dark transition-colors flex items-center gap-1.5 p-1 -mr-1"
           aria-label="Copy code to clipboard"
         >
           {isCopied ? (
-            <span className="text-green-400">Copied!</span>
+            <span className="text-status-success-dark">Copied!</span>
           ) : (
             <>
               <CopyIcon className="w-3.5 h-3.5" />
@@ -94,7 +94,7 @@ const CodeBlock: React.FC<{ code: string; language: string | null }> = ({ code, 
           )}
         </button>
       </div>
-      <pre className="p-4 text-sm text-slate-300 whitespace-pre-wrap font-mono overflow-x-auto">
+      <pre className="p-4 text-sm text-text-secondary-dark whitespace-pre-wrap font-mono overflow-x-auto">
         <code>{code}</code>
       </pre>
     </div>
