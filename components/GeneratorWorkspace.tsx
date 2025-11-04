@@ -136,12 +136,12 @@ const GeneratorWorkspace: React.FC<GeneratorWorkspaceProps> = ({
           </div>
         )}
         {mobileView === 'audit' && (
-           <div className="bg-surface-lighter dark:bg-surface-lighter-dark rounded-lg h-[calc(100vh-200px)]">
+           <div className="bg-surface-lighter dark:bg-surface-lighter-dark rounded-lg min-h-[calc(100vh-200px)]">
             <AgentDetailView agent={selectedAgent} recoveryContext={recoveryContext} />
           </div>
         )}
          {mobileView === 'preview' && (
-           <div className="bg-surface-lighter dark:bg-surface-lighter-dark rounded-lg h-[calc(100vh-200px)]">
+           <div className="bg-surface-lighter dark:bg-surface-lighter-dark rounded-lg min-h-[calc(100vh-200px)]">
              <PreviewPanel
                 code={finalCode}
                 isZenMode={isZenMode}

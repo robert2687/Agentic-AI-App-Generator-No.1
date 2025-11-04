@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Agentic AI App Generator</string>
+    <string name="title_activity_main">Agentic AI App Generator</string>
+    <string name="package_name">com.agentic.ai.app.generator</string>
+    <string name="custom_url_scheme">com.agentic.ai.app.generator</string>
+</resources>
