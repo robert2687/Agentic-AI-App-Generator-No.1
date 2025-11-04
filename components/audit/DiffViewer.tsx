@@ -17,11 +17,11 @@ export const DiffViewer: React.FC<DiffViewerProps> = ({ oldValue, newValue }) =>
   const changes: Change[] = diffLines(oldText, newText);
 
   return (
-    <div className="mt-4 text-sm rounded-lg overflow-hidden border border-slate-700/70">
-      <h4 className="text-xs font-bold bg-slate-800/80 px-3 py-1.5 text-slate-400 border-b border-slate-700/70 font-sans">
+    <div className="mt-4 text-sm rounded-lg overflow-hidden border border-border-dark/70">
+      <h4 className="text-xs font-bold bg-surface-lighter-dark/80 px-3 py-1.5 text-text-tertiary-dark border-b border-border-dark/70 font-sans">
         Code Difference from Previous Step
       </h4>
-      <div className="font-mono text-sm bg-slate-950 p-2">
+      <div className="font-mono text-sm bg-background-dark p-2">
         {changes.map((part, partIndex) => {
           const style = {
             background: part.added

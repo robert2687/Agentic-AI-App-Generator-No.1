@@ -4,8 +4,8 @@
 
 const colors = {
   // Light Theme (Default)
-  background: '#f8fafc', // slate-50
-  surface: '#ffffff',
+  background: '#ffffff', // white
+  surface: '#f8fafc', // slate-50
   'surface-lighter': '#f1f5f9', // slate-100
   'surface-highlight': '#e2e8f0', // slate-200
   border: '#cbd5e1', // slate-300
@@ -29,15 +29,15 @@ const colors = {
   'status-success-muted': 'rgba(16, 185, 129, 0.1)',
   
   // Specific dark theme colors for use with dark: prefix
-  'background-dark': '#0f172a',
-  'surface-dark': '#1e293b',
-  'surface-lighter-dark': 'rgba(51, 65, 85, 0.5)',
-  'surface-highlight-dark': '#334155',
-  'border-dark': '#334155',
-  'border-light-dark': 'rgba(51, 65, 85, 0.5)',
-  'text-primary-dark': '#e2e8f0',
-  'text-secondary-dark': '#94a3b8',
-  'text-tertiary-dark': '#64748b',
+  'background-dark': '#020617', // slate-950
+  'surface-dark': '#0f172a', // slate-900
+  'surface-lighter-dark': '#1e293b', // slate-800
+  'surface-highlight-dark': '#334155', // slate-700
+  'border-dark': '#475569', // slate-600
+  'border-light-dark': '#334155', // slate-700
+  'text-primary-dark': '#f8fafc', // slate-50
+  'text-secondary-dark': '#cbd5e1', // slate-300
+  'text-tertiary-dark': '#94a3b8', // slate-400
   
   'accent-primary-dark': '#38bdf8', // sky-400 (lighter for dark bg)
   'accent-primary-hover-dark': '#0ea5e9', // sky-500

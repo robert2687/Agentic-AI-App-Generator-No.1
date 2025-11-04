@@ -38,14 +38,14 @@ const CodePreviewPanel: React.FC<CodePreviewPanelProps> = ({ code }) => {
   }
 
   return (
-    <div className="h-full bg-slate-950 relative">
+    <div className="h-full bg-background-dark relative">
        <button
           onClick={handleCopy}
-          className="absolute top-2 right-2 text-slate-400 hover:text-white bg-slate-800/50 hover:bg-slate-700/50 transition-colors flex items-center gap-1.5 p-2 rounded-md z-10 text-xs"
+          className="absolute top-2 right-2 text-text-tertiary-dark hover:text-text-primary-dark bg-surface-lighter-dark/50 hover:bg-surface-highlight-dark/50 transition-colors flex items-center gap-1.5 p-2 rounded-md z-10 text-xs"
           aria-label="Copy code to clipboard"
         >
           {isCopied ? (
-            <span className="text-green-400">Copied!</span>
+            <span className="text-status-success-dark">Copied!</span>
           ) : (
             <>
               <CopyIcon className="w-4 h-4" />
