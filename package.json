@@ -13,7 +13,7 @@
   "dependencies": {
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
-    "@google/genai": "^1.21.0",
+    "@google/genai": "^1.26.0",
     "@supabase/supabase-js": "^2.44.4",
     "diff": "^5.2.0",
     "diff2html": "^3.4.52"
