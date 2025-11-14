@@ -4,6 +4,7 @@ import { AgentStatus } from '../types';
 import { INITIAL_AGENTS } from '../constants';
 import { Orchestrator } from '../services/orchestrator';
 import { logger } from '../services/loggerInstance';
+import { analytics } from '../services/analytics';
 
 export const useWorkflow = () => {
   const [agents, setAgents] = useState<Agent[]>(INITIAL_AGENTS);
@@ -31,6 +32,11 @@ export const useWorkflow = () => {
         agent.id === updatedAgent.id ? { ...agent, ...updatedAgent } : agent
       )
     );
+    
+    // Track agent completion
+    if (updatedAgent.status === AgentStatus.COMPLETED) {
+      analytics.track('agent_complete', updatedAgent.name);
+    }
   }, []);
   
   const handleFinalCode = useCallback((code: string) => {
@@ -40,6 +46,7 @@ export const useWorkflow = () => {
 
   const handleWorkflowComplete = useCallback(() => {
     setIsGenerating(false);
+    analytics.track('generation_complete');
   }, []);
   
   const handleWorkflowError = useCallback((error: Error, failingAgent: Agent) => {
@@ -52,6 +59,7 @@ export const useWorkflow = () => {
       errorMessage: error.message,
     });
     handleAgentUpdate({ ...failingAgent, status: AgentStatus.ERROR, output: error.message, completedAt: Date.now() });
+    analytics.track('generation_error', failingAgent.name, { error: error.message });
   }, [handleAgentUpdate]);
 
   useEffect(() => {
@@ -95,10 +103,35 @@ export const useWorkflow = () => {
     setErrorText(null);
   }, []);
   
+  const cancelGeneration = useCallback(() => {
+    if (orchestratorRef.current) {
+      orchestratorRef.current.cancel();
+      setIsGenerating(false);
+      logger.info('User', 'Generation cancelled by user', {});
+      analytics.track('generation_cancelled');
+    }
+  }, []);
+
+  const retryFromFailedAgent = useCallback(async () => {
+    if (!recoveryContext || !orchestratorRef.current) return;
+    
+    const failedAgent = agents.find(a => a.name === recoveryContext.failingAgentName);
+    if (!failedAgent || !failedAgent.input) return;
+
+    setIsError(false);
+    setErrorText(null);
+    setIsGenerating(true);
+    
+    logger.info('Orchestrator', `Retrying from failed agent: ${failedAgent.name}`, {});
+    analytics.track('retry_attempted', failedAgent.name);
+    await orchestratorRef.current.retryFromAgent(failedAgent.name, failedAgent.input);
+  }, [recoveryContext, agents]);
+  
   const startGeneration = useCallback(async () => {
     if (!projectGoal.trim() || !orchestratorRef.current) return;
     resetState();
     setIsGenerating(true);
+    analytics.track('generation_start');
 
     await orchestratorRef.current.run(projectGoal);
   }, [projectGoal, resetState]);
@@ -110,6 +143,7 @@ export const useWorkflow = () => {
     setIsError(false);
     setErrorText(null);
     setRecoveryContext(null);
+    analytics.track('refinement_start');
     
     setAgents(prev => prev.map(a => {
       if (a.name === 'Reviewer' || a.name === 'Patcher' || a.name === 'Deployer') {
@@ -149,5 +183,7 @@ export const useWorkflow = () => {
     resetState,
     setAgents,
     clearError,
+    cancelGeneration,
+    retryFromFailedAgent,
   };
 };

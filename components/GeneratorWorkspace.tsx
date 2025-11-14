@@ -29,6 +29,8 @@ interface GeneratorWorkspaceProps {
   auditLog: AuditLogEntry[];
   handleSelectAgent: (id: number) => void;
   mobileView: 'home' | 'audit' | 'preview';
+  cancelGeneration: () => void;
+  retryFromFailedAgent: () => void;
 }
 
 const GeneratorWorkspace: React.FC<GeneratorWorkspaceProps> = (props) => {

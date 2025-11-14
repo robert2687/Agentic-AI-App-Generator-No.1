@@ -27,6 +27,13 @@ const AgentCard: React.FC<AgentCardProps> = ({ agent, isSelected, isCurrent, onC
         text: 'text-red-500'
       };
     }
+    if (agent.status === AgentStatus.CANCELLED) {
+      return {
+        border: 'border-gray-500',
+        bg: 'bg-gray-50 dark:bg-gray-900/20',
+        text: 'text-gray-500'
+      };
+    }
     if (isRecoveringAgent) {
       return {
         border: 'border-orange-500',
