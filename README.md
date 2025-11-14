@@ -20,6 +20,7 @@ View your app in AI Studio: https://ai.studio/apps/drive/13z9RgvMFPcqGZ70huEXfVk
 🎨 **Interactive UI**: Real-time agent status and live preview capabilities
 📱 **Single-File Output**: Generates complete HTML applications
 🔄 **Live Preview**: See generated applications in real-time
+📲 **Mobile App Support**: Build and deploy to Android/Google Play Store using Capacitor
 
 ## Run Locally
 
@@ -64,3 +65,33 @@ npm run preview      # Preview production build
 - **Build Tool**: Vite
 - **AI Integration**: Google Gemini API
 - **Styling**: Modern CSS with responsive design
+- **Mobile Platform**: Capacitor (for Android/iOS apps)
+
+## Build for Android/Google Play Store
+
+This app can be built as a native Android application for distribution on Google Play Store.
+
+### Quick Start Android Build
+
+```bash
+# Build web app and sync with Android
+npm run android:sync
+
+# Open in Android Studio
+npm run android:open
+
+# Or run directly on device/emulator
+npm run android:run
+```
+
+### Complete Android Build Guide
+
+For detailed instructions on building and publishing to Google Play Store, see:
+📖 **[Android Build Guide](docs/ANDROID_BUILD_GUIDE.md)**
+
+This guide covers:
+- Setting up Android development environment
+- Building release APK/AAB for Google Play Store
+- Signing your app
+- Publishing to Google Play Store
+- Continuous deployment setup
