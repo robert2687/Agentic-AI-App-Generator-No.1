@@ -34,6 +34,8 @@ const AppContent: React.FC = () => {
     resetState,
     setAgents,
     clearError,
+    cancelGeneration,
+    retryFromFailedAgent,
   } = useWorkflow();
 
   const {
@@ -115,6 +117,8 @@ const AppContent: React.FC = () => {
           auditLog={auditLog}
           handleSelectAgent={handleSelectAgent}
           mobileView={mobileView}
+          cancelGeneration={cancelGeneration}
+          retryFromFailedAgent={retryFromFailedAgent}
         />
       </main>
 
