@@ -1,4 +1,4 @@
-import { GenerateContentResponse } from "@google/genai";
+import { GenerateContentResponse, GoogleGenerativeAIError } from "@google/genai";
 import { ai, withRetry } from '../../geminiClient';
 import type { Provider } from '../types';
 
@@ -12,7 +12,7 @@ class GeminiProvider implements Provider {
 
     try {
       const stream: AsyncIterable<GenerateContentResponse> = await withRetry(() => ai.models.generateContentStream({
-        model: "gemini-2.5-flash",
+        model: "gemini-1.5-pro",
         contents: prompt,
       }));
       
@@ -27,6 +27,9 @@ class GeminiProvider implements Provider {
       return fullOutput;
     } catch (error) {
       console.error("Gemini API call failed:", error);
+      if (error instanceof GoogleGenerativeAIError) {
+        throw new Error(`Gemini API Error: ${error.message}`);
+      }
       // Re-throw a more user-friendly error to be caught by the orchestrator.
       throw new Error("Failed to get a response from the Gemini API. Check your API key, billing, and network connection.");
     }

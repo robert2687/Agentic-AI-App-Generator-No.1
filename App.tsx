@@ -9,6 +9,7 @@ import { AuthProvider } from './contexts/AuthContext';
 import AuthModal from './components/AuthModal';
 import { withPremiumGate } from './hoc/withPremiumGate';
 import GeneratorWorkspace from './components/GeneratorWorkspace';
+import ErrorNotification from './components/ErrorNotification';
 import { AgentStatus } from './types';
 
 const GatedGeneratorWorkspace = withPremiumGate(GeneratorWorkspace);
@@ -32,6 +33,7 @@ const AppContent: React.FC = () => {
     startDeployment,
     resetState,
     setAgents,
+    clearError,
   } = useWorkflow();
 
   const {
@@ -124,6 +126,9 @@ const AppContent: React.FC = () => {
       )}
       {showDeploymentModal && (
          <DeploymentModal agent={deployerAgent} onClose={() => setShowDeploymentModal(false)} />
+      )}
+      {isError && errorText && (
+        <ErrorNotification message={errorText} onClose={clearError} />
       )}
     </div>
   );

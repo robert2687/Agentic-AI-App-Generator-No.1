@@ -89,6 +89,11 @@ export const useWorkflow = () => {
     setRecoveryContext(null);
     logger.clear();
   }, []);
+
+  const clearError = useCallback(() => {
+    setIsError(false);
+    setErrorText(null);
+  }, []);
   
   const startGeneration = useCallback(async () => {
     if (!projectGoal.trim() || !orchestratorRef.current) return;
@@ -143,5 +148,6 @@ export const useWorkflow = () => {
     startDeployment,
     resetState,
     setAgents,
+    clearError,
   };
 };
