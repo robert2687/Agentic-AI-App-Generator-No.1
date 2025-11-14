@@ -64,3 +64,9 @@ npm run preview      # Preview production build
 - **Build Tool**: Vite
 - **AI Integration**: Google Gemini API
 - **Styling**: Modern CSS with responsive design
+
+## Contributing
+
+Contributions are welcome! Please see [`CONTRIBUTING.md`](CONTRIBUTING.md) for guidelines.
+
+This repository includes custom [GitHub Copilot instructions](.github/copilot-instructions.md) to help provide context-aware code suggestions and maintain consistency with the project's architecture and coding standards.

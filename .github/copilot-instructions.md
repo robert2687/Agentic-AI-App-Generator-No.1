@@ -209,3 +209,29 @@ When working with this codebase:
 - Implement proper TypeScript types
 - Follow React best practices and hooks rules
 - Consider performance implications (large bundle size noted in build)
+
+## Resources and Documentation
+
+### Official Documentation
+- [React 19 Documentation](https://react.dev/)
+- [TypeScript Documentation](https://www.typescriptlang.org/docs/)
+- [Vite Documentation](https://vitejs.dev/)
+- [Google Gemini API Documentation](https://ai.google.dev/docs)
+- [Supabase Documentation](https://supabase.com/docs)
+
+### Project Documentation
+- `README.md` - Setup and usage instructions
+- `CONTRIBUTING.md` - Contribution guidelines and checklist
+- `docs/architecture.md` - System architecture and design
+- `.github/ISSUE_TEMPLATE/` - Issue templates
+- `.github/PULL_REQUEST_TEMPLATE.md` - PR template
+
+### Development Resources
+- Environment variables: Use `.env.local` (see `.env.local.template`)
+- Pre-commit hooks: Configured in `.pre-commit-config.yaml`
+- Design tokens: `design-tokens.json`
+- Type definitions: `types.ts`
+- Application constants: `constants.ts`
+
+### External Links
+- [AI Studio App](https://ai.studio/apps/drive/13z9RgvMFPcqGZ70huEXfVkUS8keVjKMS) - View the app in AI Studio
