@@ -29,6 +29,8 @@ class GeminiProvider implements Provider {
       console.error("Gemini API call failed:", error);
       // Re-throw a more user-friendly error to be caught by the orchestrator.
       throw new Error(error?.message || "Failed to get a response from the Gemini API. Check your API key, billing, and network connection.");
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      throw new Error(`Failed to get a response from the Gemini API: ${errorMessage}. Check your API key, billing, and network connection.`);
     }
   }
 }

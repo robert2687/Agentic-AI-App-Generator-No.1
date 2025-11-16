@@ -20,6 +20,7 @@ View your app in AI Studio: https://ai.studio/apps/drive/13z9RgvMFPcqGZ70huEXfVk
 🎨 **Interactive UI**: Real-time agent status and live preview capabilities
 📱 **Single-File Output**: Generates complete HTML applications
 🔄 **Live Preview**: See generated applications in real-time
+📲 **Mobile App Support**: Build and deploy to Android/Google Play Store using Capacitor
 
 ## Run Locally
 
@@ -64,3 +65,9 @@ npm run preview      # Preview production build
 - **Build Tool**: Vite
 - **AI Integration**: Google Gemini API
 - **Styling**: Modern CSS with responsive design
+
+## Contributing
+
+Contributions are welcome! Please see [`CONTRIBUTING.md`](CONTRIBUTING.md) for guidelines.
+
+This repository includes custom [GitHub Copilot instructions](.github/copilot-instructions.md) to help provide context-aware code suggestions and maintain consistency with the project's architecture and coding standards.
