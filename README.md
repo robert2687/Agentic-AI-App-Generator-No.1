@@ -65,33 +65,9 @@ npm run preview      # Preview production build
 - **Build Tool**: Vite
 - **AI Integration**: Google Gemini API
 - **Styling**: Modern CSS with responsive design
-- **Mobile Platform**: Capacitor (for Android/iOS apps)
 
-## Build for Android/Google Play Store
+## Contributing
 
-This app can be built as a native Android application for distribution on Google Play Store.
+Contributions are welcome! Please see [`CONTRIBUTING.md`](CONTRIBUTING.md) for guidelines.
 
-### Quick Start Android Build
-
-```bash
-# Build web app and sync with Android
-npm run android:sync
-
-# Open in Android Studio
-npm run android:open
-
-# Or run directly on device/emulator
-npm run android:run
-```
-
-### Complete Android Build Guide
-
-For detailed instructions on building and publishing to Google Play Store, see:
-📖 **[Android Build Guide](docs/ANDROID_BUILD_GUIDE.md)**
-
-This guide covers:
-- Setting up Android development environment
-- Building release APK/AAB for Google Play Store
-- Signing your app
-- Publishing to Google Play Store
-- Continuous deployment setup
+This repository includes custom [GitHub Copilot instructions](.github/copilot-instructions.md) to help provide context-aware code suggestions and maintain consistency with the project's architecture and coding standards.
