@@ -20,6 +20,7 @@ View your app in AI Studio: https://ai.studio/apps/drive/13z9RgvMFPcqGZ70huEXfVk
 🎨 **Interactive UI**: Real-time agent status and live preview capabilities
 📱 **Single-File Output**: Generates complete HTML applications
 🔄 **Live Preview**: See generated applications in real-time
+📲 **Mobile App Support**: Build and deploy to Android/Google Play Store using Capacitor
 
 ## Run Locally
 
