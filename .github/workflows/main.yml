@@ -14,6 +14,7 @@ on:
 permissions:
   contents: read
   actions: read
+  packages: read
 
 jobs:
   build-and-test:
