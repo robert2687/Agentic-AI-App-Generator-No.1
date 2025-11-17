@@ -14,6 +14,9 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
+    environment:
+      name: android-production
+      url: https://github.com/${{ github.repository }}/releases/tag/${{ github.ref_name }}
     
     steps:
       - name: Checkout code
