@@ -1,3 +1,10 @@
+---
+# Global instructions for the entire repository
+# These instructions apply to all files unless overridden by more specific instructions
+applies_to:
+  - "**/*"
+---
+
 # Copilot Instructions for Agentic AI App Generator
 
 ## Project Overview
