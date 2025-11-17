@@ -6,11 +6,15 @@ on:
   push:
     branches: [ main ]
 
+permissions:
+  contents: read
+  actions: read
+  packages: read
+
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
     permissions:
-      contents: read
       statuses: write
     steps:
       - name: Checkout repository
