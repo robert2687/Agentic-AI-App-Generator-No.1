@@ -13,16 +13,16 @@ import { activeImageProvider, activeImageProviderName } from '../imageProvider';
 
 
 const extractCode = (markdown: string, lang: string = 'html'): string | null => {
-  const regex = new RegExp("```" + lang + "\\n([\\s\\S]*?)```");
+  const regex = new RegExp("```(" + lang + ")?\n([\s\S]*?)```");
   const match = markdown.match(regex);
-  if (match) return match[1].trim();
+  if (match && match[2]) return match[2].trim();
   // Fallback for cases where the language is not specified
   if (!lang) {
-    const anyLangRegex = new RegExp("```(?:\\w*)\\n([\\s\\S]*?)```");
+    const anyLangRegex = new RegExp("```(?:\w*)\n([\s\S]*?)```");
     const anyLangMatch = markdown.match(anyLangRegex);
     if (anyLangMatch) return anyLangMatch[1].trim();
   }
-  return null;
+  return markdown;
 };
 
 const generateImageTool: FunctionDeclaration = {
@@ -56,6 +56,7 @@ export class Orchestrator {
   private agents: Agent[] = [];
   private providers: Provider[];
   private callbacks: OrchestratorCallbacks;
+  private isCancelled: boolean = false;
 
   constructor(callbacks: OrchestratorCallbacks) {
     this.callbacks = callbacks;
@@ -71,6 +72,17 @@ export class Orchestrator {
     logger.info('Orchestrator', `Initialized with providers: ${this.providers.map(p => p.name).join(', ')}`);
   }
 
+  public cancel() {
+    this.isCancelled = true;
+    logger.info('Orchestrator', 'Cancellation requested');
+  }
+
+  private checkCancellation() {
+    if (this.isCancelled) {
+      throw new Error('Generation cancelled by user');
+    }
+  }
+
   private updateAgentState(id: number, updates: Partial<Agent>) {
     const agent = this.agents.find(a => a.id === id);
     if (agent) {
@@ -80,6 +92,7 @@ export class Orchestrator {
   }
   
   private async executeUxUiDesignerAgent(agent: Agent, input: string): Promise<string> {
+    this.checkCancellation();
     this.updateAgentState(agent.id, { status: AgentStatus.RUNNING, input, output: 'Thinking...', startedAt: Date.now() });
 
     if (!ai) {
@@ -198,6 +211,8 @@ export class Orchestrator {
 
 
   private async executeAgent(agent: Agent, input: string): Promise<string> {
+    this.checkCancellation();
+    
     if (agent.name === 'UX/UI Designer' && this.providers.some(p => p.name === 'gemini')) {
       try {
         // Prioritize function calling path if Gemini is available
@@ -292,6 +307,12 @@ export class Orchestrator {
           }
         }
       } catch (error: any) {
+        // Check if it was a cancellation
+        if (this.isCancelled) {
+          this.updateAgentState(agent.id, { status: AgentStatus.CANCELLED, output: 'Cancelled by user', completedAt: Date.now() });
+          logger.info('Orchestrator', 'Workflow cancelled by user');
+          return;
+        }
         this.callbacks.onWorkflowError(error, agent);
         return; // Halt workflow on error
       }
@@ -301,6 +322,7 @@ export class Orchestrator {
 
   public async run(projectGoal: string) {
     logger.clear();
+    this.isCancelled = false; // Reset cancellation flag
     this.agents = AGENTS_CONFIG.map(config => ({
       ...config,
       status: AgentStatus.PENDING,
@@ -317,12 +339,14 @@ export class Orchestrator {
   }
   
   public async runRefinement(refinementPrompt: string, existingCode: string) {
+    this.isCancelled = false; // Reset cancellation flag
     logger.info('Orchestrator', `Starting refinement cycle.`);
     const reviewerPrompt = `**Previous Code:**\n\`\`\`html\n${existingCode}\n\`\`\`\n\n**User's Refinement Request:**\n${refinementPrompt}\n\n**Agent:** Reviewer\n**Task:**\nAnalyze the user's request against the existing code and provide concise, actionable instructions for the Patcher agent.`;
     await this.runWorkflow(reviewerPrompt, 'Reviewer');
   }
   
   public async runDeployment(code: string) {
+    this.isCancelled = false; // Reset cancellation flag
     const deployer = this.agents.find(a => a.name === 'Deployer');
     if (!deployer) return;
 
@@ -332,7 +356,36 @@ export class Orchestrator {
     try {
         await this.executeAgent(deployer, prompt);
     } catch (error: any) {
+        // Check if it was a cancellation
+        if (this.isCancelled) {
+          this.updateAgentState(deployer.id, { status: AgentStatus.CANCELLED, output: 'Cancelled by user', completedAt: Date.now() });
+          return;
+        }
         this.callbacks.onWorkflowError(error, deployer);
     }
+  }
+
+  public async retryFromAgent(agentName: AgentName, prompt: string) {
+    this.isCancelled = false; // Reset cancellation flag
+    logger.info('Orchestrator', `Retrying from agent: ${agentName}`);
+    
+    const startIndex = this.agents.findIndex(a => a.name === agentName);
+    if (startIndex === -1) {
+      throw new Error(`Agent ${agentName} not found`);
+    }
+
+    // Reset agents from the failed one onwards
+    for (let i = startIndex; i < this.agents.length; i++) {
+      const agent = this.agents[i];
+      this.updateAgentState(agent.id, { 
+        status: AgentStatus.PENDING, 
+        input: null, 
+        output: null,
+        startedAt: undefined,
+        completedAt: undefined 
+      });
+    }
+
+    await this.runWorkflow(prompt, agentName);
   }
 }

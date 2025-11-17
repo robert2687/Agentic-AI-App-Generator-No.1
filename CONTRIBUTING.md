@@ -2,6 +2,18 @@
 
 Thank you for your interest in contributing! To ensure a smooth and efficient development process, please review and adhere to the following checklist before submitting a pull request.
 
+## GitHub Copilot Instructions
+
+This repository includes custom instructions for GitHub Copilot to help provide better code suggestions and assistance. You can find these instructions in [`.github/copilot-instructions.md`](.github/copilot-instructions.md), which includes:
+
+- Project overview and tech stack
+- Coding standards and best practices
+- Project structure and file organization
+- Testing and accessibility requirements
+- Links to official documentation and resources
+
+If you're using GitHub Copilot, these instructions will help it provide more context-aware suggestions tailored to this project.
+
 ## Contributor Checklist
 
 Before you submit your PR, please make sure you have completed the following steps:

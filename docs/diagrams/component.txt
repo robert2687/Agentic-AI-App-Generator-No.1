@@ -1,0 +1,29 @@
+```text
++--------------------------------------------------------------------+
+|                          Agentic App Builder                        |
++--------------------------------------------------------------------+
+|  UI/IDE Layer                                                      |
+|  - React (Monaco) workspace                                        |
+|  - Stage dashboards, diffs, approvals                              |
+|  - Artifact explorer & runbooks                                    |
++--------------------------------------------------------------------+
+|  Orchestrator API (Node/Express)                                   |
+|  - Route layer (JWT + RBAC)                                        |
+|  - Workflow engine (DAG stages, gates)                             |
+|  - Job queue (Pub/Sub)                                             |
+|  - Artifact registry (Cloud Storage + Firestore index)             |
+|  - Audit logger (immutable events)                                 |
++--------------------------------------------------------------------+
+|  Agent Runners (Cloud Run containers)                              |
+|  - Planner | Architect | Visual Designer | Coder | Reviewer         |
+|  - Patcher | Deployer                                               |
+|  - Least-privilege, per-stage write scopes                         |
++--------------------------------------------------------------------+
+|  Data & Infra                                                      |
+|  - Firestore (projects, workflows, artifacts, audit, RBAC)         |
+|  - Cloud Storage (artifacts, logs, manifests)                      |
+|  - Pub/Sub (stage jobs, DLQs)                                      |
+|  - Cloudflare (WAF, rate limits)                                   |
+|  - GitHub Actions (CI/CD)                                          |
++--------------------------------------------------------------------+
+```

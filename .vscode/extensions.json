@@ -1,0 +1,14 @@
+{
+  "recommendations": [
+    "dbaeumer.vscode-eslint",
+    "esbenp.prettier-vscode",
+    "bradlc.vscode-tailwindcss",
+    "wayou.vscode-todo-highlight",
+    "usernamehw.errorlens",
+    "streetsidesoftware.code-spell-checker",
+    "dsznajder.es7-react-js-snippets",
+    "github.copilot-chat",
+    "github.copilot"
+  ],
+  "unwantedRecommendations": []
+}

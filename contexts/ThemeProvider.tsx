@@ -29,8 +29,12 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [theme, setThemeState] = useState<Theme>(getInitial);
 
   useEffect(() => {
-    document.documentElement.classList.remove('theme-light', 'theme-dark');
-    document.documentElement.classList.add(`theme-${theme}`);
+    // Tailwind uses 'dark' class for dark mode
+    if (theme === 'dark') {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
     try {
       localStorage.setItem(THEME_KEY, theme);
     } catch (e) {

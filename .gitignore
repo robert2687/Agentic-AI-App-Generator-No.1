@@ -17,6 +17,7 @@ audit-comment.md
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
+!.vscode/settings.json
 .idea
 .DS_Store
 *.suo
@@ -24,3 +25,18 @@ audit-comment.md
 *.njsproj
 *.sln
 *.sw?
+
+# Android / Capacitor
+android/.gradle
+android/.idea
+android/build
+android/app/build
+android/app/release
+android/app/debug
+android/capacitor-cordova-android-plugins/build
+android/local.properties
+android/keystore.properties
+*.keystore
+*.jks
+*.aab
+*.apk

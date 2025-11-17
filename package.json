@@ -7,11 +7,19 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "verify-setup": "node scripts/verify-setup.js"
+    "verify-setup": "node scripts/verify-setup.js",
+    "generate-logo": "node scripts/generate-logo.js",
+    "android:sync": "npm run build && npx cap sync android",
+    "android:open": "npx cap open android",
+    "android:run": "npm run android:sync && npx cap run android",
+    "android:build": "npm run build && npx cap sync android && cd android && ./gradlew assembleRelease"
   },
   "dependencies": {
+    "@capacitor/android": "^7.4.4",
+    "@capacitor/cli": "^7.4.4",
+    "@capacitor/core": "^7.4.4",
     "@google/genai": "^1.21.0",
-    "@supabase/supabase-js": "^2.44.4",
+    "@supabase/supabase-js": "^2.75.1",
     "diff": "^5.2.0",
     "diff2html": "^3.4.52",
     "react": "^19.1.1",
@@ -26,5 +34,6 @@
     "typescript": "~5.8.2",
     "vite": "^6.4.1",
     "webpack-cli": "^6.0.1"
+    "vite": "^6.4.1"
   }
 }

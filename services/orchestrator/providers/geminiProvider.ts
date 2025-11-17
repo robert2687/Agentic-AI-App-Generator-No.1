@@ -12,7 +12,7 @@ class GeminiProvider implements Provider {
 
     try {
       const stream: AsyncIterable<GenerateContentResponse> = await withRetry(() => ai.models.generateContentStream({
-        model: "gemini-2.5-flash",
+        model: "gemini-1.5-pro",
         contents: prompt,
       }));
       
@@ -25,10 +25,12 @@ class GeminiProvider implements Provider {
         }
       }
       return fullOutput;
-    } catch (error) {
+    } catch (error: any) {
       console.error("Gemini API call failed:", error);
       // Re-throw a more user-friendly error to be caught by the orchestrator.
-      throw new Error("Failed to get a response from the Gemini API. Check your API key, billing, and network connection.");
+      throw new Error(error?.message || "Failed to get a response from the Gemini API. Check your API key, billing, and network connection.");
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      throw new Error(`Failed to get a response from the Gemini API: ${errorMessage}. Check your API key, billing, and network connection.`);
     }
   }
 }
