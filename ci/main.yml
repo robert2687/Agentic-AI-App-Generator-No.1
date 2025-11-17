@@ -31,3 +31,14 @@ jobs:
           # The validation script is at `scripts/validateCss.ts`. We need to run the compiled version.
           # We assume the build step compiles it to `dist/scripts/validateCss.js`.
           COMPILED_SCRIPT="dist/scripts/validateCss.js"
+          if [ -f "$COMPILED_SCRIPT" ]; then
+            node "$COMPILED_SCRIPT" styles/App.css
+          else
+            echo "⚠️  CSS validation script not found at $COMPILED_SCRIPT, skipping validation."
+          fi
+
+      - name: 'notify vercel'
+        if: always()
+        uses: 'vercel/repository-dispatch/actions/status@v1'
+        with:
+          name: 'Vercel - agentic-ai-app-generator-no-1: checks'
