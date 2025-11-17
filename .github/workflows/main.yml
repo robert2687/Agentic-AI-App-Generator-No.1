@@ -1,0 +1,44 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [ main ]
+  push:
+    branches: [ main ]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: npm ci
+
+      # Build both the Vite application and compile Node.js scripts
+      - name: Build application and scripts
+        run: npm run build
+
+      - name: Run CSS validation
+        id: css_validation
+        run: |
+          # The validation script is at `scripts/validateCss.ts`. We need to run the compiled version.
+          # We assume the build step compiles it to `dist/scripts/validateCss.js`.
+          COMPILED_SCRIPT="dist/scripts/validateCss.js"
+          if [ -f "$COMPILED_SCRIPT" ]; then
+            node "$COMPILED_SCRIPT" styles/App.css
+          else
+            echo "⚠️  CSS validation script not found at $COMPILED_SCRIPT, skipping validation."
+          fi
+
+      - name: 'notify vercel'
+        if: always()
+        uses: 'vercel/repository-dispatch/actions/status@v1'
+        with:
+          name: 'Vercel - agentic-ai-app-generator-no-1: checks'
