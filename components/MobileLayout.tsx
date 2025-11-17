@@ -3,6 +3,8 @@ import PromptInput from './PromptInput';
 import AgentCard from './AgentCard';
 import AgentDetailView from './AgentDetailView';
 import PreviewPanel from './PreviewPanel';
+import ProgressIndicator from './ProgressIndicator';
+import ErrorRecoveryPanel from './ErrorRecoveryPanel';
 import type { Agent, AuditLogEntry, AgentName } from '../types';
 
 interface MobileLayoutProps {
@@ -30,6 +32,8 @@ interface MobileLayoutProps {
   deployerAgent?: Agent;
   auditLog: AuditLogEntry[];
   mobileView: 'home' | 'audit' | 'preview';
+  cancelGeneration: () => void;
+  retryFromFailedAgent: () => void;
 }
 
 const MobileLayout: React.FC<MobileLayoutProps> = ({
@@ -37,7 +41,7 @@ const MobileLayout: React.FC<MobileLayoutProps> = ({
   projectGoal, setProjectGoal, startGeneration, resetState, setShowPreviewModal,
   isGenerating, isComplete, refinementPrompt, setRefinementPrompt, startRefinement,
   isError, errorText, finalCode, isZenMode, setIsZenMode, startDeployment, deployerAgent,
-  auditLog, mobileView
+  auditLog, mobileView, cancelGeneration, retryFromFailedAgent
 }) => {
   const selectedAgent = agents.find(a => a.id === selectedAgentId) || agents[0];
 
@@ -59,6 +63,25 @@ const MobileLayout: React.FC<MobileLayoutProps> = ({
             isError={isError}
             errorText={errorText}
           />
+          
+          {/* Progress Indicator */}
+          {(isGenerating || isComplete) && (
+            <ProgressIndicator agents={agents} currentAgent={currentAgent} />
+          )}
+          
+          {/* Error Recovery Panel */}
+          {(isError || isGenerating) && (
+            <ErrorRecoveryPanel
+              isError={isError}
+              errorText={errorText}
+              failingAgentName={recoveryContext?.failingAgentName}
+              isGenerating={isGenerating}
+              onRetry={retryFromFailedAgent}
+              onCancel={cancelGeneration}
+              onReset={resetState}
+            />
+          )}
+          
           <div className="bg-surface dark:bg-surface-dark border border-border dark:border-border-dark rounded-lg p-4 flex flex-col gap-4 shadow-sm">
             <h2 className="text-lg font-semibold text-text-primary dark:text-text-primary-dark">Agent Workflow</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">

@@ -4,6 +4,7 @@ export enum AgentStatus {
   RUNNING = 'running',
   COMPLETED = 'completed',
   ERROR = 'error',
+  CANCELLED = 'cancelled',
 }
 
 export type AgentName =
