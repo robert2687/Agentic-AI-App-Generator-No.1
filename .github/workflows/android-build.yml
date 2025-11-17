@@ -8,8 +8,8 @@ on:
 
 permissions:
   contents: read
-  deployments: write
   actions: read
+  packages: read
 
 jobs:
   build:
