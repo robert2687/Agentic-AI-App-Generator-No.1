@@ -1,10 +1,30 @@
-name: New MCP server
-version: 0.0.1
-schema: v1
-mcpServers:
-  - name: New MCP server
-    command: npx
-    args:
-      - -y
-      - <your-mcp-server>
-    env: {}
+models:
+  - name: GPT-4o
+    provider: openai
+    model: gpt-4o
+    roles:
+      - chat
+      - edit
+      - apply
+    defaultCompletionOptions:
+      temperature: 0.7
+      maxTokens: 1500
+  - name: Codestral
+    provider: mistral
+    model: codestral-latest
+    roles:
+      - autocomplete
+    autocompleteOptions:
+      debounceDelay: 250
+      maxPromptTokens: 1024
+      onlyMyCode: true
+  - name: My Model - OpenAI-Compatible
+    provider: openai
+    apiBase: http://my-endpoint/v1
+    model: my-custom-model
+    capabilities:
+      - tool_use
+      - image_input
+    roles:
+      - chat
+      - edit
