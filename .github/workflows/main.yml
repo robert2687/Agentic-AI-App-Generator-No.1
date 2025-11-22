@@ -1,5 +1,10 @@
 name: CI
 
+permissions:
+  contents: read
+  actions: read
+  packages: read
+
 on:
   pull_request:
     branches: [ main ]
@@ -9,13 +14,16 @@ on:
 permissions:
   contents: read
   actions: read
+  packages: read
 
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
     permissions:
       contents: read
+      # Allow Vercel to post deployment statuses back to GitHub using the Statuses API
       statuses: write
+      checks: write
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4

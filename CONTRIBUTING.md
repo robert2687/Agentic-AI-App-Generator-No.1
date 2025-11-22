@@ -4,15 +4,19 @@ Thank you for your interest in contributing! To ensure a smooth and efficient de
 
 ## GitHub Copilot Instructions
 
-This repository includes custom instructions for GitHub Copilot to help provide better code suggestions and assistance. You can find these instructions in [`.github/copilot-instructions.md`](.github/copilot-instructions.md), which includes:
+This repository includes comprehensive custom instructions for GitHub Copilot to help provide better code suggestions and assistance:
 
-- Project overview and tech stack
-- Coding standards and best practices
-- Project structure and file organization
-- Testing and accessibility requirements
-- Links to official documentation and resources
+- **[`.github/copilot-instructions.md`](.github/copilot-instructions.md)** - Main instructions covering project overview, tech stack, coding standards, and best practices
+- **[`.github/instructions/`](.github/instructions/)** - Targeted instructions for specific areas:
+  - `components.instructions.md` - React component development guidelines
+  - `services.instructions.md` - Backend services and API integration patterns
+  - `testing.instructions.md` - Testing patterns and best practices
+  - `documentation.instructions.md` - Documentation writing guidelines
+- **[`.github/agents/`](.github/agents/)** - Custom agents for specialized tasks:
+  - `react-typescript-expert.agent.md` - Expert in React 19 and TypeScript
+  - `ai-backend-expert.agent.md` - Expert in AI integration and backend services
 
-If you're using GitHub Copilot, these instructions will help it provide more context-aware suggestions tailored to this project.
+If you're using GitHub Copilot, these instructions will help it provide more context-aware suggestions tailored to this project. See [`.github/instructions/README.md`](.github/instructions/README.md) for more details.
 
 ## Contributor Checklist
 
