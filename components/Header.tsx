@@ -145,7 +145,7 @@ const Header: React.FC<HeaderProps> = ({ onSignIn }) => {
                             /* Enhanced Sign In Button */
                             <button
                                 onClick={onSignIn}
-                                className="relative overflow-hidden bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 dark:from-primary-500 dark:to-primary-600 dark:hover:from-primary-600 dark:hover:to-primary-700 text-white font-semibold py-2.5 px-5 sm:px-6 rounded-xl shadow-md hover:shadow-lg transition-all duration-200 transform hover:scale-105 active:scale-95 text-sm sm:text-base"
+                                className="group relative overflow-hidden bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 dark:from-primary-500 dark:to-primary-600 dark:hover:from-primary-600 dark:hover:to-primary-700 text-white font-semibold py-2.5 px-5 sm:px-6 rounded-xl shadow-md hover:shadow-lg transition-all duration-200 transform hover:scale-105 active:scale-95 text-sm sm:text-base"
                             >
                                 <span className="relative z-10">Sign In</span>
                                 {/* Shine effect on hover */}
