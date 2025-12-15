@@ -25,40 +25,41 @@ const ErrorRecoveryPanel: React.FC<ErrorRecoveryPanelProps> = ({
   return (
     <div 
       className={`
-        bg-surface dark:bg-surface-dark 
-        border rounded-lg p-4 shadow-sm
-        ${isError ? 'border-red-500' : 'border-yellow-500'}
+        card-modern p-5 animate-scale-in
+        ${isError ? 'border-2 border-red-500 shadow-glow-error' : 'border-2 border-yellow-500'}
       `}
       role="alert"
       aria-live="assertive"
     >
       {isError ? (
         <>
-          <div className="flex items-start gap-3 mb-4">
-            <svg 
-              className="w-6 h-6 text-red-500 flex-shrink-0 mt-0.5" 
-              fill="currentColor" 
-              viewBox="0 0 20 20"
-              aria-hidden="true"
-            >
-              <path 
-                fillRule="evenodd" 
-                d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" 
-                clipRule="evenodd" 
-              />
-            </svg>
+          <div className="flex items-start gap-4 mb-4">
+            <div className="flex-shrink-0 bg-red-500 p-2 rounded-lg shadow-lg">
+              <svg 
+                className="w-6 h-6 text-white" 
+                fill="currentColor" 
+                viewBox="0 0 20 20"
+                aria-hidden="true"
+              >
+                <path 
+                  fillRule="evenodd" 
+                  d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" 
+                  clipRule="evenodd" 
+                />
+              </svg>
+            </div>
             <div className="flex-1">
-              <h3 className="font-semibold text-red-600 dark:text-red-400 mb-1">
+              <h3 className="font-bold text-lg text-red-600 dark:text-red-400 mb-2">
                 Generation Failed
                 {failingAgentName && ` at ${failingAgentName}`}
               </h3>
-              <p className="text-sm text-text-secondary dark:text-text-secondary-dark mb-3">
+              <p className="text-sm text-text-secondary dark:text-text-secondary-dark mb-4 leading-relaxed">
                 {errorText || 'An unexpected error occurred during generation.'}
               </p>
-              <div className="flex flex-wrap gap-2">
+              <div className="flex flex-wrap gap-3">
                 <button
                   onClick={onRetry}
-                  className="flex items-center gap-2 bg-primary-600 text-white font-medium py-2 px-4 rounded-md text-sm hover:bg-primary-700 transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
+                  className="btn-primary flex items-center gap-2 text-sm"
                   aria-label="Retry generation from the failed agent"
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
@@ -68,7 +69,7 @@ const ErrorRecoveryPanel: React.FC<ErrorRecoveryPanelProps> = ({
                 </button>
                 <button
                   onClick={onReset}
-                  className="flex items-center gap-2 bg-surface-highlight dark:bg-surface-highlight-dark text-text-primary dark:text-text-primary-dark font-medium py-2 px-4 rounded-md text-sm hover:bg-surface dark:hover:bg-surface-dark border border-border dark:border-border-dark transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
+                  className="btn-secondary flex items-center gap-2 text-sm"
                   aria-label="Start over with a new generation"
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
@@ -82,37 +83,39 @@ const ErrorRecoveryPanel: React.FC<ErrorRecoveryPanelProps> = ({
         </>
       ) : (
         <>
-          <div className="flex items-start gap-3">
-            <svg 
-              className="w-6 h-6 text-yellow-500 flex-shrink-0 mt-0.5 animate-spin" 
-              fill="none" 
-              viewBox="0 0 24 24"
-              aria-hidden="true"
-            >
-              <circle 
-                className="opacity-25" 
-                cx="12" 
-                cy="12" 
-                r="10" 
-                stroke="currentColor" 
-                strokeWidth="4"
-              />
-              <path 
-                className="opacity-75" 
-                fill="currentColor" 
-                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-              />
-            </svg>
+          <div className="flex items-start gap-4">
+            <div className="flex-shrink-0 bg-yellow-500 p-2 rounded-lg shadow-lg">
+              <svg 
+                className="w-6 h-6 text-white animate-spin" 
+                fill="none" 
+                viewBox="0 0 24 24"
+                aria-hidden="true"
+              >
+                <circle 
+                  className="opacity-25" 
+                  cx="12" 
+                  cy="12" 
+                  r="10" 
+                  stroke="currentColor" 
+                  strokeWidth="4"
+                />
+                <path 
+                  className="opacity-75" 
+                  fill="currentColor" 
+                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                />
+              </svg>
+            </div>
             <div className="flex-1">
-              <h3 className="font-semibold text-text-primary dark:text-text-primary-dark mb-1">
+              <h3 className="font-bold text-lg text-text-primary dark:text-text-primary-dark mb-2">
                 Generation in Progress
               </h3>
-              <p className="text-sm text-text-secondary dark:text-text-secondary-dark mb-3">
+              <p className="text-sm text-text-secondary dark:text-text-secondary-dark mb-4 leading-relaxed">
                 The agents are working on your request. This may take a few minutes.
               </p>
               <button
                 onClick={onCancel}
-                className="flex items-center gap-2 bg-red-600 text-white font-medium py-2 px-4 rounded-md text-sm hover:bg-red-700 transition-colors focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
+                className="bg-gradient-to-r from-red-600 to-red-700 text-white font-semibold py-2.5 px-5 rounded-lg shadow-lg hover:shadow-xl hover:scale-105 active:scale-95 transition-all duration-200 flex items-center gap-2 text-sm"
                 aria-label="Cancel the current generation"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">

@@ -82,9 +82,9 @@ const MobileLayout: React.FC<MobileLayoutProps> = ({
             />
           )}
           
-          <div className="bg-surface dark:bg-surface-dark border border-border dark:border-border-dark rounded-lg p-4 flex flex-col gap-4 shadow-sm">
-            <h2 className="text-lg font-semibold text-text-primary dark:text-text-primary-dark">Agent Workflow</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="card-modern p-5 flex flex-col gap-4">
+            <h2 className="text-xl font-bold text-text-primary dark:text-text-primary-dark">Agent Workflow</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {agents.map(agent => (
                 <AgentCard
                   key={agent.id}
@@ -100,12 +100,12 @@ const MobileLayout: React.FC<MobileLayoutProps> = ({
         </div>
       )}
       {mobileView === 'audit' && (
-         <div className="bg-surface dark:bg-surface-dark border border-border dark:border-border-dark rounded-lg min-h-[calc(100vh-200px)] shadow-sm">
+         <div className="card-modern min-h-[calc(100vh-200px)]">
           <AgentDetailView agent={selectedAgent} recoveryContext={recoveryContext} />
         </div>
       )}
        {mobileView === 'preview' && (
-         <div className="bg-surface dark:bg-surface-dark border border-border dark:border-border-dark rounded-lg min-h-[calc(100vh-200px)] shadow-sm">
+         <div className="card-modern min-h-[calc(100vh-200px)]">
            <PreviewPanel
               code={finalCode}
               isZenMode={isZenMode}

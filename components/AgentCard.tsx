@@ -22,50 +22,58 @@ const AgentCard: React.FC<AgentCardProps> = ({ agent, isSelected, isCurrent, onC
   const getStatusClasses = () => {
     if (agent.status === AgentStatus.ERROR) {
       return {
-        border: 'border-red-500',
-        bg: 'bg-red-50 dark:bg-red-900/20',
-        text: 'text-red-500'
+        border: 'border-red-500 shadow-glow-error',
+        bg: 'bg-gradient-to-br from-red-50 to-red-100 dark:from-red-900/20 dark:to-red-900/10',
+        text: 'text-red-600 dark:text-red-400',
+        ring: 'ring-red-500/20'
       };
     }
     if (agent.status === AgentStatus.CANCELLED) {
       return {
-        border: 'border-gray-500',
-        bg: 'bg-gray-50 dark:bg-gray-900/20',
-        text: 'text-gray-500'
+        border: 'border-gray-400',
+        bg: 'bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900/20 dark:to-gray-900/10',
+        text: 'text-gray-600 dark:text-gray-400',
+        ring: 'ring-gray-500/20'
       };
     }
     if (isRecoveringAgent) {
       return {
-        border: 'border-orange-500',
-        bg: 'bg-orange-50 dark:bg-orange-900/20',
-        text: 'text-orange-500'
+        border: 'border-orange-500 shadow-glow',
+        bg: 'bg-gradient-to-br from-orange-50 to-orange-100 dark:from-orange-900/20 dark:to-orange-900/10',
+        text: 'text-orange-600 dark:text-orange-400',
+        ring: 'ring-orange-500/20'
       };
     }
     switch (agent.status) {
       case AgentStatus.RUNNING:
         return {
-          border: 'border-primary-500',
-          bg: 'bg-primary-50 dark:bg-primary-900/20',
-          text: 'text-primary-500'
+          border: 'border-primary-500 shadow-glow',
+          bg: 'bg-gradient-to-br from-primary-50 to-primary-100 dark:from-primary-900/20 dark:to-primary-900/10',
+          text: 'text-primary-600 dark:text-primary-400',
+          ring: 'ring-primary-500/20'
         };
       case AgentStatus.COMPLETED:
         return {
-          border: 'border-green-500',
-          bg: 'bg-green-50 dark:bg-green-900/20',
-          text: 'text-green-500'
+          border: 'border-green-500 shadow-glow-success',
+          bg: 'bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-900/10',
+          text: 'text-green-600 dark:text-green-400',
+          ring: 'ring-green-500/20'
         };
       case AgentStatus.PENDING:
       default:
         return {
           border: 'border-border dark:border-border-dark',
           bg: 'bg-surface dark:bg-surface-dark',
-          text: 'text-text-tertiary dark:text-text-tertiary-dark'
+          text: 'text-text-tertiary dark:text-text-tertiary-dark',
+          ring: 'ring-primary-500/20'
         };
     }
   };
 
-  const { border, bg, text } = getStatusClasses();
-  const selectedClass = isSelected ? 'ring-2 ring-offset-2 ring-offset-background dark:ring-offset-background-dark ring-primary-500' : '';
+  const { border, bg, text, ring } = getStatusClasses();
+  const selectedClass = isSelected ? `ring-4 ring-offset-2 ring-offset-background dark:ring-offset-background-dark ${ring}` : '';
+  const hoverClass = 'hover:scale-105 hover:-translate-y-1 hover:shadow-2xl';
+  const activeClass = agent.status === AgentStatus.RUNNING ? 'animate-pulse-fast' : '';
   
   const renderIcon = () => {
     const iconProps = { className: "w-6 h-6" };
@@ -93,14 +101,34 @@ const AgentCard: React.FC<AgentCardProps> = ({ agent, isSelected, isCurrent, onC
       tabIndex={0}
       aria-label={`Select agent ${agent.name}, status: ${agent.status}`}
       aria-live="polite"
-      className={`card p-4 rounded-lg border flex items-center gap-4 cursor-pointer transition-all duration-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-background dark:focus-visible:ring-offset-background-dark focus-visible:ring-primary-500 ${border} ${bg} ${selectedClass} ${pulseClass} hover:scale-105 hover:shadow-lg`}
+      className={`relative overflow-hidden rounded-xl border-2 flex items-center gap-4 cursor-pointer transition-all duration-300 focus:outline-none focus-visible:ring-4 focus-visible:ring-offset-2 focus-visible:ring-offset-background dark:focus-visible:ring-offset-background-dark focus-visible:ring-primary-500 ${border} ${bg} ${selectedClass} ${hoverClass} ${activeClass} p-4`}
     >
-      <div className={`flex-shrink-0 p-2 rounded-full bg-white dark:bg-surface-dark ${text}`}>
+      {/* Shimmer effect for running state */}
+      {agent.status === AgentStatus.RUNNING && (
+        <div className="absolute inset-0 animate-shimmer opacity-30" />
+      )}
+      
+      <div className={`relative flex-shrink-0 p-3 rounded-xl bg-white dark:bg-surface-dark shadow-lg ${text}`}>
         {renderIcon()}
       </div>
-      <div>
-        <h3 className="font-semibold text-text-primary dark:text-text-primary-dark">{agent.name}</h3>
-        <p className="text-sm text-text-secondary dark:text-text-secondary-dark capitalize">{agent.status.toLowerCase()}</p>
+      <div className="flex-grow">
+        <h3 className="font-bold text-base text-text-primary dark:text-text-primary-dark">{agent.name}</h3>
+        <p className={`text-sm font-semibold capitalize ${text}`}>
+          {agent.status.toLowerCase()}
+        </p>
+      </div>
+      
+      {/* Status indicator dot */}
+      <div className="flex-shrink-0">
+        {agent.status === AgentStatus.RUNNING && (
+          <div className="w-3 h-3 rounded-full bg-primary-500 animate-pulse shadow-glow" />
+        )}
+        {agent.status === AgentStatus.COMPLETED && (
+          <div className="w-3 h-3 rounded-full bg-green-500 shadow-glow-success" />
+        )}
+        {agent.status === AgentStatus.ERROR && (
+          <div className="w-3 h-3 rounded-full bg-red-500 shadow-glow-error" />
+        )}
       </div>
     </article>
   );

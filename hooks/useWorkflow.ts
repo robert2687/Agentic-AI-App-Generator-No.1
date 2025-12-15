@@ -107,7 +107,7 @@ export const useWorkflow = () => {
     if (orchestratorRef.current) {
       orchestratorRef.current.cancel();
       setIsGenerating(false);
-      logger.info('User', 'Generation cancelled by user', {});
+      logger.info('Orchestrator', 'Generation cancelled by user', {});
       analytics.track('generation_cancelled');
     }
   }, []);
