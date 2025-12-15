@@ -17,6 +17,26 @@ export default defineConfig(({ mode }) => {
         alias: {
           '@': './',
         }
+      },
+      build: {
+        rollupOptions: {
+          output: {
+            manualChunks: {
+              // Split vendor code
+              'react-vendor': ['react', 'react-dom'],
+              // Split large dependencies
+              'diff-vendor': ['diff', 'diff2html'],
+              'ai-vendor': ['@google/genai'],
+              'supabase-vendor': ['@supabase/supabase-js'],
+            }
+          }
+        },
+        chunkSizeWarningLimit: 600,
+        // Enable source maps for production debugging (optional)
+        sourcemap: false,
+      },
+      optimizeDeps: {
+        include: ['react', 'react-dom', '@google/genai', '@supabase/supabase-js']
       }
     };
 });

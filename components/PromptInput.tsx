@@ -24,17 +24,19 @@ const PromptInput: React.FC<PromptInputProps> = ({
 
   if (isError) {
     return (
-      <div className="bg-red-50 dark:bg-red-900/20 border border-status-error rounded-lg p-4 flex flex-col gap-3 text-center animate-fade-in">
-        <div className="flex items-center justify-center gap-2">
-          <ErrorIcon className="w-6 h-6 text-status-error" />
-          <h2 className="text-lg font-bold text-status-error">Generation Failed</h2>
+      <div className="bg-gradient-to-br from-red-50 to-red-100 dark:from-red-900/20 dark:to-red-900/10 border-2 border-status-error rounded-xl p-6 flex flex-col gap-4 text-center animate-scale-in shadow-glow-error">
+        <div className="flex items-center justify-center gap-3">
+          <div className="bg-red-500 p-2.5 rounded-xl shadow-lg">
+            <ErrorIcon className="w-7 h-7 text-white" />
+          </div>
+          <h2 className="text-xl font-bold text-status-error">Generation Failed</h2>
         </div>
-        <p className="text-red-700 dark:text-red-300 text-sm">
+        <p className="text-red-700 dark:text-red-300 text-sm font-medium">
           {errorText || 'An unexpected error occurred during agent execution.'}
         </p>
         <button
           onClick={onReset}
-          className="w-full bg-gray-700 text-white font-bold py-2 px-4 rounded-md hover:bg-gray-800 transition-colors mt-2"
+          className="w-full bg-gradient-to-r from-gray-700 to-gray-800 text-white font-bold py-3 px-6 rounded-xl hover:shadow-xl hover:scale-105 active:scale-95 transition-all duration-200 mt-2 shadow-lg"
         >
           Reset and Try Again
         </button>
@@ -57,24 +59,25 @@ const PromptInput: React.FC<PromptInputProps> = ({
     : 'Start Generation';
   
   return (
-    <div className="bg-surface dark:bg-surface-dark border border-border dark:border-border-dark rounded-lg p-4 flex flex-col gap-4 shadow-sm">
+    <div className="card-modern p-6 flex flex-col gap-5 animate-scale-in">
       <div>
-        <label htmlFor="project-goal" className="font-semibold text-text-primary dark:text-text-primary-dark">
-          1. Define Your Project Goal
+        <label htmlFor="project-goal" className="font-bold text-lg text-text-primary dark:text-text-primary-dark flex items-center gap-2">
+          <span className="bg-gradient-to-r from-primary-600 to-primary-500 text-white w-7 h-7 rounded-full flex items-center justify-center text-sm shadow-lg">1</span>
+          Define Your Project Goal
         </label>
         <textarea
           id="project-goal"
           value={projectGoal}
           onChange={(e) => setProjectGoal(e.target.value)}
           placeholder="e.g., A web app for tracking personal fitness goals with data visualization..."
-          className="w-full h-32 p-2 bg-surface-highlight dark:bg-surface-highlight-dark rounded-md border border-border dark:border-border-dark focus:border-primary-500 focus:ring-4 focus:ring-primary-500/20 focus:outline-none resize-none transition-colors mt-2"
+          className="input-modern mt-3 h-36 text-base"
           disabled={isGenerating || isComplete}
         />
-        <div className="flex flex-col sm:flex-row gap-2 mt-2">
+        <div className="flex flex-col sm:flex-row gap-3 mt-4">
           <button
             onClick={handlePrimaryAction}
             disabled={isGenerating || (!isComplete && !projectGoal.trim())}
-            className="flex-grow bg-primary-600 text-white font-bold py-2 px-4 rounded-md hover:bg-primary-700 disabled:bg-gray-300 dark:disabled:bg-gray-700 disabled:text-text-tertiary disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
+            className="flex-grow btn-primary flex items-center justify-center gap-2"
           >
             {isComplete && <EyeIcon className="w-5 h-5" />}
             {primaryButtonText}
@@ -82,7 +85,7 @@ const PromptInput: React.FC<PromptInputProps> = ({
           <button
             onClick={onReset}
             disabled={isGenerating}
-            className="bg-gray-600 text-white font-bold py-2 px-4 rounded-md hover:bg-gray-700 disabled:bg-gray-300 dark:disabled:bg-gray-700 disabled:cursor-not-allowed transition-colors"
+            className="btn-secondary px-8"
           >
             Reset
           </button>
@@ -90,22 +93,23 @@ const PromptInput: React.FC<PromptInputProps> = ({
       </div>
 
       {isComplete && (
-        <div className="border-t border-border dark:border-border-dark pt-4 flex flex-col gap-2 animate-fade-in">
-          <label htmlFor="refinement-prompt" className="font-semibold text-text-primary dark:text-text-primary-dark">
-            2. Debug & Refine
+        <div className="border-t-2 border-border dark:border-border-dark pt-5 flex flex-col gap-3 animate-scale-in">
+          <label htmlFor="refinement-prompt" className="font-bold text-lg text-text-primary dark:text-text-primary-dark flex items-center gap-2">
+            <span className="bg-gradient-to-r from-green-600 to-green-500 text-white w-7 h-7 rounded-full flex items-center justify-center text-sm shadow-lg">2</span>
+            Debug & Refine
           </label>
           <textarea
             id="refinement-prompt"
             value={refinementPrompt}
             onChange={(e) => setRefinementPrompt(e.target.value)}
-            placeholder="e.g., The 'Delete' button isn\'t working. OR Change the title color to orange."
-            className="w-full h-20 p-2 bg-surface-highlight dark:bg-surface-highlight-dark rounded-md border border-border dark:border-border-dark focus:border-primary-500 focus:ring-4 focus:ring-primary-500/20 focus:outline-none resize-none transition-colors"
+            placeholder="e.g., The 'Delete' button isn't working. OR Change the title color to orange."
+            className="input-modern h-24 text-base"
             disabled={isGenerating}
           />
           <button
             onClick={onRefine}
             disabled={isGenerating || !refinementPrompt.trim()}
-            className="w-full bg-primary-600 text-white font-bold py-2 px-4 rounded-md hover:bg-primary-700 disabled:bg-gray-300 dark:disabled:bg-gray-700 disabled:text-text-tertiary disabled:cursor-not-allowed transition-colors"
+            className="btn-primary w-full"
           >
             {isGenerating ? 'Refining...' : 'Submit Refinement'}
           </button>
