@@ -1,16 +1,19 @@
-import React from 'react';
+import React, { Suspense } from 'react';
 import { useWorkflow } from './hooks/useWorkflow';
 import { useUI } from './hooks/useUI';
 import Header from './components/Header';
-import PreviewModal from './components/PreviewModal';
-import DeploymentModal from './components/DeploymentModal';
 import BottomNav from './components/BottomNav';
 import { AuthProvider } from './contexts/AuthContext';
-import AuthModal from './components/AuthModal';
 import { withPremiumGate } from './hoc/withPremiumGate';
-import GeneratorWorkspace from './components/GeneratorWorkspace';
 import ErrorNotification from './components/ErrorNotification';
 import { AgentStatus } from './types';
+import SkeletonLoader from './components/SkeletonLoader';
+
+// Lazy load heavy components for code splitting
+const PreviewModal = React.lazy(() => import('./components/PreviewModal'));
+const DeploymentModal = React.lazy(() => import('./components/DeploymentModal'));
+const AuthModal = React.lazy(() => import('./components/AuthModal'));
+const GeneratorWorkspace = React.lazy(() => import('./components/GeneratorWorkspace'));
 
 const GatedGeneratorWorkspace = withPremiumGate(GeneratorWorkspace);
 
@@ -91,46 +94,51 @@ const AppContent: React.FC = () => {
     <div className="bg-background dark:bg-background-dark text-text-primary dark:text-text-primary-dark min-h-screen font-sans pb-20 lg:pb-0 transition-colors duration-300">
       <Header onSignIn={() => setShowAuthModal(true)} />
       <main className="max-w-screen-3xl mx-auto p-4 sm:p-6">
-        <GatedGeneratorWorkspace
-          agents={agents}
-          selectedAgentId={selectedAgentId}
-          currentAgent={currentAgent}
-          recoveryContext={recoveryContext}
-          setSelectedAgentId={setSelectedAgentId}
-          isZenMode={isZenMode}
-          projectGoal={projectGoal}
-          setProjectGoal={setProjectGoal}
-          startGeneration={handleStartGeneration}
-          resetState={handleReset}
-          setShowPreviewModal={setShowPreviewModal}
-          isGenerating={isGenerating}
-          isComplete={isComplete}
-          refinementPrompt={refinementPrompt}
-          setRefinementPrompt={setRefinementPrompt}
-          startRefinement={handleStartRefinement}
-          isError={isError}
-          errorText={errorText}
-          finalCode={finalCode}
-          setIsZenMode={setIsZenMode}
-          startDeployment={handleStartDeployment}
-          deployerAgent={deployerAgent}
-          auditLog={auditLog}
-          handleSelectAgent={handleSelectAgent}
-          mobileView={mobileView}
-          cancelGeneration={cancelGeneration}
-          retryFromFailedAgent={retryFromFailedAgent}
-        />
+        <Suspense fallback={<SkeletonLoader />}>
+          <GatedGeneratorWorkspace
+            agents={agents}
+            selectedAgentId={selectedAgentId}
+            currentAgent={currentAgent}
+            recoveryContext={recoveryContext}
+            setSelectedAgentId={setSelectedAgentId}
+            isZenMode={isZenMode}
+            projectGoal={projectGoal}
+            setProjectGoal={setProjectGoal}
+            startGeneration={handleStartGeneration}
+            resetState={handleReset}
+            setShowPreviewModal={setShowPreviewModal}
+            isGenerating={isGenerating}
+            isComplete={isComplete}
+            refinementPrompt={refinementPrompt}
+            setRefinementPrompt={setRefinementPrompt}
+            startRefinement={handleStartRefinement}
+            isError={isError}
+            errorText={errorText}
+            finalCode={finalCode}
+            setIsZenMode={setIsZenMode}
+            startDeployment={handleStartDeployment}
+            deployerAgent={deployerAgent}
+            auditLog={auditLog}
+            handleSelectAgent={handleSelectAgent}
+            mobileView={mobileView}
+            cancelGeneration={cancelGeneration}
+            retryFromFailedAgent={retryFromFailedAgent}
+          />
+        </Suspense>
       </main>
 
       <BottomNav activeView={mobileView} setActiveView={setMobileView} />
 
-      {showAuthModal && <AuthModal onClose={() => setShowAuthModal(false)} />}
-      {showPreviewModal && finalCode && (
-        <PreviewModal code={finalCode} onClose={() => setShowPreviewModal(false)} />
-      )}
-      {showDeploymentModal && (
-         <DeploymentModal agent={deployerAgent} onClose={() => setShowDeploymentModal(false)} />
-      )}
+      <Suspense fallback={null}>
+        {showAuthModal && <AuthModal onClose={() => setShowAuthModal(false)} />}
+        {showPreviewModal && finalCode && (
+          <PreviewModal code={finalCode} onClose={() => setShowPreviewModal(false)} />
+        )}
+        {showDeploymentModal && (
+           <DeploymentModal agent={deployerAgent} onClose={() => setShowDeploymentModal(false)} />
+        )}
+      </Suspense>
+      
       {isError && errorText && (
         <ErrorNotification message={errorText} onClose={clearError} />
       )}
