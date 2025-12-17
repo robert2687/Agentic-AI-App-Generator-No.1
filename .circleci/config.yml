@@ -1,0 +1,21 @@
+version: 2.1
+
+orbs:
+  node: circleci/node@5.2.0
+
+jobs:
+  build:
+    docker:
+      - image: cimg/node:20.18
+    steps:
+      - checkout
+      - node/install-packages:
+          pkg-manager: npm
+      - run:
+          name: Build project
+          command: npm run build
+
+workflows:
+  build_and_test:
+    jobs:
+      - build
