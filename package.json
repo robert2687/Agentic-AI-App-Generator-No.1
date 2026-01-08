@@ -19,7 +19,7 @@
     "@capacitor/cli": "^7.4.4",
     "@capacitor/core": "^7.4.4",
     "@google/genai": "^1.21.0",
-    "@supabase/supabase-js": "^2.75.1",
+    "@supabase/supabase-js": "^2.88.0",
     "diff": "^5.2.0",
     "diff2html": "^3.4.52",
     "react": "^19.1.1",
